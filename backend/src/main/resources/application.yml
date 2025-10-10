@@ -1,0 +1,24 @@
+spring:
+  profiles:
+    default: dev
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+  mvc:
+    problemdetails:
+      enabled: true
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8080
+  forward-headers-strategy: native
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info

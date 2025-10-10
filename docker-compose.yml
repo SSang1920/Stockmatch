@@ -1,0 +1,10 @@
+services:
+  mysql:
+    image: 'mysql:8.0'
+    container_name: mysql-local
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: stockmatch
+      MYSQL_USER: app
+    ports:
+      - '3306'
