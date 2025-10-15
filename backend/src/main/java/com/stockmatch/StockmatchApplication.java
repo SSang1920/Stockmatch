@@ -1,4 +1,4 @@
-package com.example.stockmatch;
+package com.stockmatch;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

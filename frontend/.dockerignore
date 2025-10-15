@@ -1,0 +1,16 @@
+# 의존성 폴더
+node_modules
+
+# 빌드 산출물
+dist
+build
+
+# Git
+.git
+
+# 환경변수
+.env
+
+# etc
+npm-debug.log
+README.md

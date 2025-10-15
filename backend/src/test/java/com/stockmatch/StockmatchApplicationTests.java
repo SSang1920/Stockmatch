@@ -1,4 +1,4 @@
-package com.example.stockmatch;
+package com.stockmatch;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

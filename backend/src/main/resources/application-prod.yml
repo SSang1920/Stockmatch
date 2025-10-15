@@ -3,9 +3,18 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+
   jpa:
     hibernate:
       ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        default_batch_fetch_size: 100
+        jdbc:
+          batch_size: 30
+
   security:
     oauth2:
       client:
@@ -13,6 +22,7 @@ spring:
           google:
             client-id: ${GOOGLE_CLIENT_ID:dev-client}
             client-secret: ${GOOGLE_CLIENT_SECRET:dev-secret}
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
         provider:
           google:
             issuer-uri: https://accounts.google.com
@@ -21,3 +31,11 @@ logging:
   level:
     root: info
     org.hibernate.SQL: warn
+    org.hibernate.orm.jdbc.bind: off
+  file:
+    name: /var/log/stockmatch/app.log
+
+server:
+  forward-headers-strategy: native
+  error:
+    include-message: never

@@ -1,0 +1,14 @@
+# IDE/Build file
+.idea
+.gradle
+build
+out
+
+# VCS
+.git
+.gitignore
+
+# Logs
+*.log
+
+.env

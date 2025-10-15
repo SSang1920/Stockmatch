@@ -12,10 +12,23 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        default_batch_fetch_size: 100
+  message:
+    basename: messages
+    encoding: UTF-8
+  output:
+    ansi:
+      enabled: always
 
 server:
   port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: ture
+      force: true
   forward-headers-strategy: native
+  timezone: Asia/Seoul
 
 management:
   endpoints:
