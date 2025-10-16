@@ -14,9 +14,8 @@ concurrency:
 
 env:
   REGISTRY: docker.io
-  IMAGE_OWNER: ${{ secrets.DOCKERHUB_USERNAME }}
-  BACKEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/stockmatch-backend
-  WEB_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/stockmatch-web
+  DOCKER_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
+  UNIFIED_IMAGE: ${{ env.DOCKER_NAMESPACE }}/stockmatch
   TEST_OPTIONAL: 'false'
 
 jobs:
@@ -95,25 +94,25 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Extract meta (tags/labels) - backend
+      - name: Meta (backend)
         id: meta_backend
         uses: docker/metadata-action@v5
         with:
-          image: ${{ env.BACKEND_IMAGE }}
+          image: ${{ env.UNIFIED_IMAGE }}
           tags: |
-            type=sha
-            type=ref,event=branch
-            type=semver,pattern={{version}}
+            type=sha,prefix=backend-sha-
+            type=ref,event=branch,prefix=backend-
+            type=semver,pattern={{version}},prefix=backend-
 
-      - name: Extract meta (tags/labels) - web
+      - name: Meta (web)
         id: meta_web
         uses: docker/metadata-action@v5
         with:
-          image: ${{ env.WEB_IMAGE }}
+          image: ${{ env.UNIFIED_IMAGE }}
           tags: |
-            type=sha
-            type=ref,event=branch
-            type=semver,pattern={{version}}
+            type=sha,prefix=web-sha-
+            type=ref,event=branch,prefix=web-
+            type=semver,pattern={{version}},prefix=web-
 
       - name: Build & Push Backend
         uses: docker/build-push-action@v6
@@ -123,8 +122,8 @@ jobs:
           push: true
           tags: ${{ steps.meta_backend.outputs.tags }}
           labels: ${{ steps.meta_backend.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.BACKEND_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ env.BACKEND_IMAGE }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.UNIFIED_IMAGE }}:backend-buildcache
+          cache-to: type=registry,ref=${{ env.UNIFIED_IMAGE }}:backend-buildcache,mode=max
 
       - name: Build & Push Web
         uses: docker/build-push-action@v6
@@ -134,8 +133,8 @@ jobs:
           push: true
           tags: ${{ steps.meta_web.outputs.tags }}
           labels: ${{ steps.meta_web.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.WEB_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ env.WEB_IMAGE }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.UNIFIED_IMAGE }}:web-buildcache
+          cache-to: type=registry,ref=${{ env.UNIFIED_IMAGE }}:web-buildcache,mode=max
 
   deploy:
     name: Deploy to Server
