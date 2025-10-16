@@ -98,7 +98,7 @@ jobs:
         id: meta_backend
         uses: docker/metadata-action@v5
         with:
-          image: ${{ env.UNIFIED_IMAGE }}
+          images: ${{ env.UNIFIED_IMAGE }}
           tags: |
             type=sha,prefix=backend-sha-
             type=ref,event=branch,prefix=backend-
@@ -108,7 +108,7 @@ jobs:
         id: meta_web
         uses: docker/metadata-action@v5
         with:
-          image: ${{ env.UNIFIED_IMAGE }}
+          images: ${{ env.UNIFIED_IMAGE }}
           tags: |
             type=sha,prefix=web-sha-
             type=ref,event=branch,prefix=web-
