@@ -1,5 +1,6 @@
 package com.stockmatch.securityasset.domain;
 
+import com.stockmatch.WatchItem.WatchItem;
 import com.stockmatch.common.BaseEntity;
 import com.stockmatch.portfolio.domain.Currency;
 import jakarta.persistence.*;

@@ -4,12 +4,14 @@ import com.stockmatch.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 @Table(name ="alpha_vantage_key")
 public class AlphaVantageKey extends BaseEntity {
 
@@ -18,7 +20,7 @@ public class AlphaVantageKey extends BaseEntity {
     @Column(name = "api_key_id")
     private Long id;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
