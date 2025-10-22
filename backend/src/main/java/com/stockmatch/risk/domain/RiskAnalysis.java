@@ -5,6 +5,7 @@ import com.stockmatch.portfolio.domain.Portfolio;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -12,6 +13,7 @@ import java.time.LocalDate;
 @Entity
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "risk_analysis")
 public class RiskAnalysis extends BaseEntity {
 

@@ -5,6 +5,7 @@ import com.stockmatch.securityasset.domain.Security;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "transaction")
 public class Transaction extends BaseEntity {
 

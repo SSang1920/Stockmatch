@@ -2,9 +2,11 @@ package com.stockmatch.portfolio.domain;
 
 import com.stockmatch.common.BaseEntity;
 import com.stockmatch.risk.domain.RiskAnalysis;
+import com.stockmatch.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.List;
 @Entity
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "portfolio")
 public class Portfolio extends BaseEntity {
 

@@ -5,6 +5,7 @@ import com.stockmatch.portfolio.domain.Currency;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.List;
 @Entity
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "security")
 public class Security extends BaseEntity {
 
@@ -46,11 +48,11 @@ public class Security extends BaseEntity {
     private String isin;
 
     @Column
-    private boolean delisted;
+    private boolean delisted = false;       // 상장폐지 여부
 
     @OneToMany(mappedBy = "security")
     private List<DailyPrice> dailyPrices = new ArrayList<>();
 
-    @OneToOne
+    @OneToOne(mappedBy = "security", fetch = FetchType.LAZY)
     private WatchItem watchItem;
 }
