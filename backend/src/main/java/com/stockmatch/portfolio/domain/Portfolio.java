@@ -2,6 +2,7 @@ package com.stockmatch.portfolio.domain;
 
 import com.stockmatch.common.BaseEntity;
 import com.stockmatch.risk.domain.RiskAnalysis;
+import com.stockmatch.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

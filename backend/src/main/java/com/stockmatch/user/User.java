@@ -5,12 +5,14 @@ import com.stockmatch.portfolio.domain.Portfolio;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "user")
 public class User extends BaseEntity {
 
@@ -23,19 +25,19 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private AuthProvider provider;
 
-    @Column(name ="provider_id", length = 255, nullable = false)
+    @Column(name ="provider_id", length = 255)
     private String providerId;
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 100)
     private String email;
 
-    @Column(name = "email_verified", nullable = false)
+    @Column(name = "email_verified")
     private boolean emailVerified;
 
     @Column(length = 50, nullable = false)
     private String name;
 
-    @Column(name = "profile_image_url", length = 255, nullable = false)
+    @Column(name = "profile_image_url", length = 255)
     private String profileImageUrl;
 
     @Enumerated(EnumType.STRING)
