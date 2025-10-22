@@ -1,16 +1,15 @@
-package com.stockmatch.user;
+package com.stockmatch.user.domain;
 
 import com.stockmatch.common.BaseEntity;
 import com.stockmatch.portfolio.domain.Portfolio;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "user")
 public class User extends BaseEntity {
 
@@ -23,19 +22,19 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private AuthProvider provider;
 
-    @Column(name ="provider_id", length = 255, nullable = false)
+    @Column(name ="provider_id", length = 255)
     private String providerId;
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 100)
     private String email;
 
-    @Column(name = "email_verified", nullable = false)
+    @Column(name = "email_verified")
     private boolean emailVerified;
 
     @Column(length = 50, nullable = false)
     private String name;
 
-    @Column(name = "profile_image_url", length = 255, nullable = false)
+    @Column(name = "profile_image_url", length = 255)
     private String profileImageUrl;
 
     @Enumerated(EnumType.STRING)
@@ -59,5 +58,30 @@ public class User extends BaseEntity {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private AlphaVantageKey alphaVantageKey;
 
+    //OAuth2 신규 사용자 생성을 위한 생성자
+    @Builder
+    public User(AuthProvider provider, String providerId , String email, String name, String profileImageUrl){
+        this.provider = provider;
+        this.providerId = providerId;
+        this.email = email;
+        this.emailVerified =  true; //소셜 로그인은 이메일 인증 되었다고 가정
+        this.name = name;
+        this.profileImageUrl = profileImageUrl;
+        this.role = UserRole.USER;
+        this.status = UserStatus.ACTIVE;
+        this.lastLoginAt = LocalDateTime.now();
+    }
+
+    //이미 존재하는 사용자 로그인시 업데이트
+    public User updateOAuthInfo(String name, String profileImageUrl){
+        this.name =name;
+        this.profileImageUrl = profileImageUrl;
+        this.lastLoginAt = LocalDateTime.now();
+        return this;
+    }
+
+    public String getRoleKey() {
+        return this.role.getKey();
+    }
 
 }

@@ -1,4 +1,4 @@
-package com.stockmatch.user;
+package com.stockmatch.user.domain;
 
 public enum UserStatus {
     ACTIVE,

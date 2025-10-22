@@ -1,6 +1,7 @@
 package com.stockmatch.portfolio.domain;
 
 import com.stockmatch.common.BaseEntity;
+import com.stockmatch.securityasset.domain.Security;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
