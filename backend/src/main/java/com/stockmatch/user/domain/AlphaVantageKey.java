@@ -1,4 +1,4 @@
-package com.stockmatch.user;
+package com.stockmatch.user.domain;
 
 import com.stockmatch.common.BaseEntity;
 import jakarta.persistence.*;

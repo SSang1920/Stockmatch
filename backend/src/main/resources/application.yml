@@ -35,3 +35,8 @@ management:
     web:
       exposure:
         include: health, info
+
+jwt:
+  secretKey: "a-very-long-and-secure-secret-key-that-is-at-least-256-bits-long-for-hs256"
+  accessTokenExpirationTime : 3600000 #1시간
+  refreshTokenExpirationTime : 604800000 #7일

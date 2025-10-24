@@ -1,18 +1,15 @@
-package com.stockmatch.user;
+package com.stockmatch.user.domain;
 
 import com.stockmatch.common.BaseEntity;
 import com.stockmatch.portfolio.domain.Portfolio;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "user")
 public class User extends BaseEntity {
 
@@ -60,6 +57,32 @@ public class User extends BaseEntity {
 
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
     private AlphaVantageKey alphaVantageKey;
+
+    //OAuth2 신규 사용자 생성을 위한 생성자
+    @Builder
+    public User(AuthProvider provider, String providerId , String email, String name, String profileImageUrl){
+        this.provider = provider;
+        this.providerId = providerId;
+        this.email = email;
+        this.emailVerified =  true; //소셜 로그인은 이메일 인증 되었다고 가정
+        this.name = name;
+        this.profileImageUrl = profileImageUrl;
+        this.role = UserRole.USER;
+        this.status = UserStatus.ACTIVE;
+        this.lastLoginAt = LocalDateTime.now();
+    }
+
+    //이미 존재하는 사용자 로그인시 업데이트
+    public User updateOAuthInfo(String name, String profileImageUrl){
+        this.name =name;
+        this.profileImageUrl = profileImageUrl;
+        this.lastLoginAt = LocalDateTime.now();
+        return this;
+    }
+
+    public String getRoleKey() {
+        return this.role.getKey();
+    }
 
     //== 연관관계 편의 메서드 ==//
     public void linkPortfolio(Portfolio portfolio) {
