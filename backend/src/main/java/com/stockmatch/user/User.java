@@ -55,11 +55,17 @@ public class User extends BaseEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Portfolio portfolio;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
     private AlphaVantageKey alphaVantageKey;
 
-
+    //== 연관관계 편의 메서드 ==//
+    public void linkPortfolio(Portfolio portfolio) {
+        this.portfolio = portfolio;
+        if (portfolio != null) {
+            portfolio.updateUser(this);
+        }
+    }
 }

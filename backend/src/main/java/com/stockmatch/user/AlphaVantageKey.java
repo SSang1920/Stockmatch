@@ -20,8 +20,8 @@ public class AlphaVantageKey extends BaseEntity {
     @Column(name = "api_key_id")
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
     @Column(name = "key_cipher", length = 1024, nullable = false)

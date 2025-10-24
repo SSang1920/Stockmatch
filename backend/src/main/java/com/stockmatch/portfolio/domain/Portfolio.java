@@ -4,17 +4,16 @@ import com.stockmatch.common.BaseEntity;
 import com.stockmatch.risk.domain.RiskAnalysis;
 import com.stockmatch.user.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Getter
-@AllArgsConstructor
-@NoArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
 @Table(name = "portfolio")
 public class Portfolio extends BaseEntity {
 
@@ -23,20 +22,29 @@ public class Portfolio extends BaseEntity {
     @Column(name = "portfolio_id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "base_currency", nullable = false)
+    @Builder.Default
     private Currency baseCurrency = Currency.KRW;
 
     @OneToMany(mappedBy = "portfolio")
+    @Builder.Default
     private List<Holding> holdings = new ArrayList<>();
 
     @OneToMany(mappedBy = "portfolio")
+    @Builder.Default
     private List<Transaction> transactions = new ArrayList<>();
 
     @OneToMany(mappedBy = "portfolio")
+    @Builder.Default
     private List<RiskAnalysis> riskAnalyses = new ArrayList<>();
+
+    //== 연관관계 편의 메서드 ==//
+    public void updateUser(User user) {
+        this.user = user;
+    }
 }
