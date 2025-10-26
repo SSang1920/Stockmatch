@@ -1,5 +1,10 @@
 package com.stockmatch.config.jwt;
 
+import com.stockmatch.common.exception.ErrorCode;
+import com.stockmatch.common.exception.JwtAuthenticationException;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +25,10 @@ public class JwtUtil {
     private final JwtProperties jwtProperties;
     private SecretKey cachedSigningKey;
 
-    private SecretKey getSigningKey() {
-        if (cachedSigningKey == null) {
-            byte[] keyBytes = jwtProperties.getSecretKey().getBytes(StandardCharsets.UTF_8);
-            cachedSigningKey = Keys.hmacShaKeyFor(keyBytes);
-        }
-        return cachedSigningKey;
+    @PostConstruct
+    public void init() {
+        // JwtProperties에서 secretKey를 가져와 객체 생성후 캐싱
+        this.cachedSigningKey = Keys.hmacShaKeyFor(jwtProperties.getSecretKey().getBytes(StandardCharsets.UTF_8));
     }
 
     // AccessToken 생성
@@ -38,7 +41,7 @@ public class JwtUtil {
                 .claim("role", role)
                 .issuedAt(now)
                 .expiration(expiryDate)
-                .signWith(getSigningKey())
+                .signWith(cachedSigningKey)
                 .compact();
     }
 
@@ -51,8 +54,34 @@ public class JwtUtil {
                 .subject(userPk)
                 .issuedAt(now)
                 .expiration(expiryDate)
-                .signWith(getSigningKey())
+                .signWith(cachedSigningKey)
                 .compact();
+    }
+
+    private Claims parseClaims(String token) {
+        try {
+            return Jwts.parser()
+                    .verifyWith(cachedSigningKey) //검증에 사용할 비밀 키 설정
+                    .build()
+                    .parseSignedClaims(token) // 검증
+                    .getPayload(); //내용물 추출 & 반환
+
+        } catch (ExpiredJwtException e) {
+            //토큰 만료시 에러 처리
+            throw new JwtAuthenticationException(ErrorCode.TOKEN_EXPIRED);
+
+        } catch (JwtException | IllegalArgumentException e) {
+            // 서명이 다르거나 형식이 잘못된 경우 에러 처리
+            throw new JwtAuthenticationException(ErrorCode.TOKEN_INVALID);
+        }
+    }
+
+    public String getUserPkFromToken (String token) {
+        return parseClaims(token).getSubject();
+    }
+
+    public void validateTokenOrThrow(String token){
+        parseClaims(token);
     }
 
 }
