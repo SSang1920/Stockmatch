@@ -4,6 +4,7 @@ import com.stockmatch.user.domain.AuthProvider;
 import com.stockmatch.user.domain.User;
 import lombok.Builder;
 import lombok.Getter;
+import org.xml.sax.helpers.AttributesImpl;
 
 
 import java.util.Map;
@@ -37,8 +38,51 @@ public class OAuthAttributes {
         if ("google".equals(registrationId)){
             return ofGoogle(userNameAttributeName,attributes);
         }
+        if ("naver".equals(registrationId)){
+            return ofNaver("id", attributes);
+        }
+        if ("kakao".equals(registrationId)){
+            return ofKakao("id", attributes);
+        }
 
         throw new IllegalArgumentException("Unsupported social login: " + registrationId);
+    }
+
+    private static OAuthAttributes ofNaver(String userNameAttributeName, Map<String, Object> attributes) {
+
+        Map<String, Object> response = (Map<String, Object>) attributes.get("response");
+
+        return OAuthAttributes.builder()
+                .name((String) response.get("name"))
+                .email((String) response.get("email"))
+                .profileImageUrl((String) response.get("profile_image_url"))
+                .provider(AuthProvider.NAVER)
+                .providerId((String) response.get(userNameAttributeName))
+                .attributes(response)
+                .nameAttributeKey(userNameAttributeName)
+                .build();
+    }
+
+    private static OAuthAttributes ofKakao(String userNameAttributeName, Map<String, Object> attributes) {
+
+        // 'properties' Map에서 닉네임, 프로필 이미지 추출
+        Map<String, Object> properties = (Map<String, Object>) attributes.get("properties");
+        String nickname = (String) properties.get("nickname");
+        String profileImageUrl = (String) properties.get("profile_image");
+
+        // 'kakao_account' Map에서 이메일 추출
+        Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
+        String email = (kakaoAccount != null) ? (String) kakaoAccount.get("email") : null;
+
+        return OAuthAttributes.builder()
+                .name(nickname)
+                .email(email)
+                .profileImageUrl(profileImageUrl)
+                .provider(AuthProvider.KAKAO)
+                .providerId(String.valueOf(attributes.get("id")))
+                .attributes(attributes)
+                .nameAttributeKey(userNameAttributeName)
+                .build();
     }
 
     private static OAuthAttributes ofGoogle(String userNameAttributeName, Map<String, Object> attributes){
@@ -52,6 +96,9 @@ public class OAuthAttributes {
                 .nameAttributeKey(userNameAttributeName)
                 .build();
     }
+
+
+
 
     public User toEntity(){
         return User.builder()
