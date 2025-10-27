@@ -31,20 +31,44 @@ public class Portfolio extends BaseEntity {
     @Builder.Default
     private Currency baseCurrency = Currency.KRW;
 
-    @OneToMany(mappedBy = "portfolio")
+    @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Holding> holdings = new ArrayList<>();
 
-    @OneToMany(mappedBy = "portfolio")
+    @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Transaction> transactions = new ArrayList<>();
 
-    @OneToMany(mappedBy = "portfolio")
+    @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<RiskAnalysis> riskAnalyses = new ArrayList<>();
 
-    //== 연관관계 편의 메서드 ==//
-    public void updateUser(User user) {
+    // === 연관관계 편의 메서드 === //
+    public void setUser(User user) {
         this.user = user;
+        if (user.getPortfolio() != this) {
+            user.setPortfolio(this);
+        }
+    }
+
+    public void addHolding(Holding holding) {
+        holdings.add(holding);
+        if (holding.getPortfolio() != this) {
+            holding.setPortfolio(this);
+        }
+    }
+
+    public void addTransaction(Transaction transaction) {
+        transactions.add(transaction);
+        if (transaction.getPortfolio() != this) {
+            transaction.setPortfolio(this);
+        }
+    }
+
+    public void addRiskAnalysis(RiskAnalysis riskAnalysis) {
+        riskAnalyses.add(riskAnalysis);
+        if (riskAnalysis.getPortfolio() != this) {
+            riskAnalysis.setPortfolio(this);
+        }
     }
 }

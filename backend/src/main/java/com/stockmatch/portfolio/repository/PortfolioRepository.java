@@ -8,4 +8,8 @@ import java.util.Optional;
 public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
 
     Optional<Portfolio> findByUserId(Long userId);
+
+    boolean existsByUserId(Long userId);
+
+
 }

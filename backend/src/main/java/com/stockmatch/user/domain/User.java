@@ -58,6 +58,14 @@ public class User extends BaseEntity {
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
     private AlphaVantageKey alphaVantageKey;
 
+    // === 연관관계 편의 메서드 ===  //
+    public void setPortfolio(Portfolio portfolio) {
+        this.portfolio = portfolio;
+        if (portfolio.getUser() != this) {
+            portfolio.setUser(this);
+        }
+    }
+
     //OAuth2 신규 사용자 생성을 위한 생성자
     @Builder
     public User(AuthProvider provider, String providerId , String email, String name, String profileImageUrl){
@@ -82,13 +90,5 @@ public class User extends BaseEntity {
 
     public String getRoleKey() {
         return this.role.getKey();
-    }
-
-    //== 연관관계 편의 메서드 ==//
-    public void linkPortfolio(Portfolio portfolio) {
-        this.portfolio = portfolio;
-        if (portfolio != null) {
-            portfolio.updateUser(this);
-        }
     }
 }

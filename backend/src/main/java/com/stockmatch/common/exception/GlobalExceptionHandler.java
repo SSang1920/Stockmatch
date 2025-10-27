@@ -1,6 +1,6 @@
 package com.stockmatch.common.exception;
 
-import com.stockmatch.common.dto.ApiResponse;
+import com.stockmatch.common.api.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.http.ResponseEntity;

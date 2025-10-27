@@ -1,4 +1,4 @@
-package com.stockmatch.common.dto;
+package com.stockmatch.common.api;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AccessLevel;

@@ -40,4 +40,22 @@ public class RiskAnalysis extends BaseEntity {
 
     @Column(precision = 10, scale = 5)
     private BigDecimal maxDrawdown;
+
+    // === 연관관계 편의 메서드 === //
+    public void setPortfolio(Portfolio newPortfolio) {
+        if (this.portfolio == newPortfolio) {
+            return;
+        }
+
+        // 기존 연관관계 끊기
+        if (this.portfolio != null) {
+            this.portfolio.getRiskAnalyses().remove(this);
+        }
+
+        // 새 연관관계 설정
+        this.portfolio = newPortfolio;
+        if (newPortfolio != null) {
+            newPortfolio.getRiskAnalyses().add(this);
+        }
+    }
 }
