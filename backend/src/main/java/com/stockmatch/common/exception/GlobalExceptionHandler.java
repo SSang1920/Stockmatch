@@ -64,35 +64,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.fail(ec.code(), ec.message()));
     }
 
-    // 인증과정에서 발생한 예외 처리
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAuthentication(AuthenticationException e){
-
-        // 토큰 만료, 형식 오류등의 예외 처리
-        if (e instanceof JwtAuthenticationException jae) {
-            var ec = jae.getErrorCode();
-            log.warn("[JwtAuthenticationException] code={}, message={}", ec.code(), ec.message());
-            return ResponseEntity
-                    .status(ec.status())
-                    .body(ApiResponse.fail(ec.code(), ec.message()));
-        }
-
-        var ec = ErrorCode.UNAUTHORIZED;
-        log.warn("[AuthenticationException] {}", e.getMessage());
-        return ResponseEntity
-                .status(ec.status())
-                .body(ApiResponse.fail(ec.code(), ec.message()));
-    }
-
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException e) {
-        var ec = ErrorCode.ACCESS_DENIED;
-        log.warn("[AccessDeniedException] {}", e.getMessage());
-        return ResponseEntity
-                .status(ec.status())
-                .body(ApiResponse.fail(ec.code(), ec.message()));
-    }
-
     // 그 외 시스템 예외처리
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleEtc(Exception e) {

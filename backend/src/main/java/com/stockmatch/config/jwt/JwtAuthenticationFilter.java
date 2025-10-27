@@ -1,10 +1,9 @@
 package com.stockmatch.config.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nimbusds.jose.proc.SecurityContext;
-import com.stockmatch.common.dto.ApiResponse;
+import com.stockmatch.common.api.ApiResponse;
+import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
-import com.stockmatch.common.exception.JwtAuthenticationException;
 import com.stockmatch.config.security.CustomUserDetails;
 import com.stockmatch.user.domain.User;
 import com.stockmatch.user.repository.UserRepository;
@@ -16,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -27,7 +25,7 @@ import java.io.IOException;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class JwtAuthenticationFilter  extends OncePerRequestFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     public final JwtUtil jwtUtil;
     public final UserRepository userRepository;
@@ -58,7 +56,7 @@ public class JwtAuthenticationFilter  extends OncePerRequestFilter {
 
             // DB에서 사용자 조회
             User user = userRepository.findById(Long.parseLong(userPk))
-                    .orElseThrow(()-> new JwtAuthenticationException(ErrorCode.USER_NOT_FOUND));
+                    .orElseThrow(()-> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
             // CustomUserDetails 객체 생성
             CustomUserDetails userDetails = new CustomUserDetails(user);
@@ -77,7 +75,7 @@ public class JwtAuthenticationFilter  extends OncePerRequestFilter {
             //SecurityContext에 인증정보저장
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        } catch (JwtAuthenticationException e) {
+        } catch (BusinessException e) {
             log.warn("JWT Authentication Failed: {}", e.getMessage());
             setErrorResponse(response, e.getErrorCode());
             return;

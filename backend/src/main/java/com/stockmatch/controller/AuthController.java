@@ -1,8 +1,8 @@
 package com.stockmatch.controller;
 
-import com.stockmatch.common.dto.ApiResponse;
+import com.stockmatch.common.api.ApiResponse;
+import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
-import com.stockmatch.common.exception.JwtAuthenticationException;
 import com.stockmatch.config.jwt.JwtUtil;
 import com.stockmatch.user.domain.User;
 import com.stockmatch.user.repository.UserRepository;
@@ -41,7 +41,7 @@ public class AuthController {
 
         // 사용자 정보 조회
         User user = userRepository.findById(Long.parseLong(userPk))
-                .orElseThrow(() -> new JwtAuthenticationException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         // 새 accessToken 생성
         String newAccessToken = jwtUtil.generateAccessToken(String.valueOf(user.getId()), user.getRoleKey());
@@ -60,7 +60,7 @@ public class AuthController {
             return bearerToken.substring(7);
         }
         // 토큰이 없거나 형식이 잘못된 경우 예외 발생
-        throw new JwtAuthenticationException(ErrorCode.TOKEN_INVALID);
+        throw new BusinessException(ErrorCode.TOKEN_INVALID);
     }
 
 }

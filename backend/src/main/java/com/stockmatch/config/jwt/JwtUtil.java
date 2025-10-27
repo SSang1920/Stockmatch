@@ -1,14 +1,13 @@
 package com.stockmatch.config.jwt;
 
+import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
-import com.stockmatch.common.exception.JwtAuthenticationException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
@@ -68,11 +67,11 @@ public class JwtUtil {
 
         } catch (ExpiredJwtException e) {
             //토큰 만료시 에러 처리
-            throw new JwtAuthenticationException(ErrorCode.TOKEN_EXPIRED);
+            throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
 
         } catch (JwtException | IllegalArgumentException e) {
             // 서명이 다르거나 형식이 잘못된 경우 에러 처리
-            throw new JwtAuthenticationException(ErrorCode.TOKEN_INVALID);
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
     }
 

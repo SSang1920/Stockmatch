@@ -43,6 +43,7 @@ public class PortfolioService {
                             .user(user)
                             .baseCurrency(Currency.KRW)
                             .build();
+                    newPortfolio.setUser(user);
 
                     try {
                         return portfolioRepository.save(newPortfolio);

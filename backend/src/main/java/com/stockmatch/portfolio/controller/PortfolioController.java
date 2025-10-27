@@ -1,6 +1,7 @@
 package com.stockmatch.portfolio.controller;
 
 import com.stockmatch.common.api.ApiResponse;
+import com.stockmatch.config.security.CustomUserDetails;
 import com.stockmatch.portfolio.dto.PortfolioResponse;
 import com.stockmatch.portfolio.dto.PortfolioSummaryResponse;
 import com.stockmatch.portfolio.service.PortfolioService;
@@ -16,12 +17,12 @@ public class PortfolioController {
     private final PortfolioService portfolioService;
 
     @PostMapping("/me/ensure")
-    public ApiResponse<PortfolioResponse> ensureMyPortfolio(@AuthenticationPrincipal Long userId) {
-        return ApiResponse.ok(portfolioService.ensureForUser(userId));
+    public ApiResponse<PortfolioResponse> ensureMyPortfolio(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ApiResponse.ok(portfolioService.ensureForUser(userDetails.getUser().getId()));
     }
 
     @GetMapping("/me/summary")
-    public ApiResponse<PortfolioSummaryResponse> getMyPortfolioSummary(@AuthenticationPrincipal Long userId) {
-        return ApiResponse.ok(portfolioService.getSummaryForUser(userId));
+    public ApiResponse<PortfolioSummaryResponse> getMyPortfolioSummary(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ApiResponse.ok(portfolioService.getSummaryForUser(userDetails.getUser().getId()));
     }
 }
