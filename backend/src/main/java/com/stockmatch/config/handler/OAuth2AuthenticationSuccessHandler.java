@@ -2,6 +2,8 @@ package com.stockmatch.config.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stockmatch.config.jwt.JwtUtil;
+import com.stockmatch.config.security.CustomUserDetails;
+import com.stockmatch.user.domain.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -9,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
@@ -28,17 +29,15 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException{
 
-        //사용자 정보 가져오기
-        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+        // Principal을 customUserDetails 타입으로 변환
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        // User 엔티티의 PK(id)
-        String userPk = oAuth2User.getName();
+        // 우리의 user 엔티티를 직접 가져옴
+        User user = userDetails.getUser();
 
-        //사용자 권한 정보 추출
-        String role = oAuth2User.getAuthorities().stream()
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No authorities found"))
-                .getAuthority();
+        // User 엔티티의 Long  타입 id를 문자열로 변환하여 userPk로 사용
+        String userPk = String.valueOf(user.getId());
+        String role = user.getRoleKey();
 
         // JWT 토큰 생성
         String accessToken = jwtutil.generateAccessToken(userPk, role);
