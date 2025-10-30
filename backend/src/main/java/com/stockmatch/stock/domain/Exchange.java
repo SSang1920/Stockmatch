@@ -1,4 +1,4 @@
-package com.stockmatch.securityasset.domain;
+package com.stockmatch.stock.domain;
 
 public enum Exchange {
     KRX, KOSDAQ, NASDAQ

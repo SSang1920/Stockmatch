@@ -70,3 +70,7 @@ logging:
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
     org.springframework.security: debug
+
+finnhub:
+  base-url: https://finnhub.io/api/v1
+  api-key: ${FINNHUB_API_KEY:dev-finnhub-key}

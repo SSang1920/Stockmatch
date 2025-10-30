@@ -68,7 +68,7 @@ public class SecurityConfig {
                                 "/error",
                                 "/login/**",
                                 "/oauth2/**",
-                                "/api/auth/refresh", "api/portfolio/**",
+                                "/api/auth/refresh", "api/portfolio/**", "/api/stock/**",
                                 "/health", "actuator/health", "/actuator/info",
                                 "index.html", "/assets/**", "/favicon.ico"
                         ).permitAll()

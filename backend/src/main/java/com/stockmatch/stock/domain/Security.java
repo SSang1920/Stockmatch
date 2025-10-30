@@ -1,4 +1,4 @@
-package com.stockmatch.securityasset.domain;
+package com.stockmatch.stock.domain;
 
 import com.stockmatch.WatchItem.WatchItem;
 import com.stockmatch.common.BaseEntity;
