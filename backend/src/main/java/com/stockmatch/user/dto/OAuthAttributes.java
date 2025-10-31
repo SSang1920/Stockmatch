@@ -4,11 +4,7 @@ import com.stockmatch.user.domain.AuthProvider;
 import com.stockmatch.user.domain.User;
 import lombok.Builder;
 import lombok.Getter;
-import org.xml.sax.helpers.AttributesImpl;
-
-
 import java.util.Map;
-import java.util.Objects;
 
 @Getter
 @Builder
@@ -96,9 +92,6 @@ public class OAuthAttributes {
                 .nameAttributeKey(userNameAttributeName)
                 .build();
     }
-
-
-
 
     public User toEntity(){
         return User.builder()

@@ -52,6 +52,9 @@ public class User extends BaseEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Column(name = "refresh_token", length = 255)
+    private String refreshToken;
+
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Portfolio portfolio;
 
@@ -85,10 +88,31 @@ public class User extends BaseEntity {
         this.name =name;
         this.profileImageUrl = profileImageUrl;
         this.lastLoginAt = LocalDateTime.now();
+
+        if (this.status == UserStatus.DELETED){
+            this.status = UserStatus.ACTIVE;
+            this.deletedAt = null;
+        }
         return this;
     }
 
     public String getRoleKey() {
         return this.role.getKey();
+    }
+
+
+    public void updateProfile(String name){
+        if (name != null && !name.isBlank()) {
+            this.name = name;
+        }
+    }
+
+    public void deactivate() {
+        this.status = UserStatus.DELETED;
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public void updateRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 }
