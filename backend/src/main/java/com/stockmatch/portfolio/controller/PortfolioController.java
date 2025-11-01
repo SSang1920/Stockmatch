@@ -6,6 +6,7 @@ import com.stockmatch.portfolio.dto.PortfolioResponse;
 import com.stockmatch.portfolio.dto.PortfolioSummaryResponse;
 import com.stockmatch.portfolio.service.PortfolioService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,12 +18,14 @@ public class PortfolioController {
     private final PortfolioService portfolioService;
 
     @PostMapping("/me/ensure")
-    public ApiResponse<PortfolioResponse> ensureMyPortfolio(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ApiResponse.ok(portfolioService.ensureForUser(userDetails.getUser().getId()));
+    public ResponseEntity<ApiResponse<PortfolioResponse>> ensureMyPortfolio(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        var result = portfolioService.ensureForUser(userDetails.getUser().getId());
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
     @GetMapping("/me/summary")
-    public ApiResponse<PortfolioSummaryResponse> getMyPortfolioSummary(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return ApiResponse.ok(portfolioService.getSummaryForUser(userDetails.getUser().getId()));
+    public ResponseEntity<ApiResponse<PortfolioSummaryResponse>> getMyPortfolioSummary(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        var result = portfolioService.getSummaryForUser(userDetails.getUser().getId());
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 }
