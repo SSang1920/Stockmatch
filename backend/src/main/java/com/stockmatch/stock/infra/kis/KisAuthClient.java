@@ -23,7 +23,7 @@ public class KisAuthClient {
     @Value("${kis.app-secret}")
     private String appSecret;
 
-    public KisAuthResponse getAccessToken() {
+    public KisAuthResponse requestAccessToken() {
         String url = baseUrl + "/oauth2/tokenP";
 
         Map<String, String> body = Map.of(
