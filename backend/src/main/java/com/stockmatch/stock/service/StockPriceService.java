@@ -1,7 +1,9 @@
 package com.stockmatch.stock.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.stockmatch.stock.dto.FinnhubQuoteResponse;
-import com.stockmatch.stock.infra.FinnhubClient;
+import com.stockmatch.stock.infra.finnhub.FinnhubClient;
+import com.stockmatch.stock.infra.kis.KisStockClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +16,7 @@ import java.util.Map;
 public class StockPriceService {
 
     private final FinnhubClient finnhubClient;
+    private final KisStockClient kisStockClient;
 
     /**
      * 미국 주식 단일 시세 조회
@@ -37,5 +40,9 @@ public class StockPriceService {
         }
 
         return result;
+    }
+
+    public JsonNode getKrStockPrice(String code) {
+        return kisStockClient.getKoreaPrice(code);
     }
 }

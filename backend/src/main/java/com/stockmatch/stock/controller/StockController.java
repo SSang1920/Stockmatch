@@ -27,4 +27,10 @@ public class StockController {
         var data = stockPriceService.getUsStockPrices(symbols);
         return ApiResponse.ok(data);
     }
+
+    @GetMapping("/kr/{code}")
+    public ApiResponse<Object> getKrQuote(@PathVariable String code) {
+        var data = stockPriceService.getKrStockPrice(code);
+        return ApiResponse.ok(data);
+    }
 }

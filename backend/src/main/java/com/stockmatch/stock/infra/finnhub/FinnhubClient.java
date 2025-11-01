@@ -1,4 +1,4 @@
-package com.stockmatch.stock.infra;
+package com.stockmatch.stock.infra.finnhub;
 
 import com.stockmatch.stock.dto.FinnhubQuoteResponse;
 import lombok.RequiredArgsConstructor;
