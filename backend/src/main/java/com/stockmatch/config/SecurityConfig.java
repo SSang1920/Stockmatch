@@ -50,7 +50,7 @@ public class SecurityConfig {
                                 "/health",
                                 "/health",
                                 "/api/auth/**",
-                                "api/portfolio/**", "/api/stock/**",
+                                "/api/portfolio/**", "/api/stock/**",
                                 "index.html", "/assets/**", "/favicon.ico"
                         ).permitAll()
                         // ADMIN 역할을 가진 사용자만 접근 가능

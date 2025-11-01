@@ -1,4 +1,4 @@
-package com.stockmatch.user.Controller;
+package com.stockmatch.user.controller;
 
 import com.stockmatch.common.api.ApiResponse;
 import com.stockmatch.user.service.AuthService;
@@ -40,7 +40,7 @@ public class AuthController {
      */
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<Map<String, String>>> refreshAccessToken(
-            @RequestParam("Authorization") String refreshTokenHeader) {
+            @RequestHeader("Authorization") String refreshTokenHeader) {
 
         Map<String, String> responseData = authService.refreshAccessToken(refreshTokenHeader);
 
