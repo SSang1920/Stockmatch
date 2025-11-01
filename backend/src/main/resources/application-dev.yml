@@ -28,13 +28,13 @@ spring:
           google:
             client-id: ${GOOGLE_CLIENT_ID:dev-client}
             client-secret: ${GOOGLE_CLIENT_SECRET:dev-secret}
-            redirect-uri: http://localhost:3000/auth/google/callback
+            redirect-uri: http://localhost:8080/auth/callback/google
             scope: profile,email
 
           naver:
             client-id: ${NAVER_CLIENT_ID:dev-naver-client}
             client-secret: ${NAVER_CLIENT_SECRET:dev-naver-client}
-            redirect-uri: http://localhost:3000/auth/naver/callback
+            redirect-uri: http://localhost:8080/auth/callback/naver
             scope: name,email,profile_image
             authorization-grant-type: authorization_code
             client-name : Naver
@@ -42,7 +42,7 @@ spring:
           kakao:
             client-id: ${KAKAO_CLIENT_ID:dev-kakao-client}
             client-secret: ${KAKAO_CLIENT_SECRET:dev-kakao-secret}
-            redirect-uri: http://localhost:3000/auth/kakao/callback
+            redirect-uri: http://localhost:8080/auth/callback/kakao
             client-authentication-method: client_secret_post
             authorization-grant-type: authorization_code
             scope: profile_nickname, profile_image, account_email
@@ -77,3 +77,9 @@ logging:
 finnhub:
   base-url: https://finnhub.io/api/v1
   api-key: ${FINNHUB_API_KEY:dev-finnhub-key}
+
+kis:
+  base-url: https://openapi.koreainvestment.com:9443
+  app-key: ${KIS_APP_KEY:dev-kis-key}
+  app-secret: ${KIS_APP_SECRET:dev-kis-secret}
+  tr-id: FHKST01010100  # 국내주식 현재가 시세 조회 트랜잭션 ID

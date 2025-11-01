@@ -19,6 +19,8 @@ public enum ErrorCode {
     ACCESS_DENIED("A002", "해당 기능에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN),
     TOKEN_EXPIRED("A003", "토큰이 만료되었습니다.", HttpStatus.UNAUTHORIZED),
     TOKEN_INVALID("A004", "유효하지 않은 토큰입니다.", HttpStatus.UNAUTHORIZED),
+    OAUTH_TOKEN_EXCHANGE_FAILED("A005", "토큰 교환에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    OAUTH_USERINFO_FAILED("A006", "사용자 정보 조회에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // 유저
     USER_NOT_FOUND("U001", "사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
