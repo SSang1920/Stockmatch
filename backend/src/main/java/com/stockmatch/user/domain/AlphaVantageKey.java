@@ -2,16 +2,14 @@ package com.stockmatch.user.domain;
 
 import com.stockmatch.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name ="alpha_vantage_key")
 public class AlphaVantageKey extends BaseEntity {
 
@@ -39,5 +37,12 @@ public class AlphaVantageKey extends BaseEntity {
     @Column(name = "usage_count")
     private Long usageCount;
 
+    @Builder
+    public AlphaVantageKey(User user, String keyCipher, String keyLast4){
+        this.user = user;
+        this.keyCipher = keyCipher;
+        this.keyLast4 = keyLast4;
+        this.usageCount = 0L;
+    }
 
 }

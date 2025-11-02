@@ -1,10 +1,14 @@
 package com.stockmatch.user.Controller;
 
 import com.stockmatch.common.api.ApiResponse;
+import com.stockmatch.config.security.CustomUserDetails;
 import com.stockmatch.user.service.AuthService;
+import com.stockmatch.user.service.UserService;
+import com.stockmatch.user.service.unlink.OAuthUnlinker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -16,6 +20,25 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserService userService;
+
+    @GetMapping("/callback/{provider}")
+    public ResponseEntity<ApiResponse<Map<String, String>>> callback(
+            @PathVariable String provider,
+            @RequestParam("code") String code,
+            @RequestParam(value = "state", required = false) String state) {
+
+        log.info("{} login callback code: {}, state: {}", provider, code, state);
+
+        Map<String, String> tokens = switch (provider.toLowerCase()) {
+            case "kakao" -> authService.kakaoLogin(code);
+            case "naver" -> authService.naverLogin(code, state);
+            case "google" -> authService.googleLogin(code);
+            default -> throw new IllegalArgumentException("Unsupported provider: " + provider);
+        };
+
+        return ResponseEntity.ok(ApiResponse.ok(tokens));
+    }
 
     /**
      * Refresh Token을 사용하여 새로운 Access Token을 발급합니다.
@@ -29,28 +52,13 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok(responseData));
     }
 
-    @GetMapping("/callback/kakao")
-    public ResponseEntity<ApiResponse<Map<String, String>>> kakaoCallback(
-            @RequestParam("code") String code) {
-        log.info("kakao login callback code: {}", code);
-        Map<String, String> tokens = authService.kakaoLogin(code);
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        return ResponseEntity.ok(ApiResponse.ok(tokens));
-    }
+        Long userId = userDetails.getUser().getId();
+        userService.deleteUser(userId);
 
-    @GetMapping("/callback/naver")
-    public ResponseEntity<ApiResponse<Map<String, String>>> naverCallback(
-            @RequestParam("code") String code, @RequestParam("state") String state) {
-        log.info("Naver login callback code: {}, state: {}", code, state);
-        Map<String, String> tokens = authService.naverLogin(code, state);
-        return ResponseEntity.ok(ApiResponse.ok(tokens));
-    }
-
-    @GetMapping("/callback/google")
-    public ResponseEntity<ApiResponse<Map<String, String>>> googleCallback(
-            @RequestParam("code") String code) {
-        log.info("Google login callback code: {}", code);
-        Map<String, String> tokens = authService.googleLogin(code);
-        return ResponseEntity.ok(ApiResponse.ok(tokens));
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 }

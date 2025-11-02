@@ -62,6 +62,144 @@ public class AuthService {
     private static final String GOOGLE_TOKEN_URI = "https://oauth2.googleapis.com/token";
     private static final String GOOGLE_USER_INFO_URI = "https://www.googleapis.com/oauth2/v2/userinfo";
 
+    public Map<String, String> kakaoLogin(String code) {
+        return doLogin("kakao", code, null);
+    }
+
+    public Map<String, String> naverLogin(String code, String state) {
+        return doLogin("naver", code, state);
+    }
+
+    public Map<String, String> googleLogin(String code) {
+        return doLogin("google", code, null);
+    }
+
+    /**
+     * 공통 로그인
+     */
+    private Map<String, String> doLogin(String provider, String code, String state) {
+        // 인가코드 -> 엑세스 토큰 발급
+        String accessToken = exchangeAccessToken(provider, code, state);
+
+        // 엑세스 토큰으로 사용자 프로필 조회
+        Map<String, Object> rawProfile = fetchUserProfile(provider, accessToken);
+
+        // provider별 프로필 구조를 표준 DTO로 매핑
+        OAuthAttributes attributes = mapToOAuthAttributes(provider, rawProfile);
+
+        // 사용자 upsert(DB 저장/수정) + JWT(access/refresh) 발급
+        User user = saveOrUpdate(attributes);
+        return createAndSaveTokens(user);
+    }
+
+    /**
+     * 인가코드 -> 엑세스 토큰 교환
+     */
+    private String exchangeAccessToken(String provider, String code, String state) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+
+        form.add("grant_type", "authorization_code");
+        String tokenUri;
+        switch (provider) {
+            case "kakao" -> {
+                tokenUri = KAKAO_TOKEN_URI;
+                form.add("client_id", kakaoClientId);
+                form.add("client_secret", kakaoClientSecret);
+                form.add("redirect_uri", kakaoRedirectUri);
+                form.add("code", code);
+            }
+
+            case "naver" -> {
+                tokenUri = NAVER_TOKEN_URI;
+                form.add("client_id", naverClientId);
+                form.add("client_secret", naverClientSecret);
+                form.add("redirect_uri", naverRedirectUri);
+                form.add("code", code);
+                if (StringUtils.hasText(state)) form.add("state", state);
+            }
+
+            case "google" -> {
+                tokenUri = GOOGLE_TOKEN_URI;
+                form.add("client_id", googleClientId);
+                form.add("client_secret", googleClientSecret);
+                form.add("redirect_uri", googleRedirectUri);
+                form.add("code", code);
+            }
+
+            default -> throw new IllegalArgumentException("Unsupported provider: " + provider);
+        }
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
+        Map<String, Object> response = restTemplate.postForObject(tokenUri, request, Map.class);
+
+        if (response == null || response.get("access_token") == null) {
+            throw new BusinessException(ErrorCode.OAUTH_TOKEN_EXCHANGE_FAILED);
+        }
+
+        return (String) response.get("access_token");
+    }
+
+    /**
+     * 엑세스 토큰으로 사용자 프로필 조회
+     */
+    private Map<String, Object> fetchUserProfile(String provider, String accessToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", "Bearer " + accessToken);
+
+        return switch (provider) {
+            case "kakao" -> {
+                headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);  // Content-Type: Post 설정
+                HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(headers);
+                yield restTemplate.postForObject(KAKAO_USER_INFO_URI, request, Map.class);
+            }
+
+            case "naver" -> {
+                HttpEntity<Void> request = new HttpEntity<>(headers);
+                yield restTemplate.postForObject(NAVER_USER_INFO_URI, request, Map.class);
+            }
+
+            case "google" -> {
+                HttpEntity<Void> request = new HttpEntity<>(headers);
+                yield restTemplate.getForObject(GOOGLE_USER_INFO_URI + "?access_token=" + accessToken, Map.class);
+            }
+
+            default -> throw new IllegalArgumentException("Unsupported provider: " + provider);
+        };
+    }
+
+    /**
+     * provider별 프로필 JSON -> 표준 OAuthAttributes 매핑
+     */
+    @SuppressWarnings("unchecked")
+    private OAuthAttributes mapToOAuthAttributes(String provider, Map<String, Object> profile) {
+        return switch (provider) {
+            case "kakao" -> OAuthAttributes.of("kakao", "id", profile);
+
+            case "naver" -> {
+                Map<String, Object> response = (Map<String, Object>) profile.get("response");
+                if (response == null) throw new BusinessException(ErrorCode.OAUTH_USERINFO_FAILED);
+                yield OAuthAttributes.of("naver", "id", Map.of("response", response));
+            }
+
+            case "google" -> OAuthAttributes.of("google", "sub", profile);
+
+            default -> throw new IllegalArgumentException("Unsupported provider: " + provider);
+        };
+    }
+
+    /**
+     * 사용자 upsert(DB 저장/수정) 로직
+     */
+    private User saveOrUpdate(OAuthAttributes attributes) {
+        User user = userRepository.findByProviderAndProviderId(
+                        attributes.getProvider(), attributes.getProviderId())
+                .map(e -> e.updateOAuthInfo(attributes.getName(), attributes.getProfileImageUrl()))
+                .orElse(attributes.toEntity());
+        return userRepository.save(user);
+    }
+
     /**
      * Refresh Token 을 사용하여 새로운 Access Token 발급
      */
@@ -80,126 +218,8 @@ public class AuthService {
     }
 
     /**
-     * 소셜 로그인
-     * @param code = 인가 코드 (Authorization Code)
-     * @return
+     * 실제 토큰 추출
      */
-    public Map<String, String> kakaoLogin(String code) {
-        String kakaoAccessToken = getKakaoAccessToken(code);
-        Map<String, Object> userInfoAttributes = getKakaoUserInfo(kakaoAccessToken);
-        OAuthAttributes attributes = OAuthAttributes.of("kakao", "id", userInfoAttributes);
-        User user = saveOrUpdate(attributes);
-
-        return createAndSaveTokens(user);
-    }
-
-    public Map<String, String> naverLogin(String code, String state) {
-        String naverAccessToken = getNaverAccessToken(code, state);
-        Map<String, Object> userInfoAttributes = getNaverUserInfo(naverAccessToken);
-        OAuthAttributes attributes = OAuthAttributes.of("naver", "id", userInfoAttributes);
-        User user = saveOrUpdate(attributes);
-
-        return createAndSaveTokens(user);
-    }
-
-    public Map<String, String> googleLogin(String code) {
-        String googleAccessToken = getGoogleAccessToken(code);
-        Map<String, Object> userInfoAttributes = getGoogleUserInfo(googleAccessToken);
-        OAuthAttributes attributes = OAuthAttributes.of("google", "sub", userInfoAttributes);
-        User user = saveOrUpdate(attributes);
-
-        return createAndSaveTokens(user);
-    }
-
-    private String getKakaoAccessToken(String code){
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("grant_type", "authorization_code");
-        params.add("client_id", kakaoClientId);
-        params.add("client_secret", kakaoClientSecret);
-        params.add("redirect_uri", kakaoRedirectUri);
-        params.add("code", code);
-
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
-        Map<String, Object> response = restTemplate.postForObject(KAKAO_TOKEN_URI, request, Map.class);
-
-        return (String) response.get("access_token");
-    }
-
-    private Map<String, Object> getKakaoUserInfo(String accessToken) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Bearer " + accessToken);
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(headers);
-
-        // POST 요청으로 액세스 토큰 요청
-        return restTemplate.postForObject(KAKAO_USER_INFO_URI, request, Map.class);
-    }
-
-    private String getNaverAccessToken(String code, String state) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("grant_type", "authorization_code");
-        params.add("client_id", naverClientId); //REST API 키
-        params.add("client_secret", naverClientSecret); //시크릿키
-        params.add("redirect_uri", naverRedirectUri);
-        params.add("code", code); //인가코드
-        params.add("state", state);
-
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
-        Map<String, Object> response = restTemplate.postForObject(NAVER_TOKEN_URI, request, Map.class);
-
-        return (String) response.get("access_token");
-    }
-
-    private Map<String, Object> getNaverUserInfo(String accessToken) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Bearer " + accessToken);
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(headers);
-
-        return restTemplate.postForObject(NAVER_USER_INFO_URI, request, Map.class);
-    }
-
-    private String getGoogleAccessToken(String code) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("grant_type", "authorization_code");
-        params.add("client_id", googleClientId);
-        params.add("client_secret", googleClientSecret);
-        params.add("redirect_uri", googleRedirectUri);
-        params.add("code", code);
-
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
-        Map<String, Object> response = restTemplate.postForObject(GOOGLE_TOKEN_URI, request, Map.class);
-
-        return (String) response.get("access_token");
-    }
-
-    private Map<String, Object> getGoogleUserInfo(String accessToken) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Bearer " + accessToken);
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(headers);
-
-        return restTemplate.getForObject(GOOGLE_USER_INFO_URI + "?access_token=" + accessToken, Map.class);
-    }
-
-    private User saveOrUpdate(OAuthAttributes attributes) {
-        User user = userRepository.findByProviderAndProviderId(
-                        attributes.getProvider(),
-                        attributes.getProviderId()
-                )
-                .map(entity -> entity.updateOAuthInfo(attributes.getName(), attributes.getProfileImageUrl()))
-                .orElse(attributes.toEntity());
-
-        return userRepository.save(user);
-    }
-
     private String resolveToken(String bearerToken) {
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
@@ -207,6 +227,9 @@ public class AuthService {
         throw new BusinessException(ErrorCode.TOKEN_INVALID);
     }
 
+    /**
+     * Access/Refresh 토큰 생성 및 저장
+     */
     private Map<String, String> createAndSaveTokens(User user) {
         String accessToken = jwtUtil.generateAccessToken(String.valueOf(user.getId()), user.getRoleKey());
         String refreshToken = jwtUtil.generateRefreshToken(String.valueOf(user.getId()));
@@ -214,6 +237,4 @@ public class AuthService {
 
         return Map.of("accessToken", accessToken, "refreshToken", refreshToken);
     }
-
-
 }
