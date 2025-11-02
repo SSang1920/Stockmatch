@@ -5,8 +5,10 @@ import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.user.domain.AuthProvider;
 import com.stockmatch.user.domain.User;
 import com.stockmatch.user.service.unlink.OAuthUnlinker;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 
@@ -16,14 +18,15 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OAuthUnlinkService {
 
-    private final Map<AuthProvider, OAuthUnlinker> unlinkerMap;
+    private final List<OAuthUnlinker> unlinkers;
+    private Map<AuthProvider, OAuthUnlinker> unlinkerMap;
 
-    public OAuthUnlinkService(List<OAuthUnlinker> unlinkers){
+    @PostConstruct
+    public void initialize() {
         this.unlinkerMap = unlinkers.stream().collect(
                 Collectors.toMap(OAuthUnlinker::getProvider, Function.identity())
         );
@@ -46,6 +49,4 @@ public class OAuthUnlinkService {
             }
         }
     }
-
-
 }
