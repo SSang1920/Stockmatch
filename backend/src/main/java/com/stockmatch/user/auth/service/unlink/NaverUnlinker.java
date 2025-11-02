@@ -1,10 +1,10 @@
-package com.stockmatch.user.service.unlink;
+package com.stockmatch.user.auth.service.unlink;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
-import com.stockmatch.user.domain.AuthProvider;
-import com.stockmatch.user.domain.User;
+import com.stockmatch.user.auth.domain.AuthProvider;
+import com.stockmatch.user.member.domain.User;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,10 +1,8 @@
-package com.stockmatch.user.Controller;
+package com.stockmatch.user.auth.controller;
 
 import com.stockmatch.common.api.ApiResponse;
 import com.stockmatch.config.security.CustomUserDetails;
-import com.stockmatch.user.service.AuthService;
-import com.stockmatch.user.service.UserService;
-import com.stockmatch.user.service.unlink.OAuthUnlinker;
+import com.stockmatch.user.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

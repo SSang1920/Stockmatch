@@ -1,4 +1,4 @@
-package com.stockmatch.user.dto;
+package com.stockmatch.user.member.dto.request;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

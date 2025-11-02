@@ -1,11 +1,11 @@
-package com.stockmatch.user.Controller;
+package com.stockmatch.user.member.controller;
 
 import com.stockmatch.common.api.ApiResponse;
 import com.stockmatch.config.security.CustomUserDetails;
-import com.stockmatch.user.dto.ApiKeyRequest;
-import com.stockmatch.user.dto.UserInfoResponse;
-import com.stockmatch.user.dto.UserProfileUpdateRequest;
-import com.stockmatch.user.service.UserService;
+import com.stockmatch.user.member.dto.request.ApiKeyRequest;
+import com.stockmatch.user.member.dto.response.UserInfoResponse;
+import com.stockmatch.user.member.dto.request.UserProfileUpdateRequest;
+import com.stockmatch.user.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
-public class UserController {
+public class MemberController {
 
-    private final UserService userService;
+    private final MemberService userService;
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserInfoResponse>> getUserInfo(

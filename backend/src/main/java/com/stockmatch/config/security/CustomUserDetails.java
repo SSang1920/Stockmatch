@@ -1,8 +1,7 @@
 package com.stockmatch.config.security;
 
-import com.stockmatch.user.domain.User;
+import com.stockmatch.user.member.domain.User;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

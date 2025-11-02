@@ -1,11 +1,11 @@
-package com.stockmatch.user.service;
+package com.stockmatch.user.auth.service;
 
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.config.jwt.JwtUtil;
-import com.stockmatch.user.domain.User;
-import com.stockmatch.user.dto.OAuthAttributes;
-import com.stockmatch.user.repository.UserRepository;
+import com.stockmatch.user.member.domain.User;
+import com.stockmatch.user.auth.dto.OAuthAttributes;
+import com.stockmatch.user.member.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

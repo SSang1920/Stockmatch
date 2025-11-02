@@ -1,7 +1,7 @@
-package com.stockmatch.user.repository;
+package com.stockmatch.user.member.repository;
 
-import com.stockmatch.user.domain.AuthProvider;
-import com.stockmatch.user.domain.User;
+import com.stockmatch.user.auth.domain.AuthProvider;
+import com.stockmatch.user.member.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

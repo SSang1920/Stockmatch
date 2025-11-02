@@ -1,13 +1,14 @@
-package com.stockmatch.user.service;
+package com.stockmatch.user.member.service;
 
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
-import com.stockmatch.user.domain.AlphaVantageKey;
-import com.stockmatch.user.domain.User;
-import com.stockmatch.user.dto.UserInfoResponse;
-import com.stockmatch.user.dto.UserProfileUpdateRequest;
-import com.stockmatch.user.repository.AlphaVantageKeyRepository;
-import com.stockmatch.user.repository.UserRepository;
+import com.stockmatch.user.auth.service.OAuthUnlinkService;
+import com.stockmatch.user.member.domain.AlphaVantageKey;
+import com.stockmatch.user.member.domain.User;
+import com.stockmatch.user.member.dto.response.UserInfoResponse;
+import com.stockmatch.user.member.dto.request.UserProfileUpdateRequest;
+import com.stockmatch.user.member.repository.AlphaVantageKeyRepository;
+import com.stockmatch.user.member.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +18,7 @@ import java.util.Optional;
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
-public class UserService {
+public class MemberService {
 
     private final UserRepository userRepository;
     private final AlphaVantageKeyRepository alphaVantageKeyRepository;

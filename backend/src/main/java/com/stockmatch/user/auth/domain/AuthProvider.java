@@ -1,4 +1,4 @@
-package com.stockmatch.user.domain;
+package com.stockmatch.user.auth.domain;
 
 public enum AuthProvider {
     GOOGLE,

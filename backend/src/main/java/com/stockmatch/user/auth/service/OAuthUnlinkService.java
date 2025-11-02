@@ -1,14 +1,12 @@
-package com.stockmatch.user.service;
+package com.stockmatch.user.auth.service;
 
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
-import com.stockmatch.user.domain.AuthProvider;
-import com.stockmatch.user.domain.User;
-import com.stockmatch.user.service.unlink.OAuthUnlinker;
+import com.stockmatch.user.auth.domain.AuthProvider;
+import com.stockmatch.user.member.domain.User;
+import com.stockmatch.user.auth.service.unlink.OAuthUnlinker;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 

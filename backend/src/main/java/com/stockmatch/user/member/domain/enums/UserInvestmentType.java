@@ -1,4 +1,4 @@
-package com.stockmatch.user.domain;
+package com.stockmatch.user.member.domain.enums;
 
 public enum UserInvestmentType {
     LOW,

@@ -1,9 +1,9 @@
-package com.stockmatch.user.dto;
+package com.stockmatch.user.member.dto.response;
 
-import com.stockmatch.user.domain.AlphaVantageKey;
-import com.stockmatch.user.domain.AuthProvider;
-import com.stockmatch.user.domain.User;
-import com.stockmatch.user.domain.UserInvestmentType;
+import com.stockmatch.user.member.domain.AlphaVantageKey;
+import com.stockmatch.user.auth.domain.AuthProvider;
+import com.stockmatch.user.member.domain.User;
+import com.stockmatch.user.member.domain.enums.UserInvestmentType;
 import lombok.Getter;
 
 @Getter

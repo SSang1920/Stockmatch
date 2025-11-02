@@ -1,7 +1,11 @@
-package com.stockmatch.user.domain;
+package com.stockmatch.user.member.domain;
 
 import com.stockmatch.common.BaseEntity;
 import com.stockmatch.portfolio.domain.Portfolio;
+import com.stockmatch.user.auth.domain.AuthProvider;
+import com.stockmatch.user.member.domain.enums.UserInvestmentType;
+import com.stockmatch.user.member.domain.enums.UserRole;
+import com.stockmatch.user.member.domain.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
