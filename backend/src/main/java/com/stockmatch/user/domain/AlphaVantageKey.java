@@ -45,4 +45,12 @@ public class AlphaVantageKey extends BaseEntity {
         this.usageCount = 0L;
     }
 
+    /**
+     * API 키 업데이트
+     */
+    public void updateKey(String newKeyCipher, String newKeyLast4) {
+        this.keyCipher = newKeyCipher;
+        this.keyLast4 = newKeyLast4;
+    }
+
 }

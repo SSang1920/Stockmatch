@@ -64,25 +64,29 @@ public class UserService {
      */
     @Transactional
     public void upsertAlphaVantageKey(Long userId, String newApiKey){
+
+        //User 엔티티 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(()-> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        String keyCipher = newApiKey;
-        String keyLast4 = newApiKey.length() > 4 ? newApiKey.substring(newApiKey.length() -4) : newApiKey;
-
         Optional<AlphaVantageKey> existingKeyOpt = alphaVantageKeyRepository.findByUserId(userId);
 
-        if (existingKeyOpt.isPresent()){
+        // 새로운 키
+        String keyCipher = newApiKey;
+        String keyLast4 = newApiKey.length() > 4 ? newApiKey.substring(newApiKey.length() - 4) : newApiKey;
+
+        if (existingKeyOpt.isPresent()) {
+            // 기존 키가 있을시 내용 수정
             AlphaVantageKey existingKey = existingKeyOpt.get();
-            alphaVantageKeyRepository.delete(existingKey);
+            existingKey.updateKey(keyCipher, keyLast4);
+        } else {
+            // 기존 키 X 생성"
+            AlphaVantageKey newKey = AlphaVantageKey.builder()
+                    .user(user)
+                    .keyCipher(keyCipher)
+                    .keyLast4(keyLast4)
+                    .build();
+            alphaVantageKeyRepository.save(newKey);
         }
-
-        AlphaVantageKey newKey = AlphaVantageKey.builder()
-                .user(user)
-                .keyCipher(keyCipher)
-                .keyLast4(keyLast4)
-                .build();
-
-        alphaVantageKeyRepository.save(newKey);
     }
 }
