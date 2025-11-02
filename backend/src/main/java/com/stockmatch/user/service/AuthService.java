@@ -78,24 +78,28 @@ public class AuthService {
      * 공통 로그인
      */
     private Map<String, String> doLogin(String provider, String code, String state) {
-        // 인가코드 -> 엑세스 토큰 발급
-        String accessToken = exchangeAccessToken(provider, code, state);
+        // Provider의 API를 호출할 때 사용할 토큰 발급
+        Map<String, String> socialTokens = exchangeTokens(provider, code, state);
+        String providerAccessToken = socialTokens.get("access_token"); // "네이버/구글용 Access Token"
+        String providerRefreshToken = socialTokens.get("refresh_token"); // "네이버/구글용 Refresh Token"
 
         // 엑세스 토큰으로 사용자 프로필 조회
-        Map<String, Object> rawProfile = fetchUserProfile(provider, accessToken);
+        Map<String, Object> rawProfile = fetchUserProfile(provider, providerAccessToken);
 
         // provider별 프로필 구조를 표준 DTO로 매핑
         OAuthAttributes attributes = mapToOAuthAttributes(provider, rawProfile);
 
         // 사용자 upsert(DB 저장/수정) + JWT(access/refresh) 발급
         User user = saveOrUpdate(attributes);
-        return createAndSaveTokens(user);
+
+        //우리 서버의 accessToken, refreshToken 발급
+        return createAndSaveTokens(user, providerRefreshToken);
     }
 
     /**
      * 인가코드 -> 엑세스 토큰 교환
      */
-    private String exchangeAccessToken(String provider, String code, String state) {
+    private Map<String,String> exchangeTokens(String provider, String code, String state) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
@@ -138,7 +142,11 @@ public class AuthService {
             throw new BusinessException(ErrorCode.OAUTH_TOKEN_EXCHANGE_FAILED);
         }
 
-        return (String) response.get("access_token");
+        Map<String, String> socialTokens = new java.util.HashMap<>();
+        socialTokens.put("access_token", (String) response.get("access_token"));
+        socialTokens.put("refresh_token", (String) response.get("refresh_token"));
+
+        return socialTokens;
     }
 
     /**
@@ -230,11 +238,20 @@ public class AuthService {
     /**
      * Access/Refresh 토큰 생성 및 저장
      */
-    private Map<String, String> createAndSaveTokens(User user) {
-        String accessToken = jwtUtil.generateAccessToken(String.valueOf(user.getId()), user.getRoleKey());
-        String refreshToken = jwtUtil.generateRefreshToken(String.valueOf(user.getId()));
-        user.updateRefreshToken(refreshToken); // DB에 Refresh Token 저장
+    private Map<String, String> createAndSaveTokens(User user, String providerRefreshToken) {
+        String ourAccessToken = jwtUtil.generateAccessToken(String.valueOf(user.getId()), user.getRoleKey());
+        String ourRefreshToken = jwtUtil.generateRefreshToken(String.valueOf(user.getId()));
 
-        return Map.of("accessToken", accessToken, "refreshToken", refreshToken);
+        user.updateRefreshToken(providerRefreshToken); // DB에 Refresh Token 저장
+
+        return Map.of("accessToken", ourAccessToken, "refreshToken", ourRefreshToken);
+    }
+
+    public void logout(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+            user.updateRefreshToken(null);
+        log.info("로그아웃 처리 완료. userPk: {}", userId);
     }
 }

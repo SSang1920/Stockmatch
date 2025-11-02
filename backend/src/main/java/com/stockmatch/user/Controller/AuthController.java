@@ -20,7 +20,6 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
-    private final UserService userService;
 
     @GetMapping("/callback/{provider}")
     public ResponseEntity<ApiResponse<Map<String, String>>> callback(
@@ -45,7 +44,7 @@ public class AuthController {
      */
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<Map<String, String>>> refreshAccessToken(
-            @RequestParam("Authorization") String refreshTokenHeader) {
+            @RequestHeader("Authorization") String refreshTokenHeader) {
 
         Map<String, String> responseData = authService.refreshAccessToken(refreshTokenHeader);
 
@@ -57,7 +56,7 @@ public class AuthController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         Long userId = userDetails.getUser().getId();
-        userService.deleteUser(userId);
+        authService.logout(userId);
 
         return ResponseEntity.ok(ApiResponse.ok());
     }
