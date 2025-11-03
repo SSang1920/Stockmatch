@@ -27,12 +27,7 @@ public class AuthController {
 
         log.info("{} login callback code: {}, state: {}", provider, code, state);
 
-        Map<String, String> tokens = switch (provider.toLowerCase()) {
-            case "kakao" -> authService.kakaoLogin(code);
-            case "naver" -> authService.naverLogin(code, state);
-            case "google" -> authService.googleLogin(code);
-            default -> throw new IllegalArgumentException("Unsupported provider: " + provider);
-        };
+        Map<String, String> tokens = authService.login(provider, code, state);
 
         return ResponseEntity.ok(ApiResponse.ok(tokens));
     }
