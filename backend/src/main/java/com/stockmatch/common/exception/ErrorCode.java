@@ -40,6 +40,7 @@ public enum ErrorCode {
     // 종목(Security)
     SECURITY_NOT_FOUND("S001", "종목을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     SECURITY_ALREADY_EXISTS("S002", "이미 존재하는 종목입니다.", HttpStatus.CONFLICT),
+    DUPLICATE_TICKER("S003", "중복된 종목 코드입니다.", HttpStatus.CONFLICT),
 
     // 외부 API
     RATE_LIMITED("M001", "외부 API 호출 제한에 걸렸습니다.", HttpStatus.TOO_MANY_REQUESTS);

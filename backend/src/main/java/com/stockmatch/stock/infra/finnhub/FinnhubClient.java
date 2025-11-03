@@ -37,7 +37,7 @@ public class FinnhubClient {
 
         // FinnhubQuoteResponse -> StockPriceResponse 변환
         return StockPriceResponse.builder()
-                .symbol(symbol)
+                .ticker(symbol)
                 .name(symbol)
                 .currentPrice(raw.getC())
                 .prevClose(raw.getPc())

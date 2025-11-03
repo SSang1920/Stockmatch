@@ -16,7 +16,7 @@ public class PortfolioSummaryResponse {
     @Getter
     @Builder
     public static class HoldingSummary {
-        private String symbol;
+        private String ticker;
         private String name;
         private double quantity;
         private double avgPrice;

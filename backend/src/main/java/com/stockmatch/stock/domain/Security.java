@@ -24,7 +24,7 @@ public class Security extends BaseEntity {
     private Long id;
 
     @Column(length = 30, nullable = false)
-    private String symbol;      // 종목 코드
+    private String ticker;      // 종목 코드
 
     @Column(length = 100)
     private String name;        // 종목명

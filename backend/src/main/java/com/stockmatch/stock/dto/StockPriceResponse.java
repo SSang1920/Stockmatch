@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class StockPriceResponse {
     
-    private String symbol;          // 종목 코드
+    private String ticker;          // 종목 코드
     private String name;            // 종목명
     private double currentPrice;    // 현재가
     private double prevClose;       // 전일 종가

@@ -9,7 +9,6 @@ import com.stockmatch.portfolio.dto.PortfolioResponse;
 import com.stockmatch.portfolio.dto.PortfolioSummaryResponse;
 import com.stockmatch.portfolio.repository.HoldingRepository;
 import com.stockmatch.portfolio.repository.PortfolioRepository;
-import com.stockmatch.portfolio.repository.TransactionRepository;
 import com.stockmatch.stock.dto.StockPriceResponse;
 import com.stockmatch.stock.service.StockPriceService;
 import com.stockmatch.user.member.domain.User;
@@ -32,7 +31,6 @@ public class PortfolioService {
     private final PortfolioRepository portfolioRepository;
     private final UserRepository userRepository;
     private final HoldingRepository holdingRepository;
-    private final TransactionRepository transactionRepository;
     private final StockPriceService stockPriceService;
 
     /**
@@ -86,9 +84,9 @@ public class PortfolioService {
 
                 // 국내/해외 구분
                 if (h.getSecurity().isKorean()) {
-                    price = stockPriceService.getKrStockPrice(h.getSecurity().getSymbol());
+                    price = stockPriceService.getKrStockPrice(h.getSecurity().getTicker());
                 } else {
-                    price = stockPriceService.getUsStockPrice(h.getSecurity().getSymbol());
+                    price = stockPriceService.getUsStockPrice(h.getSecurity().getTicker());
                 }
 
                 // 보유수량 및 단가
@@ -111,7 +109,7 @@ public class PortfolioService {
                 // 각 종목별 상세 정보 DTO 변환
                 holdingSummaries.add(
                         PortfolioSummaryResponse.HoldingSummary.builder()
-                                .symbol(h.getSecurity().getSymbol())
+                                .ticker(h.getSecurity().getTicker())
                                 .name(h.getSecurity().getName())
                                 .quantity(quantity.doubleValue())
                                 .avgPrice(avgPrice.doubleValue())

@@ -61,7 +61,7 @@ public class KisStockClient {
 
         // KIS 응답 JSON -> StockPriceResponse 변환
         return StockPriceResponse.builder()
-                .symbol(code)
+                .ticker(code)
                 .name(o.path("bstp_kor_isnm").asText())         // 종목명
                 .currentPrice(o.path("stck_prpr").asDouble())   // 현재가
                 .prevClose(o.path("prdy_vrss").asDouble())      // 전일 종가
