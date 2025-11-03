@@ -1,6 +1,7 @@
 package com.stockmatch.stock.infra.finnhub;
 
 import com.stockmatch.stock.dto.FinnhubQuoteResponse;
+import com.stockmatch.stock.dto.StockPriceResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -19,12 +20,31 @@ public class FinnhubClient {
     @Value("${finnhub.api-key}")
     private String apiKey;
 
-    public FinnhubQuoteResponse getQuote(String symbol) {
+    /**
+     * 해외 단일 종목 현재가 조회
+     */
+    public StockPriceResponse getQuote(String symbol) {
         String url = UriComponentsBuilder.fromUriString(baseUrl + "/quote")
                 .queryParam("symbol", symbol)
                 .queryParam("token", apiKey)
                 .toUriString();
 
-        return restTemplate.getForObject(url, FinnhubQuoteResponse.class);
+        FinnhubQuoteResponse raw = restTemplate.getForObject(url, FinnhubQuoteResponse.class);
+
+        if (raw == null) {
+            throw new IllegalStateException("Finnhub API 응답이 없습니다.");
+        }
+
+        // FinnhubQuoteResponse -> StockPriceResponse 변환
+        return StockPriceResponse.builder()
+                .symbol(symbol)
+                .name(symbol)
+                .currentPrice(raw.getC())
+                .prevClose(raw.getPc())
+                .openPrice(raw.getO())
+                .highPrice(raw.getH())
+                .lowPrice(raw.getL())
+                .changeRate((raw.getC() - raw.getPc()) / raw.getPc() * 100.0)
+                .build();
     }
 }

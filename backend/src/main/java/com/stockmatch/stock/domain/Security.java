@@ -24,19 +24,19 @@ public class Security extends BaseEntity {
     private Long id;
 
     @Column(length = 30, nullable = false)
-    private String ticker;      // 종목 코드
+    private String symbol;      // 종목 코드
 
     @Column(length = 100)
-    private String name;        // 종목 공식 명칭
+    private String name;        // 종목명
 
     @Enumerated(EnumType.STRING)
-    private Market market;
+    private Market market;      // 시장 구분 (KR, US)
 
     @Enumerated(EnumType.STRING)
-    private Exchange exchange;
+    private Exchange exchange;  // 거래소
 
     @Enumerated(EnumType.STRING)
-    private Currency currency;
+    private Currency currency;  // 거래 통화
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type")
@@ -56,4 +56,29 @@ public class Security extends BaseEntity {
 
     @OneToOne(mappedBy = "security", fetch = FetchType.LAZY)
     private WatchItem watchItem;
+
+    // ===== 헬퍼 메서드 ====
+
+    /**
+     * 국내 종목 여부 판별
+     */
+    public boolean isKorean() {
+        return market == Market.KOR
+                || exchange == Exchange.KOSPI
+                || exchange == Exchange.KOSDAQ;
+    }
+
+    /**
+     * 해외 종목 여부 판별
+     */
+    public boolean isForeign() {
+        return !isKorean();
+    }
+
+    /**
+     * 거래 통화 반환 (기본값: KRW)
+     */
+    public Currency getCurrencyCode() {
+        return currency != null ? currency : Currency.KRW;
+    }
 }

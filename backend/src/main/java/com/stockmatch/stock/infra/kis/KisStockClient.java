@@ -1,6 +1,7 @@
 package com.stockmatch.stock.infra.kis;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.stockmatch.stock.dto.StockPriceResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -29,10 +30,8 @@ public class KisStockClient {
 
     /**
      * 국내 주식 현재가 시세 조회
-     * @param code KRX 종목코드
-     * @return
      */
-    public JsonNode getKoreaPrice(String code) {
+    public StockPriceResponse getKoreaPrice(String code) {
         String url = UriComponentsBuilder
                 .fromUriString(baseUrl + "/uapi/domestic-stock/v1/quotations/inquire-price")
                 .queryParam("FID_COND_MRKT_DIV_CODE", "J")  // 조건 시장 분류 코드
@@ -52,8 +51,25 @@ public class KisStockClient {
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
         ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
+        JsonNode body = response.getBody();
 
-        return response.getBody();
+        if (body == null || body.get("output") == null) {
+            throw new IllegalStateException("KIS API 응답이 없습니다.");
+        }
+
+        JsonNode o = body.get("output");
+
+        // KIS 응답 JSON -> StockPriceResponse 변환
+        return StockPriceResponse.builder()
+                .symbol(code)
+                .name(o.path("bstp_kor_isnm").asText())         // 종목명
+                .currentPrice(o.path("stck_prpr").asDouble())   // 현재가
+                .prevClose(o.path("prdy_vrss").asDouble())      // 전일 종가
+                .openPrice(o.path("stck_oprc").asDouble())      // 시가
+                .highPrice(o.path("stck_hgpr").asDouble())      // 고가
+                .lowPrice(o.path("stck_lwpr").asDouble())       // 저가
+                .changeRate(o.path("prdy_ctrt").asDouble())     // 등락률
+                .build();
     }
 
 }

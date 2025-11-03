@@ -1,7 +1,6 @@
 package com.stockmatch.stock.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.stockmatch.stock.dto.FinnhubQuoteResponse;
+import com.stockmatch.stock.dto.StockPriceResponse;
 import com.stockmatch.stock.infra.finnhub.FinnhubClient;
 import com.stockmatch.stock.infra.kis.KisStockClient;
 import lombok.RequiredArgsConstructor;
@@ -20,29 +19,28 @@ public class StockPriceService {
 
     /**
      * 미국 주식 단일 시세 조회
-     * @param symbol 주식 심볼
-     * @return
      */
-    public FinnhubQuoteResponse getUsStockPrice(String symbol) {
+    public StockPriceResponse getUsStockPrice(String symbol) {
         return finnhubClient.getQuote(symbol);
     }
 
     /**
      * 미국 주식 다건 시세 조회
-     * @param symbols 주식 심볼 리스트
-     * @return
      */
-    public Map<String, FinnhubQuoteResponse> getUsStockPrices(List<String> symbols) {
-        Map<String, FinnhubQuoteResponse> result = new LinkedHashMap<>();
+    public Map<String, StockPriceResponse> getUsStockPrices(List<String> symbols) {
+        Map<String, StockPriceResponse> result = new LinkedHashMap<>();
         for (String symbol : symbols) {
-            FinnhubQuoteResponse quote = finnhubClient.getQuote(symbol);
+            StockPriceResponse quote = finnhubClient.getQuote(symbol);
             result.put(symbol, quote);
         }
 
         return result;
     }
 
-    public JsonNode getKrStockPrice(String code) {
+    /**
+     * 국내 주식 단일 시세 조회
+     */
+    public StockPriceResponse getKrStockPrice(String code) {
         return kisStockClient.getKoreaPrice(code);
     }
 }
