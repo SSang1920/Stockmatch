@@ -83,3 +83,9 @@ kis:
   app-key: ${KIS_APP_KEY:dev-kis-key}
   app-secret: ${KIS_APP_SECRET:dev-kis-secret}
   tr-id: FHKST01010100  # 국내주식 현재가 시세 조회 트랜잭션 ID
+
+price:
+  cache:
+    ttl-seconds: 10
+  refresh-ms: 10000
+  enable-scheduler: true
