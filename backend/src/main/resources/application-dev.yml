@@ -89,3 +89,7 @@ price:
     ttl-seconds: 10
   refresh-ms: 10000
   enable-scheduler: true
+
+bok:
+  api:
+    key: ${BOK_API_KEY}

@@ -27,7 +27,6 @@ public enum ErrorCode {
     USER_NOT_FOUND("U001", "사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     USER_ALREADY_EXISTS("U002", "이미 존재하는 사용자입니다.", HttpStatus.CONFLICT),
 
-
     // 포트폴리오
     PORTFOLIO_NOT_FOUND("P001", "포트폴리오를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     PORTFOLIO_ALREADY_EXISTS("P002", "이미 존재하는 포트폴리오입니다.", HttpStatus.CONFLICT),
@@ -36,6 +35,9 @@ public enum ErrorCode {
     HOLDING_NOT_FOUND("H001", "보유 종목을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     HOLDING_ALREADY_EXISTS("H002", "이미 존재하는 보유 종목입니다.", HttpStatus.CONFLICT),
 
+    // 환율(ExchangeRate
+    UNSUPPORTED_CURRENCY_CONVERSION("E001", "지원하지 않는 통화 변환입니다.", HttpStatus.BAD_REQUEST ),
+    EXCHANGE_RATE_NOT_FOUD("E002", "해당 날짜의 환율 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
     // 종목(Security)
     SECURITY_NOT_FOUND("S001", "종목을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
