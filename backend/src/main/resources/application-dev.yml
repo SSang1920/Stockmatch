@@ -98,3 +98,7 @@ import:
     kospi-location: classpath:import/kospi_code.csv
     kosdaq-location: classpath:import/kosdaq_code.csv
     encoding: UTF-8
+
+bok:
+  api:
+    key: ${BOK_API_KEY}

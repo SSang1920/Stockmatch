@@ -1,18 +1,17 @@
-package com.stockmatch.exchangeRate;
+package com.stockmatch.exchangeRate.domain;
 
 import com.stockmatch.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
 @Getter
+@Builder
 @AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "exchange_rate")
 public class ExchangeRate extends BaseEntity {
 

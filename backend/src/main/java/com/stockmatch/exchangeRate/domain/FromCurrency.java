@@ -1,4 +1,4 @@
-package com.stockmatch.exchangeRate;
+package com.stockmatch.exchangeRate.domain;
 
 public enum FromCurrency {
 
