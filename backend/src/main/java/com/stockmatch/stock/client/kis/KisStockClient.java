@@ -1,6 +1,9 @@
-package com.stockmatch.stock.infra.kis;
+package com.stockmatch.stock.client.kis;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.stockmatch.common.exception.BusinessException;
+import com.stockmatch.common.exception.ErrorCode;
+import com.stockmatch.stock.client.ExternalPriceClient;
 import com.stockmatch.stock.dto.Region;
 import com.stockmatch.stock.dto.StockPriceResponse;
 import lombok.RequiredArgsConstructor;
@@ -10,9 +13,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-@Component
+@Component("kisStockClient")
 @RequiredArgsConstructor
-public class KisStockClient {
+public class KisStockClient implements ExternalPriceClient {
 
     private final RestTemplate restTemplate;
     private final KisTokenProvider kisTokenProvider;
@@ -28,6 +31,23 @@ public class KisStockClient {
 
     @Value("${kis.tr-id}")
     private String trId;
+
+    @Override
+    public StockPriceResponse getRealtime(String region, String ticker) {
+        if (!"KR".equalsIgnoreCase(region)) {
+            throw new BusinessException(ErrorCode.UNSUPPORTED_REGION);
+        }
+
+        return getKoreaPrice(ticker);
+    }
+
+    /**
+     * 국내 주식 현재가 시세 조회
+     */
+    public StockPriceResponse getKoreaPrice(String code) {
+        JsonNode o = getKoreaPriceRaw(code);
+        return toStockPrice(code, o);
+    }
 
     /**
      * 공통 요청 헤더
@@ -45,32 +65,34 @@ public class KisStockClient {
     }
 
     /**
-     * 시세 조회 URL
-     */
-    private String priceUrl(String code) {
-        return UriComponentsBuilder
-                .fromUriString(baseUrl + "/uapi/domestic-stock/v1/quotations/inquire-price")
-                .queryParam("FID_COND_MRKT_DIV_CODE", "J")  // 조건 시장 분류 코드
-                .queryParam("FID_INPUT_ISCD", code)
-                .toUriString();
-    }
-
-    /**
-     * 원본 JSON 응답 반환
+     * KIS 원본 JSON 응답 반환
      */
     public JsonNode getKoreaPriceRaw(String code) {
-        String url = priceUrl(code);
-        String accessToken = kisTokenProvider.getAccessToken();
-        HttpEntity<Void> entity = new HttpEntity<>(defaultHeaders(accessToken));
+        try {
+            String url = UriComponentsBuilder
+                    .fromUriString(baseUrl + "/uapi/domestic-stock/v1/quotations/inquire-price")
+                    .queryParam("FID_COND_MRKT_DIV_CODE", "J")  // 조건 시장 분류 코드
+                    .queryParam("FID_INPUT_ISCD", code)
+                    .toUriString();
 
-        ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
+            String accessToken = kisTokenProvider.getAccessToken();
+            HttpEntity<Void> entity = new HttpEntity<>(defaultHeaders(accessToken));
 
-        JsonNode body = response.getBody();
-        if (body == null || body.get("output") == null) {
-            throw new IllegalStateException("KIS API 응답이 없습니다.");
+            ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
+
+            JsonNode body = response.getBody();
+            JsonNode output = (body == null) ? null : body.get("output");
+            if (output == null) {
+                throw new BusinessException(ErrorCode.UPSTREAM_DATA_EMPTY);
+            }
+
+            return output;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
         }
 
-        return body.get("output");
     }
 
     /**
@@ -79,11 +101,13 @@ public class KisStockClient {
     private StockPriceResponse toStockPrice(String code, JsonNode o) {
         String name = o.path("bstp_kor_isnm").asText();
         double current = o.path("stck_prpr").asDouble();
-        double prevClose = o.path("stck_prdy_clpr").asDouble();
+        double prevClose = o.path("stck_sdpr").asDouble();
         double open = o.path("stck_oprc").asDouble();
         double high = o.path("stck_hgpr").asDouble();
         double low = o.path("stck_lwpr").asDouble();
-        double changeRate = o.path("prdy_ctrt").asDouble();
+
+        double changePct = o.path("prdy_ctrt").asDouble();
+        double changeRate = changePct / 100.0;
 
         return StockPriceResponse.builder()
                 .region(Region.KR)
@@ -97,13 +121,4 @@ public class KisStockClient {
                 .changeRate(changeRate)
                 .build();
     }
-
-    /**
-     * 국내 주식 현재가 시세 조회
-     */
-    public StockPriceResponse getKoreaPrice(String code) {
-        JsonNode o = getKoreaPriceRaw(code);
-        return toStockPrice(code, o);
-    }
-
 }

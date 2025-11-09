@@ -32,6 +32,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.apache.commons:commons-csv:1.11.0'
 
 	// JWT
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'

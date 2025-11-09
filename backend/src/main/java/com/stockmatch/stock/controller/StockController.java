@@ -25,7 +25,7 @@ public class StockController {
     }
 
     @GetMapping("/us/batch")
-    public ResponseEntity<ApiResponse<Map<String, StockPriceResponse>>> getUsQuotes(@RequestBody List<String> symbols) {
+    public ResponseEntity<ApiResponse<Map<String, StockPriceResponse>>> getUsQuotes(@RequestParam List<String> symbols) {
         var data = stockPriceService.getUsStockPrices(symbols);
         return ResponseEntity.ok(ApiResponse.ok(data));
     }

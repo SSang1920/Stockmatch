@@ -43,7 +43,9 @@ public enum ErrorCode {
     DUPLICATE_TICKER("S003", "중복된 종목 코드입니다.", HttpStatus.CONFLICT),
 
     // 외부 API
-    RATE_LIMITED("M001", "외부 API 호출 제한에 걸렸습니다.", HttpStatus.TOO_MANY_REQUESTS);
+    EXTERNAL_API_ERROR("E001", "외부 API 호출 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
+    UNSUPPORTED_REGION("E002", "지원하지 않는 지역입니다.", HttpStatus.BAD_REQUEST),
+    UPSTREAM_DATA_EMPTY("E003", "외부 API 응답이 비어 있습니다.", HttpStatus.BAD_GATEWAY);
 
     private final String code;
     private final String message;

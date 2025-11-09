@@ -1,5 +1,6 @@
 package com.stockmatch.stock.repository;
 
+import com.stockmatch.stock.domain.Market;
 import com.stockmatch.stock.domain.Security;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -9,4 +10,8 @@ public interface SecurityRepository extends JpaRepository<Security, Long> {
 
 
     Optional<Security> findByTicker(String ticker);
+
+    Optional<Security> findByTickerAndMarket(String ticker, Market market);
+
+    long countByMarket(Market market);
 }

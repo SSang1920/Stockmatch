@@ -1,6 +1,5 @@
-package com.stockmatch.stock.infra.kis;
+package com.stockmatch.stock.client.kis;
 
-import com.stockmatch.stock.dto.KisAuthResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;

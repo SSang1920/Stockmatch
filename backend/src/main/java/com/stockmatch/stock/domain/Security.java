@@ -5,6 +5,7 @@ import com.stockmatch.common.BaseEntity;
 import com.stockmatch.portfolio.domain.Currency;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -15,7 +16,13 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "security")
+@Builder
+@Table(
+        name = "security",
+        uniqueConstraints = {
+            @UniqueConstraint(name = "uk_security_ticker", columnNames = {"market", "ticker"})
+        }
+)
 public class Security extends BaseEntity {
 
     @Id
@@ -49,13 +56,23 @@ public class Security extends BaseEntity {
     private String isin;
 
     @Column
+    @Builder.Default
     private boolean delisted = false;       // 상장폐지 여부
 
+    @Builder.Default
     @OneToMany(mappedBy = "security")
     private List<DailyPrice> dailyPrices = new ArrayList<>();
 
     @OneToOne(mappedBy = "security", fetch = FetchType.LAZY)
     private WatchItem watchItem;
+
+    public void updateIsin(String isin) {
+        this.isin = isin;
+    }
+
+    public void updateName(String name) {
+        this.name = name;
+    }
 
     // ===== 헬퍼 메서드 ====
 

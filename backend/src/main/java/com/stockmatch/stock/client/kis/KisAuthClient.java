@@ -1,4 +1,4 @@
-package com.stockmatch.stock.infra.kis;
+package com.stockmatch.stock.client.kis;
 
 import com.stockmatch.stock.dto.KisAuthResponse;
 import lombok.RequiredArgsConstructor;

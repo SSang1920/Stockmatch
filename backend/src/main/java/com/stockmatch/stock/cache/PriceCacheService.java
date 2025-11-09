@@ -21,6 +21,11 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor
 public class PriceCacheService {
 
+    // 락 대기 최대 시간
+    private static final long LOCK_WAIT_MS = 3000L;
+    private static final long LOCK_SLEEP_MS = 50L;
+    private static final Duration LOCK_TTL = Duration.ofSeconds(5);
+
     private final StringRedisTemplate redis;
     private final ObjectMapper om;
 
@@ -32,6 +37,10 @@ public class PriceCacheService {
      */
     private String key(String region, String symbol) {
         return "price:" + region + ":" + symbol;
+    }
+
+    private String lockKey(String region, String symbol) {
+        return "lock:price:" + region + ":" + symbol;
     }
 
     /**
@@ -79,13 +88,48 @@ public class PriceCacheService {
         var cached = getCached(region, symbol);
         if (cached.isPresent()) return cached.get();
 
-        // 캐시 미스면 외부 API 호출하여 가져오기
-        var fresh = fetcher.get();
+        final String lockKey = lockKey(region, symbol);
+        final String token = UUID.randomUUID().toString();
 
-        // null 방어
-        if (fresh != null) put(region, symbol, fresh);
+        // 락 시도
+        Boolean acquired = redis.opsForValue().setIfAbsent(lockKey, token, LOCK_TTL);
+        if (Boolean.TRUE.equals(acquired)) {
+            try {
+                // 더블 체크
+                var again = getCached(region, symbol);
+                if (again.isPresent()) return again.get();
 
-        return fresh;
+                // 외부 API 로드
+                var fresh = fetcher.get();
+                if (fresh != null) put(region, symbol, fresh);
+
+                return fresh;
+            } finally {
+                // 락 해제
+                String v = redis.opsForValue().get(lockKey);
+                if (token.equals(v)) {
+                    redis.delete(lockKey);
+                }
+            }
+        } else {
+            // 캐시가 채워지길 대기
+            long deadline = System.currentTimeMillis() + LOCK_WAIT_MS;
+            while (System.currentTimeMillis() < deadline) {
+                var v = getCached(region, symbol);
+                if (v.isPresent()) return v.get();
+                try {
+                    Thread.sleep(LOCK_SLEEP_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+
+            // 타임아웃이면 직접 로드(과한 지연 방지)
+            var fresh = fetcher.get();
+            if (fresh != null) put(region, symbol, fresh);
+            return fresh;
+        }
     }
 
     /**
@@ -100,44 +144,18 @@ public class PriceCacheService {
             return Collections.emptyMap();
         }
 
-        // 캐시 일괄 조회
-        List<String> keys = symbols.stream().map(s -> key(region, s)).toList();
-        List<String> rawList = redis.opsForValue().multiGet(keys);
-        if (rawList == null) rawList = Collections.emptyList();
+        Map<String, StockPriceResponse> out = new LinkedHashMap<>();
+        for (String s : symbols) {
+            StockPriceResponse v = this.getOrLoad(region, s, () -> {
+                // 단건 호출일 때 한 종목만 요청하도록 감싸기
+                Map<String, StockPriceResponse> one = fetcher.apply(List.of(s));
+                return one != null ? one.get(s) : null;
+            });
 
-        Map<String, StockPriceResponse> hitMap = new LinkedHashMap<>();
-        List<String> misses = new ArrayList<>();
-
-        for (int i = 0; i < symbols.size(); i++) {
-            String sym = symbols.get(i);
-            String raw = (i < rawList.size()) ? rawList.get(i) : null;
-            var parsed = parse(raw);
-
-            if (parsed.isPresent()) {
-                hitMap.put(sym, parsed.get());
-            } else {
-                misses.add(sym);
-            }
+            if (v != null) out.put(s, v);
         }
 
-        // 캐시 미스시 외부 호출
-        if (!misses.isEmpty()) {
-            Map<String, StockPriceResponse> fetched = fetcher.apply(misses);
-            if (fetched != null && !fetched.isEmpty()) {
-                // 캐시 채우기
-                fetched.forEach((sym, price) -> {
-                    if (price != null) put(region, sym, price);
-                });
-
-                // 결과 합치기(입력 순서 유지)
-                for (String sym : misses) {
-                    var v = fetched.get(sym);
-                    if (v != null) hitMap.put(sym, v);
-                }
-            }
-        }
-
-        return hitMap;
+        return out;
     }
 
     /**
