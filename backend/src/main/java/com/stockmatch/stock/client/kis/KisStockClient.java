@@ -3,15 +3,20 @@ package com.stockmatch.stock.client.kis;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
+import com.stockmatch.stock.cache.SecurityNameCacheService;
 import com.stockmatch.stock.client.ExternalPriceClient;
 import com.stockmatch.stock.dto.Region;
 import com.stockmatch.stock.dto.StockPriceResponse;
+import com.stockmatch.stock.repository.SecurityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.time.Duration;
 
 @Component("kisStockClient")
 @RequiredArgsConstructor
@@ -19,6 +24,9 @@ public class KisStockClient implements ExternalPriceClient {
 
     private final RestTemplate restTemplate;
     private final KisTokenProvider kisTokenProvider;
+    private final SecurityNameCacheService nameCache;
+
+    private static final Duration NAME_TTL = Duration.ofDays(7);
 
     @Value("${kis.base-url}")
     private String baseUrl;
@@ -45,8 +53,9 @@ public class KisStockClient implements ExternalPriceClient {
      * 국내 주식 현재가 시세 조회
      */
     public StockPriceResponse getKoreaPrice(String code) {
-        JsonNode o = getKoreaPriceRaw(code);
-        return toStockPrice(code, o);
+        String normCode = nameCache.normizeTicker(code);
+        JsonNode o = getKoreaPriceRaw(normCode);
+        return toStockPrice(normCode, o);
     }
 
     /**
@@ -98,8 +107,21 @@ public class KisStockClient implements ExternalPriceClient {
     /**
      * Json -> StockPriceResponse 매핑
      */
-    private StockPriceResponse toStockPrice(String code, JsonNode o) {
-        String name = o.path("bstp_kor_isnm").asText();
+    private StockPriceResponse toStockPrice(String normCode, JsonNode o) {
+        // 캐시/DB
+        String name = nameCache.getKrName(normCode);
+
+        // KIS 응답 필드 보조 시도
+        if (name == null || name.isBlank()) {
+            String kisName = o.path("bstp_kor_isnm").asText(null);
+            if (kisName != null && !kisName.isBlank()) {
+                nameCache.putKr(normCode, kisName, 24 * 60 * 60L);
+                name = kisName;
+            }
+        }
+
+        if (name == null || name.isBlank()) name = normCode;
+
         double current = o.path("stck_prpr").asDouble();
         double prevClose = o.path("stck_sdpr").asDouble();
         double open = o.path("stck_oprc").asDouble();
@@ -111,7 +133,7 @@ public class KisStockClient implements ExternalPriceClient {
 
         return StockPriceResponse.builder()
                 .region(Region.KR)
-                .ticker(code)
+                .ticker(normCode)
                 .name(name)
                 .currentPrice(current)
                 .prevClose(prevClose)

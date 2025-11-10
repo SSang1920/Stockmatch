@@ -90,6 +90,11 @@ price:
   refresh-ms: 10000
   enable-scheduler: true
 
+namecache:
+  prefix: secname
+  ttl-seconds: 604800
+  kr-namespace: KR
+
 import:
   krx:
     enabled: true
