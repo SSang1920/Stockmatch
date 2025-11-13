@@ -23,6 +23,7 @@ public enum ErrorCode {
     OAUTH_USERINFO_FAILED("A006", "사용자 정보 조회에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     OAUTH_UNLINK_FAILED("A007", "소셜 서비스와의 연동 해제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     REFRESH_TOKEN_NOT_FOUND("A008", "Refresh Token이 존재하지 않습니다. 다시 로그인해주세요.", HttpStatus.BAD_REQUEST),
+
     // 유저
     USER_NOT_FOUND("U001", "사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     USER_ALREADY_EXISTS("U002", "이미 존재하는 사용자입니다.", HttpStatus.CONFLICT),
@@ -37,7 +38,7 @@ public enum ErrorCode {
 
     // 환율(ExchangeRate
     UNSUPPORTED_CURRENCY_CONVERSION("E001", "지원하지 않는 통화 변환입니다.", HttpStatus.BAD_REQUEST ),
-    EXCHANGE_RATE_NOT_FOUD("E002", "해당 날짜의 환율 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    EXCHANGE_RATE_NOT_FOUND("E002", "해당 날짜의 환율 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
     // 종목(Security)
     SECURITY_NOT_FOUND("S001", "종목을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
@@ -47,7 +48,9 @@ public enum ErrorCode {
     // 외부 API
     EXTERNAL_API_ERROR("E001", "외부 API 호출 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
     UNSUPPORTED_REGION("E002", "지원하지 않는 지역입니다.", HttpStatus.BAD_REQUEST),
-    UPSTREAM_DATA_EMPTY("E003", "외부 API 응답이 비어 있습니다.", HttpStatus.BAD_GATEWAY);
+    UPSTREAM_DATA_EMPTY("E003", "외부 API 응답이 비어 있습니다.", HttpStatus.BAD_GATEWAY),
+    INVALID_API_KEY("E004", "올바르지 않은 API KEY입니다. (AlphaVantage)", HttpStatus.BAD_REQUEST),
+    API_KEY_NOT_REGISTERED("E005", "API KEY가 존재하지 않습니다. (AlphaVantage)", HttpStatus.BAD_REQUEST);
 
     private final String code;
     private final String message;
