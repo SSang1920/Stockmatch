@@ -1,10 +1,8 @@
-package com.stockmatch.financials.infra;
+package com.stockmatch.corporate.overview.infra;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.stockmatch.financials.client.ExternalFinancialsClient;
-import com.stockmatch.financials.dto.CompanyOverviewResponse;
-import com.stockmatch.user.member.service.MemberService;
+import com.stockmatch.corporate.overview.client.ExternalOverviewClient;
+import com.stockmatch.corporate.overview.dto.CompanyOverviewDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,9 +14,9 @@ import java.net.URI;
 import java.util.Map;
 
 @Slf4j
-@Component("alphaVantageFinancialsClient")
+@Component("alphaVantageOverviewClient")
 @RequiredArgsConstructor
-public class AlphaVantageClient implements ExternalFinancialsClient {
+public class AlphaVantageOverviewClient implements ExternalOverviewClient {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
@@ -27,7 +25,7 @@ public class AlphaVantageClient implements ExternalFinancialsClient {
     private String baseUrl;
 
    @Override
-   public CompanyOverviewResponse getCompanyOverview(String symbol, String apiKey){
+   public CompanyOverviewDto getCompanyOverview(String symbol, String apiKey){
 
        URI uri = UriComponentsBuilder
                .fromUriString(baseUrl)
@@ -46,6 +44,6 @@ public class AlphaVantageClient implements ExternalFinancialsClient {
            return null;
        }
 
-       return objectMapper.convertValue(rawResponse, CompanyOverviewResponse.class);
+       return objectMapper.convertValue(rawResponse, CompanyOverviewDto.class);
    }
 }

@@ -1,24 +1,23 @@
-package com.stockmatch.financials.service;
+package com.stockmatch.corporate.overview.service;
 
-import com.stockmatch.financials.cache.FinancialsCacheService;
-import com.stockmatch.financials.dto.CompanyOverviewResponse;
-import com.stockmatch.financials.infra.AlphaVantageClient;
+import com.stockmatch.corporate.overview.cache.OverviewCacheService;
+import com.stockmatch.corporate.overview.dto.CompanyOverviewDto;
+import com.stockmatch.corporate.overview.infra.AlphaVantageOverviewClient;
 import com.stockmatch.user.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class FinancialService {
+public class OverviewService {
 
-    private final FinancialsCacheService cacheService;
-    private final AlphaVantageClient alphaVantageClient;
+    private final OverviewCacheService cacheService;
+    private final AlphaVantageOverviewClient alphaVantageClient;
     private final MemberService memberService;
 
-    public CompanyOverviewResponse getCompanyOverview(Long userId, String symbol) {
+    public CompanyOverviewDto getCompanyOverview(Long userId, String symbol) {
 
         return cacheService.getOrLoadOverview(symbol, () -> {
 

@@ -1,26 +1,22 @@
-package com.stockmatch.financials.cache;
+package com.stockmatch.corporate.overview.cache;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.stockmatch.exchangeRate.domain.FromCurrency;
-import com.stockmatch.exchangeRate.domain.ToCurrency;
-import com.stockmatch.financials.dto.CompanyOverviewResponse;
+import com.stockmatch.corporate.overview.dto.CompanyOverviewDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class FinancialsCacheService {
+public class OverviewCacheService {
 
     private static final long LOCK_WAIT_MS = 3000L;
     private static final long LOCK_SLEEP_MS = 50L;
@@ -32,47 +28,47 @@ public class FinancialsCacheService {
 
     // --- 키 생성 규칙 ---
     private String key(String symbol) {
-        return "financials:overview:" + symbol;
+        return "corporate:overview:" + symbol;
     }
 
     private String lockKey(String symbol) {
-        return "lock:financials:overview:" + symbol;
+        return "lock:corporate:overview::" + symbol;
     }
 
     // --- JSON 변환 헬퍼 ---
-    private Optional<CompanyOverviewResponse> parse(String json) {
+    private Optional<CompanyOverviewDto> parse(String json) {
         if (json == null) return Optional.empty();
         try {
-            return Optional.of(objectMapper.readValue(json, CompanyOverviewResponse.class));
+            return Optional.of(objectMapper.readValue(json, CompanyOverviewDto.class));
         } catch (Exception e) {
-            log.warn("FinancialsCache parse fail. err={}", e.toString());
+            log.warn("OverviewCache parse fail. err={}", e.toString());
             return Optional.empty();
         }
     }
 
-    private String stringify(CompanyOverviewResponse v) {
+    private String stringify(CompanyOverviewDto v) {
         try {
             return objectMapper.writeValueAsString(v);
         } catch (JsonProcessingException e) {
-            log.warn("FinancialsCache write fail. err={}", e.toString());
+            log.warn("OverviewCache write fail. err={}", e.toString());
             return null;
         }
     }
 
     // --- 캐시 조회/저장 로직 (헬퍼 메서드) ---
-    public Optional<CompanyOverviewResponse> getCached(String symbol) {
+    public Optional<CompanyOverviewDto> getCached(String symbol) {
         String v = redisTemplate.opsForValue().get(key(symbol));
         return parse(v);
     }
 
-    public void put(String symbol, CompanyOverviewResponse response) {
+    public void put(String symbol, CompanyOverviewDto response) {
         String json = stringify(response);
         if (json == null) return;
         redisTemplate.opsForValue().set(key(symbol), json, CACHE_TTL);
     }
 
 
-    public CompanyOverviewResponse getOrLoadOverview(String symbol, Supplier<CompanyOverviewResponse> loader){
+    public CompanyOverviewDto getOrLoadOverview(String symbol, Supplier<CompanyOverviewDto> loader){
 
         var cached = getCached(symbol);
         if (cached.isPresent()) return cached.get();

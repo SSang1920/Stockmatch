@@ -1,4 +1,4 @@
-package com.stockmatch.financials.dto;
+package com.stockmatch.corporate.overview.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CompanyOverviewResponse {
+public class CompanyOverviewDto {
 
     @JsonProperty("Symbol")
     private String symbol;
