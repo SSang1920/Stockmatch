@@ -2,9 +2,14 @@ package com.stockmatch.portfolio.controller;
 
 import com.stockmatch.common.api.ApiResponse;
 import com.stockmatch.config.security.CustomUserDetails;
+import com.stockmatch.portfolio.dto.HoldingRequest;
+import com.stockmatch.portfolio.dto.HoldingResponse;
 import com.stockmatch.portfolio.dto.PortfolioResponse;
-import com.stockmatch.portfolio.dto.PortfolioSummaryResponse;
+import com.stockmatch.portfolio.dto.PortfolioValuationResponse;
+import com.stockmatch.portfolio.service.HoldingService;
 import com.stockmatch.portfolio.service.PortfolioService;
+import com.stockmatch.portfolio.service.PortfolioValuationService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,16 +21,32 @@ import org.springframework.web.bind.annotation.*;
 public class PortfolioController {
 
     private final PortfolioService portfolioService;
+    private final PortfolioValuationService portfolioValuationService;
+    private final HoldingService holdingService;
 
     @PostMapping("/me/ensure")
-    public ResponseEntity<ApiResponse<PortfolioResponse>> ensureMyPortfolio(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<ApiResponse<PortfolioResponse>> ensureMyPortfolio(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
         var result = portfolioService.ensureForUser(userDetails.getUser().getId());
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
-    @GetMapping("/me/summary")
-    public ResponseEntity<ApiResponse<PortfolioSummaryResponse>> getMyPortfolioSummary(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        var result = portfolioService.getSummaryForUser(userDetails.getUser().getId());
+    @PostMapping("/me/holdings")
+    public ResponseEntity<ApiResponse<HoldingResponse>> addMyHolding(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Valid HoldingRequest request
+    ) {
+        var result = holdingService.addOrUpdateHolding(userDetails.getUser().getId(), request);
         return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
+    @GetMapping("/me/valuation")
+    public ResponseEntity<ApiResponse<PortfolioValuationResponse>> getMyPortfolioValuation(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        var portfolio = portfolioService.ensureForUser(userDetails.getUser().getId());
+        var valuation = portfolioValuationService.calculate(portfolio.getPortfolioId());
+        return ResponseEntity.ok(ApiResponse.ok(valuation));
     }
 }

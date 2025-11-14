@@ -39,6 +39,20 @@ public class Holding extends BaseEntity {
     @Column(nullable = false)
     private Currency currency = Currency.KRW;
 
+    // ===== 상태 변경 메서드 ===== //
+    public void updateQuantity(BigDecimal quantity) {
+        this.quantity = quantity;
+    }
+
+    public void updateAvgPrice(BigDecimal avgPrice) {
+        this.avgPrice = avgPrice;
+    }
+
+    public void updateQuantityAndAvgPrice(BigDecimal quantity, BigDecimal avgPrice) {
+        updateQuantity(quantity);
+        updateAvgPrice(avgPrice);
+    }
+
     // === 연관관계 편의 메서드 === //
     public void setPortfolio(Portfolio newPortfolio) {
         if (this.portfolio == newPortfolio) {
