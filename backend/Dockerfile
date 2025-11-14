@@ -13,6 +13,8 @@ RUN ./gradlew dependencies --no-daemon || true
 
 # 소스 복사 후 빌드
 COPY src ./src
+
+
 RUN ./gradlew clean bootJar -x test --no-daemon
 
 # 2) 런타임 스테이지
