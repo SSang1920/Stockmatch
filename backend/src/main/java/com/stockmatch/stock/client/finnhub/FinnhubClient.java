@@ -2,7 +2,10 @@ package com.stockmatch.stock.client.finnhub;
 
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
+import com.stockmatch.portfolio.domain.Currency;
 import com.stockmatch.stock.client.ExternalPriceClient;
+import com.stockmatch.stock.client.finnhub.dto.FinnhubSymbolProfile;
+import com.stockmatch.stock.domain.Exchange;
 import com.stockmatch.stock.dto.FinnhubQuoteResponse;
 import com.stockmatch.stock.dto.Region;
 import com.stockmatch.stock.dto.StockPriceResponse;
@@ -40,7 +43,11 @@ public class FinnhubClient implements ExternalPriceClient {
      */
     public StockPriceResponse getQuote(String symbol) {
         FinnhubQuoteResponse raw = getQuoteRaw(symbol);
-        String name = resolveNameBySymbol(symbol);
+        FinnhubSymbolProfile profile = getUsSymbolProfile(symbol);
+
+        String name = (profile != null && profile.name() != null && !profile.name().isBlank())
+                ? profile.name()
+                : symbol;
 
         return toStockPrice(symbol, raw).toBuilder().name(name).build();
     }
@@ -66,23 +73,40 @@ public class FinnhubClient implements ExternalPriceClient {
     }
 
     /**
-     * 심볼로 해외 종목명 조회 - 실패 시 심볼을 그대로 반환
+     * 해외 종목 기본 정보 조회
      */
-    public String resolveNameBySymbol(String symbol) {
+    public FinnhubSymbolProfile getUsSymbolProfile(String symbol) {
         try {
             String url = UriComponentsBuilder.fromUriString(baseUrl + "/stock/profile2")
                     .queryParam("symbol", symbol)
                     .queryParam("token", apiKey)
                     .toUriString();
 
-            Map<?, ?> body = restTemplate.getForObject(url, Map.class);
-            if (body == null) return symbol;
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = restTemplate.getForObject(url, Map.class);
+            if (body == null || body.isEmpty()) {
+                return null;
+            }
 
-            Object name = body.get("name");
-            return (name instanceof String s && !s.isBlank()) ? s : symbol;
+            String ticker = asString(body.get("ticker"), symbol);
+            String name = asString(body.get("name"), symbol);
+            String currency = asString(body.get("currency"), Currency.USD.name());
+            String exchange = asString(body.get("exchange"), Exchange.NASDAQ.name());
+
+            return new FinnhubSymbolProfile(ticker, name, currency, exchange);
         } catch (Exception e) {
-            return symbol;
+            throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
         }
+    }
+
+    /**
+     * Object 타입 값 -> String 타입 변환
+     */
+    private String asString(Object value, String defaultValue) {
+        if (value instanceof String s && !s.isBlank()) {
+            return s;
+        }
+        return defaultValue;
     }
 
     /**
