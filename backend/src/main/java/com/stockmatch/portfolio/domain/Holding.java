@@ -4,6 +4,7 @@ import com.stockmatch.common.BaseEntity;
 import com.stockmatch.stock.domain.Security;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -14,6 +15,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "holding")
+@Builder
 public class Holding extends BaseEntity {
 
     @Id
@@ -35,6 +37,7 @@ public class Holding extends BaseEntity {
     @Column(name = "avg_price", precision = 28, scale = 8)
     private BigDecimal avgPrice;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Currency currency = Currency.KRW;

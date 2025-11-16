@@ -3,7 +3,9 @@ package com.stockmatch.portfolio.repository;
 import com.stockmatch.portfolio.domain.Transaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
-    long countByPortfolioId(Long portfolioId);
+    List<Transaction> findByPortfolioIdOrderByTradeAtDesc(Long portfolioId);
 }
