@@ -34,6 +34,7 @@ public enum ErrorCode {
     // 보유 종목
     HOLDING_NOT_FOUND("H001", "보유 종목을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     HOLDING_ALREADY_EXISTS("H002", "이미 존재하는 보유 종목입니다.", HttpStatus.CONFLICT),
+    HOLDING_NOT_IN_PORTFOLIO("H003", "포트폴리오에 이 보유종목이 없습니다.", HttpStatus.FORBIDDEN),
 
     // 환율(ExchangeRate
     UNSUPPORTED_CURRENCY_CONVERSION("E001", "지원하지 않는 통화 변환입니다.", HttpStatus.BAD_REQUEST ),

@@ -15,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/portfolio")
@@ -41,10 +43,28 @@ public class PortfolioController {
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
+    @GetMapping("/me/holdings")
+    public ResponseEntity<ApiResponse<List<HoldingResponse>>> getMyHoldings(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        var result = holdingService.getMyHoldings(userDetails.getUser().getId());
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
+    @DeleteMapping("me/holdings/{holdingId}")
+    public ResponseEntity<ApiResponse<Void>> deleteMyHolding(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long holdingId
+    ) {
+        holdingService.deleteMyHolding(userDetails.getUser().getId(), holdingId);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
     @GetMapping("/me/valuation")
     public ResponseEntity<ApiResponse<PortfolioValuationResponse>> getMyPortfolioValuation(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
+
         var portfolio = portfolioService.ensureForUser(userDetails.getUser().getId());
         var valuation = portfolioValuationService.calculate(portfolio.getPortfolioId());
         return ResponseEntity.ok(ApiResponse.ok(valuation));
