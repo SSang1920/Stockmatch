@@ -82,6 +82,7 @@ public class TransactionService {
     /**
      * 매도 기록
      */
+    @Transactional
     public TransactionResponse sell(Long userId, Long portfolioId, TransactionCreateRequest request) {
 
         // 포트폴리오 조회
@@ -184,8 +185,6 @@ public class TransactionService {
 
     /**
      * 매도 시  보유 수량 감소, 수량 0이면 보유종목 삭제
-     * @param holding
-     * @param request
      */
     private void updateHoldingOnSell(Holding holding, TransactionCreateRequest request) {
         BigDecimal oldQuantity = holding.getQuantity();
