@@ -56,7 +56,7 @@ public class TransactionService {
         Portfolio portfolio = findPortfolioOfUser(userId, portfolioId);
 
         // 종목 조회
-        Security security = securityRepository.findById(request.SecurityId())
+        Security security = securityRepository.findById(request.securityId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.SECURITY_NOT_FOUND));
 
         // 거래기록 dto로 변환해서 저장
@@ -67,7 +67,7 @@ public class TransactionService {
                 .quantity(request.quantity())
                 .price(request.price())
                 .fee(request.fee())
-                .tradeAt(request.TradeAt())
+                .tradeAt(request.tradeAt())
                 .memo(request.memo())
                 .build();
         transactionRepository.save(transaction);
@@ -89,7 +89,7 @@ public class TransactionService {
         Portfolio portfolio = findPortfolioOfUser(userId, portfolioId);
 
         // 종목 조회
-        Security security = securityRepository.findById(request.SecurityId())
+        Security security = securityRepository.findById(request.securityId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.SECURITY_NOT_FOUND));
 
         // 보유종목 조회
@@ -109,7 +109,7 @@ public class TransactionService {
                 .quantity(request.quantity())
                 .price(request.price())
                 .fee(request.fee())
-                .tradeAt(request.TradeAt())
+                .tradeAt(request.tradeAt())
                 .memo(request.memo())
                 .build();
         transactionRepository.save(transaction);
@@ -126,7 +126,7 @@ public class TransactionService {
     private Portfolio findPortfolioOfUser(Long userId, Long portfolioId) {
 
         // 포트폴리오 조회
-        Portfolio portfolio = portfolioRepository.findByUserId(userId)
+        Portfolio portfolio = portfolioRepository.findById(portfolioId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND));
 
         // 포트폴리오 사용자 검증

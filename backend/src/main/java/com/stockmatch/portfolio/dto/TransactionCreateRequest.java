@@ -5,11 +5,11 @@ import java.time.LocalDateTime;
 
 public record TransactionCreateRequest(
 
-        Long SecurityId,
+        Long securityId,
         BigDecimal quantity,
         BigDecimal price,
         BigDecimal fee,
-        LocalDateTime TradeAt,
+        LocalDateTime tradeAt,
         String memo
 ) {
 }

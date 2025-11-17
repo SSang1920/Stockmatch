@@ -27,9 +27,16 @@ public record TransactionResponse(
                 transaction.getType(),
                 transaction.getQuantity(),
                 transaction.getPrice(),
-                transaction.getFee(),
+                normalizeFee(transaction.getFee()),
                 transaction.getTradeAt(),
                 transaction.getMemo()
         );
+    }
+
+    private static BigDecimal normalizeFee(BigDecimal fee) {
+        if (fee == null) {
+            return BigDecimal.ZERO;
+        }
+        return fee.stripTrailingZeros();
     }
 }

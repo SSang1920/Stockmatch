@@ -77,6 +77,24 @@ kis:
   app-secret: test-app-secret
   tr-id: TEST_TR_ID
 
+bok:
+  api:
+    key: test-api-key
+
 price:
   cache:
     ttl-seconds: 600
+
+namecache:
+  prefix: secname
+  ttl-seconds: 604800
+  kr-namespace: KR
+
+import:
+  krx:
+    enabled: true
+    load-kospi: true
+    load-kosdaq: true
+    kospi-location: classpath:import/kospi_code.csv
+    kosdaq-location: classpath:import/kosdaq_code.csv
+    encoding: UTF-8

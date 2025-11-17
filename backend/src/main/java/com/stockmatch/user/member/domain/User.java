@@ -75,7 +75,8 @@ public class User extends BaseEntity {
 
     //OAuth2 신규 사용자 생성을 위한 생성자
     @Builder
-    public User(AuthProvider provider, String providerId , String email, String name, String profileImageUrl){
+    public User(Long id, AuthProvider provider, String providerId , String email, String name, String profileImageUrl) {
+        this.id = id;
         this.provider = provider;
         this.providerId = providerId;
         this.email = email;
