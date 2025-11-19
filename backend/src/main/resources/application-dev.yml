@@ -107,3 +107,10 @@ import:
 bok:
   api:
     key: ${BOK_API_KEY}
+
+alphavantage:
+  base-url: "https://www.alphavantage.co"
+
+encryption:
+  secret-key: ${ENCRYPTION_SECRET_KEY}
+  salt: ${ENCRYPTION_SALT}

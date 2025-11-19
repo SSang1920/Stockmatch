@@ -10,6 +10,7 @@ import com.stockmatch.user.member.dto.request.UserProfileUpdateRequest;
 import com.stockmatch.user.member.repository.AlphaVantageKeyRepository;
 import com.stockmatch.user.member.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ public class MemberService {
     private final UserRepository userRepository;
     private final AlphaVantageKeyRepository alphaVantageKeyRepository;
     private final OAuthUnlinkService oAuthUnlinkService;
+    private final TextEncryptor textEncryptor;
 
     /**
      * 현재 로그인한 사용자 정보 조회
@@ -66,22 +68,26 @@ public class MemberService {
     @Transactional
     public void upsertAlphaVantageKey(Long userId, String newApiKey){
 
-        //User 엔티티 조회
-        User user = userRepository.findById(userId)
-                .orElseThrow(()-> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        if(newApiKey == null || newApiKey.isBlank() || newApiKey.length() < 10){
+            throw new BusinessException(ErrorCode.INVALID_API_KEY);
+        }
+
+        String keyCipher = textEncryptor.encrypt(newApiKey);
+        String keyLast4 = newApiKey.length() > 4 ? newApiKey.substring(newApiKey.length() -4) : newApiKey;
 
         Optional<AlphaVantageKey> existingKeyOpt = alphaVantageKeyRepository.findByUserId(userId);
-
-        // 새로운 키
-        String keyCipher = newApiKey;
-        String keyLast4 = newApiKey.length() > 4 ? newApiKey.substring(newApiKey.length() - 4) : newApiKey;
 
         if (existingKeyOpt.isPresent()) {
             // 기존 키가 있을시 내용 수정
             AlphaVantageKey existingKey = existingKeyOpt.get();
             existingKey.updateKey(keyCipher, keyLast4);
+
+            alphaVantageKeyRepository.save(existingKey);
         } else {
-            // 기존 키 X 생성"
+            // 기존 키 X 생성
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
             AlphaVantageKey newKey = AlphaVantageKey.builder()
                     .user(user)
                     .keyCipher(keyCipher)
@@ -89,5 +95,13 @@ public class MemberService {
                     .build();
             alphaVantageKeyRepository.save(newKey);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public String getDecryptedApiKey(Long userId){
+        AlphaVantageKey keyEntity = alphaVantageKeyRepository.findByUserId(userId)
+                .orElseThrow(()-> new BusinessException(ErrorCode.API_KEY_NOT_REGISTERED));
+
+        return textEncryptor.decrypt(keyEntity.getKeyCipher());
     }
 }
