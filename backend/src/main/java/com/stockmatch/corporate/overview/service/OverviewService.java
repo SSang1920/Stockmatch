@@ -1,6 +1,7 @@
 package com.stockmatch.corporate.overview.service;
 
 import com.stockmatch.corporate.overview.cache.OverviewCacheService;
+import com.stockmatch.corporate.overview.client.ExternalOverviewClient;
 import com.stockmatch.corporate.overview.dto.CompanyOverviewDto;
 import com.stockmatch.corporate.overview.infra.AlphaVantageOverviewClient;
 import com.stockmatch.user.member.service.MemberService;
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Service;
 public class OverviewService {
 
     private final OverviewCacheService cacheService;
-    private final AlphaVantageOverviewClient alphaVantageClient;
+    private final ExternalOverviewClient alphaVantageClient;
     private final MemberService memberService;
 
     public CompanyOverviewDto getCompanyOverview(Long userId, String symbol) {

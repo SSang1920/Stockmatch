@@ -1,7 +1,8 @@
-package com.stockmatch.corporate.overview.cache;
+package com.stockmatch.corporate.earnings.cache;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stockmatch.corporate.earnings.dto.EarningsDto;
 import com.stockmatch.corporate.overview.dto.CompanyOverviewDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +17,7 @@ import java.util.function.Supplier;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class OverviewCacheService {
+public class EarningsCacheService {
 
     private static final long LOCK_WAIT_MS = 3000L;
     private static final long LOCK_SLEEP_MS = 50L;
@@ -26,51 +27,48 @@ public class OverviewCacheService {
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
-    // --- 키 생성 규칙 ---
-    private String key(String symbol) {
-        return "corporate:overview:" + symbol;
+    private String key(String symbol){
+        return "corporate:earnings:" + symbol;
     }
 
-    private String lockKey(String symbol) {
-        return "lock:corporate:overview::" + symbol;
+    private String lockKey(String symbol){
+        return "lock:corporate:earnings::" + symbol;
     }
 
-    // --- JSON 변환 헬퍼 ---
     // JSON -> DTO
-    private Optional<CompanyOverviewDto> parse(String json) {
+    private Optional<EarningsDto> parse(String json) {
         if (json == null) return Optional.empty();
         try {
-            return Optional.of(objectMapper.readValue(json, CompanyOverviewDto.class));
+            return Optional.of(objectMapper.readValue(json, EarningsDto.class));
         } catch (Exception e) {
-            log.warn("OverviewCache parse fail. err={}", e.toString());
+            log.warn("EarningsCache parse fail. err={}", e.toString());
             return Optional.empty();
         }
     }
 
     // DTO -> JSON
-    private String stringify(CompanyOverviewDto v) {
+    private String stringify(EarningsDto v) {
         try {
             return objectMapper.writeValueAsString(v);
         } catch (JsonProcessingException e) {
-            log.warn("OverviewCache write fail. err={}", e.toString());
+            log.warn("EarningsCache write fail. err={}", e.toString());
             return null;
         }
     }
 
     // --- 캐시 조회/저장 로직 (헬퍼 메서드) ---
-    public Optional<CompanyOverviewDto> getCached(String symbol) {
+    public Optional<EarningsDto> getCached(String symbol) {
         String v = redisTemplate.opsForValue().get(key(symbol));
         return parse(v);
     }
 
-    public void put(String symbol, CompanyOverviewDto response) {
+    public void put(String symbol, EarningsDto response) {
         String json = stringify(response);
         if (json == null) return;
         redisTemplate.opsForValue().set(key(symbol), json, CACHE_TTL);
     }
 
-
-    public CompanyOverviewDto getOrLoadOverview(String symbol, Supplier<CompanyOverviewDto> loader){
+    public EarningsDto getOrLoadEarnings(String symbol, Supplier<EarningsDto> loader){
 
         var cached = getCached(symbol);
         if (cached.isPresent()) return cached.get();
