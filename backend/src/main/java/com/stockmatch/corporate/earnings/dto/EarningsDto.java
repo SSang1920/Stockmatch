@@ -1,21 +1,32 @@
 package com.stockmatch.corporate.earnings.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+
+import com.stockmatch.corporate.common.dto.CacheableData;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.List;
 
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EarningsDto {
+public class EarningsDto implements CacheableData {
 
     private String symbol;
     private List<AnnualEarning> annualEarnings;
     private List<QuarterlyEarning> quarterlyEarnings;
+
+    @Override
+    @JsonIgnore
+    public boolean isValidForCaching() {
+        boolean hasAnnual = annualEarnings != null && !annualEarnings.isEmpty();
+        boolean hasQuarterly = quarterlyEarnings != null && !quarterlyEarnings.isEmpty();
+        return symbol != null && (hasAnnual || hasQuarterly);
+    }
 
     @Getter
     @Builder

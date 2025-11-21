@@ -1,9 +1,11 @@
 package com.stockmatch.corporate.incomestatement.dto;
 
+import com.stockmatch.corporate.common.dto.CacheableData;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.List;
 
@@ -11,10 +13,17 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class IncomeStatementDto {
+public class IncomeStatementDto implements CacheableData {
 
     private String symbol;
     private List<AnnualReports> annualReports;
+
+    @Override
+    @JsonIgnore
+    public boolean isValidForCaching() {
+
+        return symbol != null && annualReports != null && !annualReports.isEmpty();
+    }
 
     @Getter
     @Builder
@@ -26,8 +35,5 @@ public class IncomeStatementDto {
         private String operatingIncome;
         private String researchAndDevelopment;
         private String ebitda;
-
-
-
     }
 }

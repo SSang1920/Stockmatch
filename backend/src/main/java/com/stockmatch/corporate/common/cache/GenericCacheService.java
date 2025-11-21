@@ -1,6 +1,7 @@
 package com.stockmatch.corporate.common.cache;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stockmatch.corporate.common.dto.CacheableData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -67,9 +68,16 @@ public class GenericCacheService {
 
                 // 외부 API 호출
                 var fresh = loader.get();
-                if (fresh != null) {
+                if (fresh instanceof CacheableData cacheableData) {
+                    if (cacheableData.isValidForCaching()) {
+                        put(cacheKey, fresh, ttl);
+                        log.info("유효한 데이터 캐시 저장 완료. key: {}", cacheKey);
+                    } else {
+                        log.warn("캐시할 수 없는 유효하지 않은 데이터 수신. key: {}", cacheKey);
+                    }
+                } else if (fresh != null) {
                     put(cacheKey, fresh, ttl);
-                    log.info("Cache populated for key: {}", cacheKey);
+                    log.info("캐시 저장 완료 (유효성 검사 없음). key: {}", cacheKey);
                 }
                 return fresh;
             } finally {

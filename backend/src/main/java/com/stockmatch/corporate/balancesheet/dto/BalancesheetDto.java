@@ -1,4 +1,4 @@
-package com.stockmatch.corporate.cachflow.dto;
+package com.stockmatch.corporate.balancesheet.dto;
 
 import com.stockmatch.corporate.common.dto.CacheableData;
 import lombok.AllArgsConstructor;
@@ -12,7 +12,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CashflowDto implements CacheableData {
+public class BalancesheetDto implements CacheableData {
 
     private String symbol;
     private List<AnnualReport> annualReports;
@@ -30,11 +30,12 @@ public class CashflowDto implements CacheableData {
     @NoArgsConstructor
     public static class AnnualReport {
 
-        private String operatingCashflow;
-        private String capitalExpenditures;
-        private String dividendPayout;
-        private String cashflowFromFinancing;
-        private String netIncome;
+        private String totalAssets;
+        private String totalLiabilities;
+        private String totalShareholderEquity;
+        private String totalCurrentAssets;
+        private String totalCurrentLiabilities;
+        private String longTermDebt;
 
     }
 }
