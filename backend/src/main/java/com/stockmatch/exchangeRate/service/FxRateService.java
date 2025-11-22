@@ -1,0 +1,38 @@
+package com.stockmatch.exchangeRate.service;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+public interface FxRateService {
+
+    /**
+     * 특정 날짜 기준 USD -> KRW 환율 조회
+     */
+    BigDecimal getUsdToKrwRate(LocalDate date);
+
+    /**
+     * 특정 날짜 기준 가장 최근 환율
+     */
+    BigDecimal getLatestUsdToKrwRate(LocalDate date);
+
+    /**
+     * 오늘 기준 환율 간편 조회
+     */
+    default BigDecimal getTodayUsdToKrwRate() {
+        return getUsdToKrwRate(LocalDate.now());
+    }
+
+    /**
+     * 금액 변환: USD -> KRW
+     * @param usdAmount
+     * @param date
+     * @return
+     */
+    default BigDecimal convertUsdToKrw(BigDecimal usdAmount, LocalDate date) {
+        if (usdAmount == null) {
+            return null;
+        }
+        BigDecimal rate = getUsdToKrwRate(date);
+        return  usdAmount.multiply(rate);
+    }
+}

@@ -2,6 +2,7 @@
 
     import com.stockmatch.common.exception.BusinessException;
     import com.stockmatch.common.exception.ErrorCode;
+    import com.stockmatch.exchangeRate.service.FxRateService;
     import com.stockmatch.portfolio.domain.Holding;
     import com.stockmatch.portfolio.dto.HoldingValuationResponse;
     import com.stockmatch.portfolio.dto.PortfolioValuationResponse;
@@ -14,6 +15,7 @@
 
     import java.math.BigDecimal;
     import java.math.RoundingMode;
+    import java.time.LocalDate;
     import java.util.ArrayList;
     import java.util.List;
 
@@ -28,10 +30,12 @@
 
         private final HoldingRepository holdingRepository;
         private final StockPriceService stockPriceService;
+        private final FxRateService fxRateService;
 
         /**
          * 포트폴리오의 보유 종목을 조회하여 실시간 시세 기반으로 평가 지표 계산
          */
+        @Transactional(readOnly = false)
         public PortfolioValuationResponse calculate(long portfolioId) {
             // 보유 종목 조회
             var holdings = holdingRepository.findAllWithSecurityByPortfolioId(portfolioId);
@@ -39,8 +43,12 @@
                 throw new BusinessException(ErrorCode.HOLDING_NOT_FOUND);
             }
 
+            LocalDate today = LocalDate.now();
+            BigDecimal usdToKrw = null;
+
             BigDecimal totalInvested = BigDecimal.ZERO;     // 총 매입금액
             BigDecimal totalValue = BigDecimal.ZERO;        // 총 평가금액
+
             List<HoldingValuationResponse> details = new ArrayList<>();
 
             for (Holding h : holdings) {
@@ -56,14 +64,24 @@
                 // 현재가 조회
                 BigDecimal current = getCurrentPrice(s, ticker).setScale(SCALE_PRICE, RoundingMode.HALF_UP);
 
-                // 매입금액 = 평단가 * 수량
-                var invested = avg.multiply(qty).setScale(SCALE_MONEY, RoundingMode.HALF_UP);
+                // 환율 결정
+                BigDecimal fx = BigDecimal.ONE;
 
-                // 평가금액 = 현재가 * 수량
-                var value = current.multiply(qty).setScale(SCALE_MONEY, RoundingMode.HALF_UP);
+                if (!s.isKorean()) {
+                    if (usdToKrw == null) {
+                        usdToKrw = fxRateService.getLatestUsdToKrwRate(today);
+                    }
+                    fx = usdToKrw;
+                }
 
-                // 평가손익 = 평가금액 - 매입금액
-                var pnl = value.subtract(invested).setScale(SCALE_MONEY, RoundingMode.HALF_UP);
+                // 평단가/현재가를 KRW 기준으로 변환
+                BigDecimal avgKrw = avg.multiply(fx).setScale(SCALE_PRICE, RoundingMode.HALF_UP);
+                BigDecimal CurrentKrw = current.multiply(fx).setScale(SCALE_PRICE, RoundingMode.HALF_UP);
+
+                // 매입금액/평가금액/손익 (KRW 기준)
+                BigDecimal invested = avgKrw.multiply(qty).setScale(SCALE_MONEY, RoundingMode.HALF_UP);
+                BigDecimal value = CurrentKrw.multiply(qty).setScale(SCALE_MONEY, RoundingMode.HALF_UP);
+                BigDecimal pnl = value.subtract(invested).setScale(SCALE_MONEY, RoundingMode.HALF_UP);
 
                 // 수익률 = (평가금액 / 매입금액) - 1
                 BigDecimal pnlRate = invested.compareTo(BigDecimal.ZERO) == 0

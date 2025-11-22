@@ -15,4 +15,10 @@ public interface ExchangeRepository extends JpaRepository<ExchangeRate, Long> {
             FromCurrency from,
             ToCurrency to
     );
+
+    Optional<ExchangeRate> findTopByDateLessThanEqualAndFromCurrencyAndToCurrencyOrderByDateDesc(
+            LocalDate date,
+            FromCurrency from,
+            ToCurrency to
+    );
 }
