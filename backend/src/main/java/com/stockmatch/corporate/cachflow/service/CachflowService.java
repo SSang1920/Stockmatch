@@ -1,8 +1,8 @@
-package com.stockmatch.corporate.overview.service;
+package com.stockmatch.corporate.cachflow.service;
 
+import com.stockmatch.corporate.cachflow.dto.CashflowDto;
 import com.stockmatch.corporate.common.cache.GenericCacheService;
 import com.stockmatch.corporate.common.infra.GenericAlphaVantageClient;
-import com.stockmatch.corporate.overview.dto.CompanyOverviewDto;
 import com.stockmatch.user.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,21 +13,21 @@ import java.time.Duration;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class OverviewService {
+public class CachflowService {
 
     private final GenericCacheService cacheService;
     private final GenericAlphaVantageClient apiClient;
     private final MemberService memberService;
 
-    private static final String function = "overview";
-    private static final Duration CACHE_TTL = Duration.ofDays(7);
+    private static final String function = "cash_flow";
+    private static final Duration CACHE_TTL = Duration.ofDays(1);
 
-    public CompanyOverviewDto getCompanyOverview(Long userId, String symbol) {
+    public CashflowDto getCachflow(Long userId, String symbol){
 
         return cacheService.getOrLoad(
                 function,
                 symbol,
-                CompanyOverviewDto.class,
+                CashflowDto.class,
                 CACHE_TTL,
                 () -> {
                     String apiKey = memberService.getDecryptedApiKey(userId);
@@ -36,9 +36,9 @@ public class OverviewService {
                             function,
                             symbol,
                             apiKey,
-                            CompanyOverviewDto.class);
+                            CashflowDto.class
+                    );
                 }
         );
-
     }
 }

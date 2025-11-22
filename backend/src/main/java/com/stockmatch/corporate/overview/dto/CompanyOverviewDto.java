@@ -1,16 +1,24 @@
 package com.stockmatch.corporate.overview.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.stockmatch.corporate.common.dto.CacheableData;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CompanyOverviewDto {
+public class CompanyOverviewDto implements CacheableData {
+
+    @Override
+    @JsonIgnore
+    public boolean isValidForCaching() {
+        return symbol != null && !symbol.isEmpty() && name != null && !name.isEmpty();
+    }
 
     @JsonProperty("Symbol")
     private String symbol;
