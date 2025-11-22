@@ -10,5 +10,6 @@ public record PortfolioValuationResponse(
         BigDecimal totalValue,          // 총평가금액
         BigDecimal totalPnlAmount,      // 총손익
         BigDecimal totalPnlRate,        // 총수익률
+        BigDecimal usdToKrwRate,        // USD/KRW 환율
         List<HoldingValuationResponse> holdings
 ) { }

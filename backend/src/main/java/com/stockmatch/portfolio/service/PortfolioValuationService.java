@@ -119,6 +119,7 @@
                     totalValue,
                     totalPnl,
                     totalRate,
+                    usdToKrw,
                     details
             );
         }
