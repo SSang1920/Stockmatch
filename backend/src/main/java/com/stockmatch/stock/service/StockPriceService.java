@@ -3,8 +3,6 @@ package com.stockmatch.stock.service;
 import com.stockmatch.stock.cache.PriceCacheService;
 import com.stockmatch.stock.client.PriceClientRouter;
 import com.stockmatch.stock.dto.StockPriceResponse;
-import com.stockmatch.stock.client.finnhub.FinnhubClient;
-import com.stockmatch.stock.client.kis.KisStockClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

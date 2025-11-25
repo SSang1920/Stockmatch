@@ -82,7 +82,13 @@ kis:
   base-url: https://openapi.koreainvestment.com:9443
   app-key: ${KIS_APP_KEY:dev-kis-key}
   app-secret: ${KIS_APP_SECRET:dev-kis-secret}
-  tr-id: FHKST01010100  # 국내주식 현재가 시세 조회 트랜잭션 ID
+  tr-id:
+      kr:
+        real-time: FHKST01010100      # 국내주식 현재가 시세 조회 트랜잭션 ID
+        daily-price: FHKST03010100    # 국내주식 기간별 시세 조회 트랜잭션 ID
+      us:
+        real-time: HHDFS76200200      # 해외주식 현재가 시세 조회 트랜잭션 ID
+
 
 price:
   cache:
@@ -102,6 +108,13 @@ import:
     load-kosdaq: true
     kospi-location: classpath:import/kospi_code.csv
     kosdaq-location: classpath:import/kosdaq_code.csv
+    encoding: UTF-8
+  us:
+    enabled: true
+    load-nasdaq: true
+    load-nyse: true
+    nasdaq-location: classpath:import/nasdaq_code.csv
+    nyse-location: classpath:import/nyse_code.csv
     encoding: UTF-8
 
 bok:

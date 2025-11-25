@@ -17,22 +17,20 @@ public class KrxMasterService {
     private final SecurityRepository securityRepository;
 
     @Transactional
-    public int upsertKrxKospi(String ticker, String isin, String name) {
+    public int upsertKrxKospi(String ticker, String name) {
         // 정규화
         final String normTicker = normalizeTicker(ticker);
-        final String normIsin = safe(isin);
         final String normName = safe(name);
 
-        var opt = securityRepository.findByTickerAndMarket(normTicker, Market.KOR);
+        var opt = securityRepository.findByTickerAndMarket(normTicker, Market.KR);
         Security security = opt.orElseGet(() -> Security.builder()
-                .market(Market.KOR)
+                .market(Market.KR)
                 .exchange(Exchange.KOSPI)
                 .currency(Currency.KRW)
                 .type(SecurityType.STOCK)
                 .ticker(normTicker)
                 .build());
 
-        security.updateIsin(normIsin);
         security.updateName(normName);
 
         securityRepository.save(security);
@@ -40,22 +38,20 @@ public class KrxMasterService {
     }
 
     @Transactional
-    public int upsertKrxKosdaq(String ticker, String isin, String name) {
+    public int upsertKrxKosdaq(String ticker, String name) {
         // 정규화
         final String normTicker = normalizeTicker(ticker);
-        final String normIsin = safe(isin);
         final String normName = safe(name);
 
-        var opt = securityRepository.findByTickerAndMarket(normTicker, Market.KOR);
+        var opt = securityRepository.findByTickerAndMarket(normTicker, Market.KR);
         Security security = opt.orElseGet(() -> Security.builder()
-                .market(Market.KOR)
+                .market(Market.KR)
                 .exchange(Exchange.KOSDAQ)
                 .currency(Currency.KRW)
                 .type(SecurityType.STOCK)
                 .ticker(normTicker)
                 .build());
 
-        security.updateIsin(normIsin);
         security.updateName(normName);
 
         securityRepository.save(security);

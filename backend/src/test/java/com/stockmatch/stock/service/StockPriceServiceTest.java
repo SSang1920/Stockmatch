@@ -4,7 +4,7 @@ import com.stockmatch.stock.cache.PriceCacheService;
 import com.stockmatch.stock.dto.Region;
 import com.stockmatch.stock.dto.StockPriceResponse;
 import com.stockmatch.stock.client.finnhub.FinnhubClient;
-import com.stockmatch.stock.client.kis.KisStockClient;
+import com.stockmatch.stock.client.kis.KisKorStockClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +21,8 @@ import static org.mockito.Mockito.*;
 public class StockPriceServiceTest {
 
     @Mock FinnhubClient finnhubClient;
-    @Mock KisStockClient kisStockClient;
+    @Mock
+    KisKorStockClient kisKorStockClient;
     @Mock PriceCacheService priceCache;
 
     @InjectMocks StockPriceService stockPriceService;
@@ -46,7 +47,7 @@ public class StockPriceServiceTest {
 
     @BeforeEach
     void setUp() {
-        Mockito.reset(finnhubClient, kisStockClient, priceCache);
+        Mockito.reset(finnhubClient, kisKorStockClient, priceCache);
     }
 
     @Test
@@ -70,7 +71,7 @@ public class StockPriceServiceTest {
         var r = stockPriceService.getKrStockPrice("005930");
         assertThat(r.getCurrentPrice()).isEqualTo(70000.0);
         verify(priceCache, times(1)).getOrLoad(eq("KR"), eq("005930"), any());
-        verifyNoInteractions(kisStockClient);
+        verifyNoInteractions(kisKorStockClient);
     }
 
     @Test

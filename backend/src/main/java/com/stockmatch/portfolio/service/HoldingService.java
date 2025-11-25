@@ -89,7 +89,7 @@ public class HoldingService {
         Security security = Security.builder()
                 .ticker(info.ticker() != null ? info.ticker() : ticker)
                 .name(info.name())
-                .market(Market.USA)
+                .market(Market.US)
                 .currency(Currency.USD)
                 .build();
 

@@ -49,12 +49,6 @@ public class Security extends BaseEntity {
     @Column(name = "type")
     private SecurityType type;
 
-    @Column(length = 20)
-    private String figi;
-
-    @Column(length = 20)
-    private String isin;
-
     @Column
     @Builder.Default
     private boolean delisted = false;       // 상장폐지 여부
@@ -66,12 +60,12 @@ public class Security extends BaseEntity {
     @OneToOne(mappedBy = "security", fetch = FetchType.LAZY)
     private WatchItem watchItem;
 
-    public void updateIsin(String isin) {
-        this.isin = isin;
-    }
-
     public void updateName(String name) {
         this.name = name;
+    }
+
+    public void updateType(SecurityType type) {
+        this.type = type;
     }
 
     // ===== 헬퍼 메서드 ====
@@ -80,7 +74,7 @@ public class Security extends BaseEntity {
      * 국내 종목 여부 판별
      */
     public boolean isKorean() {
-        return market == Market.KOR
+        return market == Market.KR
                 || exchange == Exchange.KOSPI
                 || exchange == Exchange.KOSDAQ;
     }

@@ -55,7 +55,7 @@ public class SecurityNameCacheService {
 
         // DB 조회
         String dbName = securityRepository
-                .findByTickerAndMarket(ticker, Market.KOR)
+                .findByTickerAndMarket(ticker, Market.KR)
                 .map(s -> s.getName() == null ? null :s.getName().trim())
                 .orElse(null);
 

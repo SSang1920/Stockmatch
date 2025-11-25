@@ -14,8 +14,8 @@ public class PriceClientRouter {
     private final ExternalPriceClient krClient;
 
     public PriceClientRouter(
-        @Qualifier("finnhubClient") ExternalPriceClient usClient,
-        @Qualifier("kisStockClient") ExternalPriceClient krClient
+        @Qualifier("kisUsStockClient") ExternalPriceClient usClient,
+        @Qualifier("kisKorStockClient") ExternalPriceClient krClient
     ) {
         this.usClient = usClient;
         this.krClient = krClient;

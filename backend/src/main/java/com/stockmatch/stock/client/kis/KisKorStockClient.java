@@ -16,9 +16,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.Duration;
 
-@Component("kisStockClient")
+@Component
 @RequiredArgsConstructor
-public class KisStockClient implements ExternalPriceClient {
+public class KisKorStockClient implements ExternalPriceClient {
 
     private final RestTemplate restTemplate;
     private final KisTokenProvider kisTokenProvider;
@@ -35,7 +35,7 @@ public class KisStockClient implements ExternalPriceClient {
     @Value("${kis.app-secret}")
     private String appSecret;
 
-    @Value("${kis.tr-id}")
+    @Value("${kis.tr-id.kr.real-time}")
     private String trId;
 
     @Override

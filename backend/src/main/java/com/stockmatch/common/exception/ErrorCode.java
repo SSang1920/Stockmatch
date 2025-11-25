@@ -13,6 +13,7 @@ public enum ErrorCode {
     INVALID_INPUT("C001", "요청 값이 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
     METHOD_NOT_ALLOWED("C002", "허용되지 않은 메서드입니다.", HttpStatus.METHOD_NOT_ALLOWED),
     MEDIA_TYPE_NOT_SUPPORTED("C003", "지원하지 않는 콘텐츠 타입입니다.", HttpStatus.UNSUPPORTED_MEDIA_TYPE),
+    INVALID_DATE_RANGE("C004", "잘못된 날짜 범위입니다.", HttpStatus.BAD_REQUEST),
 
     // 인증/인가
     UNAUTHORIZED("A001", "인증이 필요합니다.", HttpStatus.UNAUTHORIZED),

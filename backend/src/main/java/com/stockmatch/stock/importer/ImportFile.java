@@ -7,13 +7,13 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "krx_import_file",
-        uniqueConstraints = @UniqueConstraint(name = "uk_krx_import_file_location", columnNames = "location"))
+@Table(name = "import_file",
+        uniqueConstraints = @UniqueConstraint(name = "uk_import_file_location", columnNames = "location"))
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Getter
 @Builder
-public class KrxImportFile {
+public class ImportFile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

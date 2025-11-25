@@ -18,35 +18,35 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class KrxMasterLoader {
+public class UsMasterLoader {
 
-    private final KrxMasterService krxMasterService;
+    private final UsMasterService usMasterService;
     private final ResourceLoader resourceLoader;
 
     public record LoadResult(int processed, int success, int skipped, int error) { }
 
     /**
-     * KOSPI CSV 적재
+     * NASDAQ CSV 적재
      */
-    public LoadResult loadKospi(String location, Charset charset) throws IOException {
+    public LoadResult loadNasdaq(String location, Charset charset) throws IOException {
         Resource resource = resourceLoader.getResource(location);
         if (!resource.exists()) {
             throw new IllegalArgumentException("파일 없음: " + location);
         }
 
-        return loadCsvGeneric(resource, charset, Exchange.KOSPI);
+        return loadCsvGeneric(resource, charset, Exchange.NASDAQ);
     }
 
     /**
-     * KOSDAQ CSV 적재
+     * NYSE CSV 적재
      */
-    public LoadResult loadKosdaq(String location, Charset charset) throws IOException {
+    public LoadResult loadNyse(String location, Charset charset) throws IOException {
         Resource resource = resourceLoader.getResource(location);
         if (!resource.exists()) {
             throw new IllegalArgumentException("파일 없음: " + location);
         }
 
-        return loadCsvGeneric(resource, charset, Exchange.KOSDAQ);
+        return loadCsvGeneric(resource, charset, Exchange.NYSE);
     }
 
     private LoadResult loadCsvGeneric(Resource resource, Charset charset, Exchange exchange) throws IOException {
@@ -63,20 +63,24 @@ public class KrxMasterLoader {
 
             try (CSVParser parser = new CSVParser(reader, format)) {
                 // 헤더 인덱스
-                var header = parser.getHeaderMap().keySet().stream().map(String::trim).toList();
-                var idxTicker = indexOf(header, "단축코드");
-                int idxName = firstPresent(
-                        indexOf(header, "한글명"),
-                        indexOf(header, "한글종목명")
-                );
+                List<String> header = parser.getHeaderMap().keySet().stream()
+                        .map(String::trim)
+                        .toList();
+
+                int idxTicker = indexOf(header, "Symbol");
+                int idxName = indexOf(header, "Korea name");
+                int idxSecType = indexOf(header, "Security type(1:Index,2:Stock,3:ETP(ETF),4:Warrant)");
+
                 if (idxTicker < 0 || idxName < 0) {
-                    throw new IllegalArgumentException("필수 헤더 누락: [단축코드], [한글명|한글종목명]");
+                    throw new IllegalArgumentException("필수 헤더 누락: [Symbol], [Name]");
                 }
 
                 for (CSVRecord record : parser) {
                     processed++;
+
                     String ticker = record.get(idxTicker).trim();
                     String name = record.get(idxName).trim();
+                    String secType = (idxSecType >= 0) ? record.get(idxSecType).trim() : null;
 
                     if (ticker.isEmpty()) {
                         skipped++;
@@ -84,8 +88,12 @@ public class KrxMasterLoader {
                     }
 
                     try {
-                        if (exchange == Exchange.KOSPI) krxMasterService.upsertKrxKospi(ticker, name);
-                        else if (exchange == Exchange.KOSDAQ) krxMasterService.upsertKrxKosdaq(ticker, name);
+                        if (exchange == Exchange.NASDAQ) {
+                            usMasterService.upsertUsNasdaq(ticker, name, secType);
+                        } else if (exchange == Exchange.NYSE) {
+                            usMasterService.upsertUsNyse(ticker, name, secType);
+                        }
+
                         success++;
                     } catch (Exception e) {
                         error++;
@@ -98,7 +106,7 @@ public class KrxMasterLoader {
             }
         }
 
-        log.info("KRX {} 적재 완료: processed={}, success={}, skipped={}, error={}, file={}",
+        log.info("US {} 적재 완료: processed={}, success={}, skipped={}, error={}, file={}",
                 exchange, processed, success, skipped, error, resource.getDescription());
 
         return new LoadResult(processed, success, skipped, error);
@@ -108,11 +116,6 @@ public class KrxMasterLoader {
         for (int i = 0; i < header.size(); i++) {
             if (key.equals(header.get(i))) return i;
         }
-        return -1;
-    }
-
-    private static int firstPresent(int... candidates) {
-        for (int c : candidates) if (c >= 0) return c;
         return -1;
     }
 }

@@ -19,51 +19,54 @@ import static com.stockmatch.stock.importer.ImportChecksumUtils.sha256Hex;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(prefix = "import.krx", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "import.us", name = "enabled", havingValue = "true")
 @RequiredArgsConstructor
-public class KrxMasterImportRunner implements CommandLineRunner {
+public class UsMasterImportRunner implements CommandLineRunner {
 
-    private final KrxMasterLoader loader;
+    private final UsMasterLoader loader;
     private final SecurityRepository securityRepository;
     private final ImportFileRepository fileRepository;
     private final ResourceLoader resourceLoader;
 
-    @Value("${import.krx.kospi-location:classpath:import/kospi_code.csv}")
-    private String kospiLocation;
+    @Value("${import.us.nasdaq-location:classpath:import/nasdaq_listed.csv}")
+    private String nasdaqLocation;
 
-    @Value("${import.krx.kosdaq-location:classpath:import/kosdaq_code.csv}")
-    private String kosdaqLocation;
+    @Value("${import.us.nyse-location:classpath:import/nyse_listed.csv}")
+    private String nyseLocation;
 
-    @Value("${import.krx.load-kospi:true}")
-    private boolean loadKospi;
+    @Value("${import.us.load-nasdaq:true}")
+    private boolean loadNasdaq;
 
-    @Value("${import.krx.load-kosdaq:true}")
-    private boolean loadKosdaq;
+    @Value("${import.us.load-nyse:true}")
+    private boolean loadNyse;
 
-    @Value("${import.krx.encoding:UTF-8}")
+    @Value("${import.us.encoding:UTF-8}")
     private String encoding;
 
     @Override
     public void run(String... args) throws Exception {
-        var charset = toCharset(encoding);
+        Charset charset = toCharset(encoding);
 
-        if (loadKospi) {
-            importIfChanged(kospiLocation, Exchange.KOSPI, charset);
+        if (loadNasdaq) {
+            importIfChanged(nasdaqLocation, Exchange.NASDAQ, charset);
         } else {
-            log.info("[KOSPI] disabled by config.");
+            log.info("[NASDAQ] disabled by config.");
         }
 
-        if (loadKosdaq) {
-            importIfChanged(kosdaqLocation, Exchange.KOSDAQ, charset);
+        if (loadNyse) {
+            importIfChanged(nyseLocation, Exchange.NYSE, charset);
         } else {
-            log.info("[KOSDAQ] disabled by config.");
+            log.info("[NYSE] disabled by config.");
         }
 
-        // ===== 간단 검증 로그 =====
-        long krCount = securityRepository.countByMarket(Market.KR);
-        log.info("[VERIFY] security KR rows = {}", krCount);
+        // 간단 검증 로그
+        long usCount = securityRepository.countByMarket(Market.US);
+        log.info("[VERIFY] security US rows = {}", usCount);
     }
 
+    /**
+     * 파일 checksum이 변경되었을 때만 import 수행
+     */
     private void importIfChanged(String location, Exchange exchange, Charset charset) throws Exception {
         Resource resource = resourceLoader.getResource(location);
         if (!resource.exists()) {
@@ -71,20 +74,24 @@ public class KrxMasterImportRunner implements CommandLineRunner {
             return;
         }
 
+        // 새 파일 기준 checksum 계산
         String newsum = sha256Hex(resource);
+
+        // 기존 기록 조회
         var recOpt = fileRepository.findByLocationAndExchange(location, exchange);
 
+        // checksum 동일하면 스킵
         if (recOpt.isPresent() && newsum.equals(recOpt.get().getChecksum())) {
             log.info("[{}] skip: checksum unchanged. ({})", exchange, location);
             return;
         }
 
-        // 실제 적재
-        KrxMasterLoader.LoadResult r;
-        if (exchange == Exchange.KOSPI) r = loader.loadKospi(location, charset);
-        else if (exchange == Exchange.KOSDAQ) r = loader.loadKosdaq(location, charset);
+        // 실제 CSV 적재
+        UsMasterLoader.LoadResult r;
+        if (exchange == Exchange.NASDAQ) r = loader.loadNasdaq(location, charset);
+        else if (exchange == Exchange.NYSE) r = loader.loadNyse(location, charset);
 
-        // upsert 기록
+        // upsert 결과 기록
         var record = recOpt.orElseGet(() -> ImportFile.builder()
                 .location(location)
                 .exchange(exchange)

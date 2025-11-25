@@ -1,7 +1,6 @@
 package com.stockmatch.stock.controller;
 
 import com.stockmatch.common.api.ApiResponse;
-import com.stockmatch.stock.dto.FinnhubQuoteResponse;
 import com.stockmatch.stock.dto.StockPriceResponse;
 import com.stockmatch.stock.service.StockPriceService;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/stock")
+@RequestMapping("/api/stocks")
 @RequiredArgsConstructor
 public class StockController {
 

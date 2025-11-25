@@ -34,8 +34,6 @@ public class SecurityService {
                 request.getExchange(),
                 request.getCurrency(),
                 request.getType(),
-                null,
-                null,
                 false,
                 null,
                 null
