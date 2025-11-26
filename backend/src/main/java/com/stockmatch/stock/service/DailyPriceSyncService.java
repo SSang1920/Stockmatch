@@ -3,7 +3,6 @@ package com.stockmatch.stock.service;
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.stock.client.ExternalDailyPriceClient;
-import com.stockmatch.stock.client.finnhub.FinnhubDailyPriceClient;
 import com.stockmatch.stock.client.kis.KisDailyPriceClient;
 import com.stockmatch.stock.domain.DailyPrice;
 import com.stockmatch.stock.domain.Security;
@@ -22,7 +21,6 @@ import java.util.List;
 public class DailyPriceSyncService {
 
     private final KisDailyPriceClient kisDailyPriceClient;
-    private final FinnhubDailyPriceClient finnhubDailyPriceClient;
     private final SecurityRepository securityRepository;
     private final DailyPriceRepository dailyPriceRepository;
 
@@ -36,9 +34,9 @@ public class DailyPriceSyncService {
         Security security = securityRepository.findByTicker(ticker)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SECURITY_NOT_FOUND));
 
-        // 종목/시장에 따라 외부 API에서 데이터 가져오기
+        // KIS API에서 기간별 시세 가져오기
         List<ExternalDailyPriceClient.DailyPriceItem> items =
-                fetchForSecurity(security, from, to);
+                kisDailyPriceClient.getDailyPrices(security.getTicker(), from, to);
 
         // daily_price upsert
         for (var item : items) {
@@ -74,18 +72,6 @@ public class DailyPriceSyncService {
             }
 
             dailyPriceRepository.save(entity);
-        }
-    }
-
-    /**
-     * 종목 국내/해외 구분, 클라이언트 분기
-     */
-    private List<ExternalDailyPriceClient.DailyPriceItem> fetchForSecurity(Security security, LocalDate from, LocalDate to) {
-
-        if (security.isKorean()) {
-            return kisDailyPriceClient.getDailyPrices(security.getTicker(), from, to);
-        } else {
-            return finnhubDailyPriceClient.getDailyPrices(security.getTicker(), from, to);
         }
     }
 }

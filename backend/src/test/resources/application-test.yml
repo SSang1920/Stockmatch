@@ -81,6 +81,7 @@ kis:
       daily-price: test-tr-id
     us:
       real-time: test-tr-id
+      daily-price: test-tr-id
 
 bok:
   api:
