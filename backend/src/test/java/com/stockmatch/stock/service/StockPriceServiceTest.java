@@ -1,14 +1,16 @@
 package com.stockmatch.stock.service;
 
 import com.stockmatch.stock.cache.PriceCacheService;
+import com.stockmatch.stock.client.kis.KisKorStockClient;
+import com.stockmatch.stock.client.kis.KisUsStockClient;
 import com.stockmatch.stock.dto.Region;
 import com.stockmatch.stock.dto.StockPriceResponse;
-import com.stockmatch.stock.client.finnhub.FinnhubClient;
-import com.stockmatch.stock.client.kis.KisKorStockClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -20,9 +22,12 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class StockPriceServiceTest {
 
-    @Mock FinnhubClient finnhubClient;
     @Mock
     KisKorStockClient kisKorStockClient;
+
+    @Mock
+    KisUsStockClient kisUsStockClient;
+
     @Mock PriceCacheService priceCache;
 
     @InjectMocks StockPriceService stockPriceService;
@@ -47,7 +52,7 @@ public class StockPriceServiceTest {
 
     @BeforeEach
     void setUp() {
-        Mockito.reset(finnhubClient, kisKorStockClient, priceCache);
+        Mockito.reset(kisUsStockClient, kisKorStockClient, priceCache);
     }
 
     @Test
@@ -60,7 +65,7 @@ public class StockPriceServiceTest {
         var r = stockPriceService.getUsStockPrice("AAPL");
         assertThat(r.getCurrentPrice()).isEqualTo(100.0);
         verify(priceCache, times(1)).getOrLoad(eq("US"), eq("AAPL"), any());
-        verifyNoInteractions(finnhubClient);
+        verifyNoInteractions(kisUsStockClient);
     }
 
     @Test
@@ -89,6 +94,6 @@ public class StockPriceServiceTest {
         assertThat(result.get("MSFT").getCurrentPrice()).isEqualTo(200.0);
 
         verify(priceCache, times(1)).getOrLoadBulk(eq("US"), eq(symbols), any());
-        verifyNoInteractions(finnhubClient);
+        verifyNoInteractions(kisUsStockClient);
     }
 }

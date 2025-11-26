@@ -75,7 +75,12 @@ kis:
   base-url: https://mock.example
   app-key: test-app-key
   app-secret: test-app-secret
-  tr-id: TEST_TR_ID
+  tr-id:
+    kr:
+      real-time: test-tr-id
+      daily-price: test-tr-id
+    us:
+      real-time: test-tr-id
 
 bok:
   api:
@@ -98,3 +103,17 @@ import:
     kospi-location: classpath:import/kospi_code.csv
     kosdaq-location: classpath:import/kosdaq_code.csv
     encoding: UTF-8
+  us:
+    enabled: true
+    load-nasdaq: true
+    load-nyse: true
+    nasdaq-location: classpath:import/nasdaq_code.csv
+    nyse-location: classpath:import/nyse_code.csv
+    encoding: UTF-8
+
+alphavantage:
+  base-url: "https://www.mock.co"
+
+encryption:
+  secret-key: "1234"
+  salt: "12345678"
