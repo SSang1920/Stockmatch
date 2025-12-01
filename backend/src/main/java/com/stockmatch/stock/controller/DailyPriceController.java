@@ -13,12 +13,15 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/stocks")
+@RequestMapping("/api/stocks/daily-price")
 public class DailyPriceController {
 
     private final DailyPriceService dailyPriceService;
 
-    @GetMapping("/{ticker}/daily-prices")
+    /**
+     * 일반 조회 + 자동 동기화
+     */
+    @GetMapping("/{ticker}")
     public ResponseEntity<ApiResponse<List<DailyPriceResponse>>> getDailyPrices(
             @PathVariable String ticker,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -27,5 +30,18 @@ public class DailyPriceController {
         List<DailyPriceResponse> result = dailyPriceService.getDailyPrices(ticker, from, to);
         return ResponseEntity.ok(ApiResponse.ok(result));
 
+    }
+
+    /**
+     * 관리자 강제 동기화
+     */
+    @PostMapping("/sync/{ticker}")
+    public ResponseEntity<ApiResponse<Void>> syncDailyPrice(
+            @PathVariable String ticker,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        dailyPriceService.syncDailyPrices(ticker, from, to);
+        return ResponseEntity.ok(ApiResponse.ok(null));
     }
 }

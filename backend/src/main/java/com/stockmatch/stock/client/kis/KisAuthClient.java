@@ -1,6 +1,6 @@
 package com.stockmatch.stock.client.kis;
 
-import com.stockmatch.stock.dto.KisAuthResponse;
+import com.stockmatch.stock.client.kis.dto.KisAuthResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

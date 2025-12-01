@@ -1,4 +1,4 @@
-package com.stockmatch.stock.dto;
+package com.stockmatch.stock.client.kis.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
