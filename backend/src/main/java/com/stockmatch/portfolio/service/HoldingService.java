@@ -9,12 +9,9 @@ import com.stockmatch.portfolio.dto.HoldingRequest;
 import com.stockmatch.portfolio.dto.HoldingResponse;
 import com.stockmatch.portfolio.repository.HoldingRepository;
 import com.stockmatch.portfolio.repository.PortfolioRepository;
-import com.stockmatch.stock.client.finnhub.FinnhubClient;
-import com.stockmatch.stock.domain.Market;
 import com.stockmatch.stock.domain.Security;
 import com.stockmatch.stock.repository.SecurityRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,10 +25,9 @@ public class HoldingService {
     private final PortfolioRepository portfolioRepository;
     private final SecurityRepository securityRepository;
     private final HoldingRepository holdingRepository;
-    private final FinnhubClient finnhubClient;
 
     /**
-     * 로그인한 사용자의 포트폴리오에 보유 종목 1개 추가
+     * 로그인한 사용자의 포트폴리오에 보유 종목 1개 추가/수정
      */
     @Transactional
     public HoldingResponse addOrUpdateHolding(Long userId, HoldingRequest request) {
@@ -42,7 +38,7 @@ public class HoldingService {
 
         // 종목 조회
         Security security = securityRepository.findByTicker(request.ticker())
-                .orElseGet(() -> createSecurityOnDemand(request.ticker()));
+                .orElseThrow(() -> new BusinessException(ErrorCode.SECURITY_NOT_FOUND));
 
         // 기존 보유종목 여부 확인
         Holding holding = holdingRepository.findByPortfolioIdAndSecurityId(portfolio.getId(), security.getId()).orElse(null);
@@ -75,33 +71,6 @@ public class HoldingService {
     }
 
     /**
-     * 해외 종목을 Finnhub에서 조회해서 Security 엔티티로 생성/저장
-     */
-    private Security createSecurityOnDemand(String ticker) {
-
-        // Finnhub에서 종목 조회
-        var info = finnhubClient.getUsSymbolProfile(ticker);
-
-        if (info == null || info.name() == null) {
-            throw new BusinessException(ErrorCode.SECURITY_NOT_FOUND);
-        }
-
-        Security security = Security.builder()
-                .ticker(info.ticker() != null ? info.ticker() : ticker)
-                .name(info.name())
-                .market(Market.US)
-                .currency(Currency.USD)
-                .build();
-
-        try {
-            return securityRepository.save(security);
-        } catch (DataIntegrityViolationException e) {   // 동시성 처리
-            return securityRepository.findByTicker(ticker)
-                    .orElseThrow(() -> e);
-        }
-    }
-
-    /**
      * 내 보유 종목 조회
      */
     public List<HoldingResponse> getMyHoldings(Long userId) {
@@ -125,6 +94,9 @@ public class HoldingService {
                 ).toList();
     }
 
+    /**
+     * 내 보유 종목 삭제
+     */
     @Transactional
     public void deleteMyHolding(Long userId, Long holdingId) {
 

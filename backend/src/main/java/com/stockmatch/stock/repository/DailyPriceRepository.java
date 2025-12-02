@@ -21,5 +21,8 @@ public interface DailyPriceRepository extends JpaRepository<DailyPrice, Long> {
     @Query("select max(dp.date) from DailyPrice dp where dp.security.id = :securityId")
     LocalDate findMaxDateBySecurityId(@Param("securityId") Long securityId);
 
+    @Query("select min(dp.date) from DailyPrice dp where dp.security.id = :securityId")
+    LocalDate findMinDateBySecurityId(@Param("securityId") Long securityId);
+
     List<DailyPrice> findBySecurityIdAndDateBetweenOrderByDateAsc(Long id, LocalDate from, LocalDate to);
 }

@@ -34,19 +34,19 @@ public class DailyPriceServiceImpl implements DailyPriceService {
     public List<DailyPriceResponse> getDailyPrices(String ticker, LocalDate from, LocalDate to) {
 
         // 날짜 검증
-        if (from == null || to == null || from.isAfter(to)) {
-            throw new BusinessException(ErrorCode.INVALID_DATE_RANGE);
-        }
+        validateDateRange(from, to);
 
         // 종목 존재 여부 확인
         Security security = securityRepository.findByTicker(ticker)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SECURITY_NOT_FOUND));
 
-        // 이 종목의 마지막 저장된 일자
+        // 이 종목의 마지막 저장된 일자/첫번째로 저장된 일자
         LocalDate lastDate = dailyPriceRepository.findMaxDateBySecurityId(security.getId());
+        LocalDate firstDate = dailyPriceRepository.findMinDateBySecurityId(security.getId());
 
-        // 데이터가 없거나, 마지막 날짜가 from 이전일 경우 -> 전체 구간 동기화
+        // 최신 구간 채우기
         if (lastDate == null || lastDate.isBefore(from)) {
+            // 데이터가 없거나, 마지막 날짜가 from 이전일 경우 -> 전체 구간 동기화
             syncDailyPricesInternal(security, from, to);
         }
 
@@ -54,6 +54,14 @@ public class DailyPriceServiceImpl implements DailyPriceService {
         else if (lastDate.isBefore(to)) {
             LocalDate syncFrom = lastDate.plusDays(1);
             syncDailyPricesInternal(security, syncFrom, to);
+        }
+
+        // 과거구간 부족하면 채우기
+        if (firstDate == null || firstDate.isAfter(from)) {
+            LocalDate missingTo = (firstDate != null) ? firstDate.minusDays(1) : to;
+            if (!missingTo.isBefore(from)) {
+                syncDailyPricesInternal(security, from, missingTo);
+            }
         }
 
         // 최종 엔티티 조회
@@ -73,6 +81,9 @@ public class DailyPriceServiceImpl implements DailyPriceService {
     @Override
     @Transactional
     public void syncDailyPrices(String ticker, LocalDate from, LocalDate to) {
+
+        // 날짜 검증
+        validateDateRange(from, to);
 
         // 종목 조회
         Security security = securityRepository.findByTicker(ticker)
@@ -124,6 +135,22 @@ public class DailyPriceServiceImpl implements DailyPriceService {
             }
 
             dailyPriceRepository.save(entity);
+        }
+    }
+
+    /**
+     * 날짜 범위 검증 (null, 순서, 최대 1년)
+     */
+    private void validateDateRange(LocalDate from, LocalDate to) {
+
+        // null, 순서 확인
+        if (from == null || to == null || from.isAfter(to)) {
+            throw new BusinessException(ErrorCode.INVALID_DATE_RANGE);
+        }
+
+        // from 기준 1년 초과하면 예외처리
+        if (from.plusYears(1).isBefore(to)) {
+            throw new BusinessException(ErrorCode.INVALID_DATE_RANGE);
         }
     }
 }
