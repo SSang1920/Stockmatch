@@ -8,6 +8,7 @@
     import com.stockmatch.portfolio.dto.PortfolioValuationResponse;
     import com.stockmatch.portfolio.repository.HoldingRepository;
     import com.stockmatch.stock.domain.Security;
+    import com.stockmatch.stock.service.DailyPriceService;
     import com.stockmatch.stock.service.StockPriceService;
     import lombok.RequiredArgsConstructor;
     import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@
         private final HoldingRepository holdingRepository;
         private final StockPriceService stockPriceService;
         private final FxRateService fxRateService;
+        private final DailyPriceService dailyPriceService;
 
         /**
          * 포트폴리오의 보유 종목을 조회하여 실시간 시세 기반으로 평가 지표 계산
