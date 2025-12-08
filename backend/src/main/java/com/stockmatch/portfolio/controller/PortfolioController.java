@@ -2,19 +2,18 @@ package com.stockmatch.portfolio.controller;
 
 import com.stockmatch.common.api.ApiResponse;
 import com.stockmatch.config.security.CustomUserDetails;
-import com.stockmatch.portfolio.dto.HoldingRequest;
-import com.stockmatch.portfolio.dto.HoldingResponse;
-import com.stockmatch.portfolio.dto.PortfolioResponse;
-import com.stockmatch.portfolio.dto.PortfolioValuationResponse;
+import com.stockmatch.portfolio.dto.*;
 import com.stockmatch.portfolio.service.HoldingService;
 import com.stockmatch.portfolio.service.PortfolioService;
 import com.stockmatch.portfolio.service.PortfolioValuationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -51,7 +50,7 @@ public class PortfolioController {
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
-    @DeleteMapping("me/holdings/{holdingId}")
+    @DeleteMapping("/me/holdings/{holdingId}")
     public ResponseEntity<ApiResponse<Void>> deleteMyHolding(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long holdingId
@@ -68,5 +67,16 @@ public class PortfolioController {
         var portfolio = portfolioService.ensureForUser(userDetails.getUser().getId());
         var valuation = portfolioValuationService.calculate(portfolio.getPortfolioId());
         return ResponseEntity.ok(ApiResponse.ok(valuation));
+    }
+
+    @GetMapping("/me/valuation/daily")
+    public ResponseEntity<ApiResponse<List<PortfolioDailySummaryResponse>>> getMyPortfolioDailyValuation(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam("from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam("to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        var portfolio = portfolioService.ensureForUser(userDetails.getUser().getId());
+        var history = portfolioValuationService.calculateDailyHistory(portfolio.getPortfolioId(), from, to);
+        return ResponseEntity.ok(ApiResponse.ok(history));
     }
 }

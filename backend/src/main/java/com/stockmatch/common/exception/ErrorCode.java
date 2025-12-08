@@ -48,6 +48,9 @@ public enum ErrorCode {
     SECURITY_ALREADY_EXISTS("S002", "이미 존재하는 종목입니다.", HttpStatus.CONFLICT),
     DUPLICATE_TICKER("S003", "중복된 종목 코드입니다.", HttpStatus.CONFLICT),
 
+    // 일일 시세
+    DAILY_PRICE_NOT_FOUND("D001", "일일 시세를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
     // 외부 API
     EXTERNAL_API_ERROR("E001", "외부 API 호출 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
     UNSUPPORTED_REGION("E002", "지원하지 않는 지역입니다.", HttpStatus.BAD_REQUEST),
