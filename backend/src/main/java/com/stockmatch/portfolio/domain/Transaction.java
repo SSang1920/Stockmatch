@@ -65,4 +65,8 @@ public class Transaction extends BaseEntity {
             newPortfolio.getTransactions().add(this);
         }
     }
+
+    public boolean isInitialBuy() {
+        return this.type == TradeType.INITIAL_BUY;
+    }
 }

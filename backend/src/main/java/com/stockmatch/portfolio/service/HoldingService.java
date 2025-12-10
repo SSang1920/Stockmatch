@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -25,6 +26,7 @@ public class HoldingService {
     private final PortfolioRepository portfolioRepository;
     private final SecurityRepository securityRepository;
     private final HoldingRepository holdingRepository;
+    private final TransactionService transactionService;
 
     /**
      * 로그인한 사용자의 포트폴리오에 보유 종목 1개 추가/수정
@@ -43,7 +45,9 @@ public class HoldingService {
         // 기존 보유종목 여부 확인
         Holding holding = holdingRepository.findByPortfolioIdAndSecurityId(portfolio.getId(), security.getId()).orElse(null);
 
-        if (holding == null) {
+        boolean isNewHolding = (holding == null);
+
+        if (isNewHolding) {
             holding = new Holding(
                     null,
                     portfolio,
@@ -58,6 +62,17 @@ public class HoldingService {
         }
 
         holdingRepository.save(holding);
+
+        // 신규 보유라면 INITIAL_BUY 거래 기록
+        if (isNewHolding) {
+            transactionService.recordInitialBuy(
+                    portfolio,
+                    security,
+                    request.quantity(),
+                    request.avgPrice(),
+                    LocalDateTime.now()
+            );
+        }
 
         // 응답 DTO 변환
         return HoldingResponse.builder()

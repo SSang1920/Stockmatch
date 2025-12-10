@@ -4,12 +4,17 @@
     import com.stockmatch.common.exception.ErrorCode;
     import com.stockmatch.exchangeRate.service.FxRateService;
     import com.stockmatch.portfolio.domain.Holding;
+    import com.stockmatch.portfolio.domain.TradeType;
+    import com.stockmatch.portfolio.domain.Transaction;
     import com.stockmatch.portfolio.dto.HoldingValuationResponse;
     import com.stockmatch.portfolio.dto.PortfolioDailySummaryResponse;
     import com.stockmatch.portfolio.dto.PortfolioValuationResponse;
     import com.stockmatch.portfolio.repository.HoldingRepository;
+    import com.stockmatch.portfolio.repository.PortfolioRepository;
+    import com.stockmatch.portfolio.repository.TransactionRepository;
     import com.stockmatch.stock.domain.Security;
     import com.stockmatch.stock.dto.DailyPriceResponse;
+    import com.stockmatch.stock.repository.SecurityRepository;
     import com.stockmatch.stock.service.DailyPriceService;
     import com.stockmatch.stock.service.StockPriceService;
     import lombok.RequiredArgsConstructor;
@@ -20,7 +25,10 @@
     import java.math.RoundingMode;
     import java.time.LocalDate;
     import java.util.ArrayList;
+    import java.util.HashMap;
     import java.util.List;
+    import java.util.Map;
+    import java.util.stream.Collectors;
 
     @Service
     @RequiredArgsConstructor
@@ -33,72 +41,176 @@
         private static final int MAX_LOOKBACK_DAYS_FOR_PRICE = 7;
 
         private final HoldingRepository holdingRepository;
+        private final TransactionRepository transactionRepository;
+        private final SecurityRepository securityRepository;
+        private final PortfolioRepository portfolioRepository;
         private final StockPriceService stockPriceService;
         private final FxRateService fxRateService;
         private final DailyPriceService dailyPriceService;
 
         /**
-         * 포트폴리오의 보유 종목을 기준으로 from ~ to 구간의 일자별 평가 지표 계산
+         * 거래내역을 리플레이하여 from ~ to 구간의 일자별 평가 요약을 계산
+         * 매수 이전/전량 매도 후 기간은 자동으로 수량 0 -> 평가금 0
+         * 휴장일/주말: 전 거래일 종가 사용
          */
-        @Transactional(readOnly = false)
+        @Transactional
         public List<PortfolioDailySummaryResponse> calculateDailyHistory(long portfolioId, LocalDate from, LocalDate to) {
             // 파라미터 검증
             if (from == null || to == null || from.isAfter(to)) {
                 throw new BusinessException(ErrorCode.INVALID_DATE_RANGE);
             }
 
-            // 포트폴리오 보유 종목 조회
-            List<Holding> holdings = holdingRepository.findAllWithSecurityByPortfolioId(portfolioId);
-            if (holdings.isEmpty()) {
-                throw new BusinessException(ErrorCode.HOLDING_NOT_FOUND);
+            // 포트폴리오 존재 여부 검증
+            boolean exists = portfolioRepository.existsById(portfolioId);
+            if (!exists) {
+                throw new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND);
             }
 
-            // 결과 리스트
+            // 포트폴리오 거래내역 모두 조회
+            List<Transaction> transactions = transactionRepository.findAllByPortfolioIdOrderByTradeAtAsc(portfolioId);
+
+            if (transactions.isEmpty()) {
+                throw new BusinessException(ErrorCode.TRANSACTION_NOT_FOUND);
+            }
+
+            // 실제 평가 시작일
+            LocalDate firstTradeDate = transactions.get(0).getTradeAt().toLocalDate();
+            LocalDate startDate = from.isBefore(firstTradeDate) ? firstTradeDate : from;
+
+            if (startDate.isAfter(to)) {
+                // 요청 구간 전체가 첫 거래일 이전인 경우 -> 결과 X
+                return List.of();
+            }
+
+            // 거래 리플레이 + 일자별 평가
+            return replayAndCalculateDailyHistory(transactions, startDate, to);
+        }
+
+        /**
+         * 거래내역을 날짜 순으로 리플레이하면서 startDate ~ endDate 구간의 일별 평가 계산
+         */
+        private List<PortfolioDailySummaryResponse> replayAndCalculateDailyHistory(List<Transaction> transactions, LocalDate startDate, LocalDate endDate) {
             List<PortfolioDailySummaryResponse> result = new ArrayList<>();
 
+            // 종목별 포지션 상태 (securityId -> PositionState)
+            HashMap<Long, PositionState> positionMap = new HashMap<>();
+
+            // 거래에 등장하는 종목 ID들만 모아서 미리 조회
+            List<Long> securityIds = transactions.stream()
+                    .map(transaction -> transaction.getSecurity().getId())
+                    .distinct()
+                    .toList();
+
+            Map<Long, Security> securityMap = securityRepository.findAllById(securityIds).stream()
+                    .collect(Collectors.toMap(
+                            Security::getId,
+                            s -> s
+                    ));
+
+            int index = 0;
+            int transactionCount = transactions.size();
+
+            // startDate 이전 거래를 먼저 모두 반영해서 시작 시점 포지션 맞춤
+            while (index < transactionCount && transactions.get(index).getTradeAt().toLocalDate().isBefore(startDate)) {
+                applyTransaction(positionMap, transactions.get(index++));
+            }
+
             // 날짜 루프
-            LocalDate currentDate = from;
-            while (!currentDate.isAfter(to)) {
-                // 일자별 평가 계산
-                PortfolioDailySummaryResponse daily = calculateOneDay(portfolioId, holdings, currentDate);
+            LocalDate current = startDate;
+            while (!current.isAfter(endDate)) {
+                // current 날짜의 거래 반영
+                while (index < transactionCount && transactions.get(index).getTradeAt().toLocalDate().isEqual(current)) {
+                    applyTransaction(positionMap, transactions.get(index++));
+                }
+
+                // 해당 날짜 기준 포트폴리오 평가
+                PortfolioDailySummaryResponse daily = evaluatePortfolioOnDate(positionMap, securityMap, current);
 
                 result.add(daily);
 
-                currentDate = currentDate.plusDays(1);
+                current = current.plusDays(1);
             }
 
             return result;
         }
 
         /**
+         * 단일 거래를 종목별 포지션 상태에 반영
+         * BUY / INITIAL_BUY : 수량 +, 원가 += price * quantity
+         * SELL              : 수량 -, 원가 -= 평단 * quantity
+         */
+        private void applyTransaction(HashMap<Long, PositionState> positionMap, Transaction transaction) {
+            Long securityId = transaction.getSecurity().getId();
+            PositionState state = positionMap.computeIfAbsent(securityId, id -> new PositionState());
+
+            BigDecimal quantity = nz(transaction.getQuantity());
+            BigDecimal price = nz(transaction.getPrice());
+
+            if (transaction.getType() == TradeType.BUY || transaction.getType() == TradeType.INITIAL_BUY) {
+                // 매수: 수량/원가 증가
+                BigDecimal additionalCost = price.multiply(quantity).setScale(SCALE_MONEY, RoundingMode.HALF_UP);
+
+                state.quantity = state.quantity.add(quantity);
+                state.cost = state.cost.add(additionalCost);
+            } else if (transaction.getType() == TradeType.SELL) {
+                // 예외 처리
+                if (state.quantity.compareTo(BigDecimal.ZERO) <= 0) {
+                    return;
+                }
+
+                BigDecimal currentAvg = state.getAvgPrice();
+
+                // 실제 매도 수량이 보유 수량보다 크면 보유 수량까지만 처리
+                BigDecimal sellQuantity = quantity;
+                if (sellQuantity.compareTo(state.quantity) > 0) {
+                    sellQuantity = state.quantity;
+                }
+
+                BigDecimal costToRemove = currentAvg.multiply(sellQuantity).setScale(SCALE_MONEY, RoundingMode.HALF_UP);
+
+                state.quantity = state.quantity.subtract(sellQuantity);
+                state.cost = state.cost.subtract(costToRemove);
+
+                if (state.quantity.compareTo(BigDecimal.ZERO) == 0) {
+                    // 수량 0 이면 cost도 0으로 처리
+                    state.cost = BigDecimal.ZERO;
+                }
+            }
+        }
+
+        /**
          * 특정 일자 기준으로 포트폴리오 전체 평가를 계산
          */
-        private PortfolioDailySummaryResponse calculateOneDay(long portfolioId, List<Holding> holdings, LocalDate date) {
+        private PortfolioDailySummaryResponse evaluatePortfolioOnDate(HashMap<Long, PositionState> positionMap, Map<Long, Security> securityMap, LocalDate date) {
             BigDecimal totalInvested = BigDecimal.ZERO;
             BigDecimal totalValue = BigDecimal.ZERO;
 
             BigDecimal usdToKrw = null;
 
-            for (Holding h : holdings) {
-                Security security = h.getSecurity();
-                String ticker = security.getTicker();
-
-                // 보유 수량/평단가
-                BigDecimal quantity = nz(h.getQuantity());
-                BigDecimal avg = nz(h.getAvgPrice());
+            for (var entry : positionMap.entrySet()) {
+                Long securityId = entry.getKey();
+                PositionState state = entry.getValue();
 
                 // 수량 0이면 스킵
-                if (quantity.compareTo(BigDecimal.ZERO) <= 0) {
+                if (state.getQuantity().compareTo(BigDecimal.ZERO) <= 0) {
                     continue;
                 }
 
+                // 종목 조회
+                Security security = securityMap.get(securityId);
+                if (security == null) {
+                    throw new BusinessException(ErrorCode.SECURITY_NOT_FOUND);
+                }
+
+                BigDecimal quantity = state.getQuantity();
+                BigDecimal avg = state.getAvgPrice();
+
                 // 해당 일자의 종가 조회
-                BigDecimal closingPrice = getClosingPriceOnDate(security, ticker, date)
+                BigDecimal closingPrice = getClosingPriceOnDate(security, security.getTicker(), date)
                         .setScale(SCALE_PRICE, RoundingMode.HALF_UP);
 
                 // 환율 결정
                 BigDecimal fx = BigDecimal.ONE;
-
                 if (!security.isKorean()) {
                     // 미국주식인 경우 USD -> KRW 환산
                     if (usdToKrw == null) {
@@ -273,5 +385,29 @@
          */
         private BigDecimal nz(BigDecimal v) {
             return v == null ? BigDecimal.ZERO : v;
+        }
+
+        /**
+         * 거래 리플레이 시 사용되는 종목별 포지션 상태
+         */
+        private static final class PositionState {
+            private BigDecimal quantity;
+            private BigDecimal cost;
+
+            private PositionState() {
+                this.quantity = BigDecimal.ZERO;
+                this.cost = BigDecimal.ZERO;
+            }
+
+            private BigDecimal getQuantity() {
+                return quantity;
+            }
+
+            private BigDecimal getAvgPrice() {
+                if (quantity.compareTo(BigDecimal.ZERO) == 0) {
+                    return BigDecimal.ZERO;
+                }
+                return cost.divide(quantity, SCALE_PRICE, RoundingMode.HALF_UP);
+            }
         }
     }

@@ -48,6 +48,10 @@ public enum ErrorCode {
     SECURITY_ALREADY_EXISTS("S002", "이미 존재하는 종목입니다.", HttpStatus.CONFLICT),
     DUPLICATE_TICKER("S003", "중복된 종목 코드입니다.", HttpStatus.CONFLICT),
 
+    // 거래
+    TRANSACTION_NOT_FOUND("T001", "거래를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    TRANSACTION_ALREADY_EXISTS("T002", "이미 존재하는 거래입니다.", HttpStatus.CONFLICT),
+
     // 일일 시세
     DAILY_PRICE_NOT_FOUND("D001", "일일 시세를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 

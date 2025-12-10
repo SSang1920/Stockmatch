@@ -63,7 +63,6 @@ public class PortfolioController {
     public ResponseEntity<ApiResponse<PortfolioValuationResponse>> getMyPortfolioValuation(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-
         var portfolio = portfolioService.ensureForUser(userDetails.getUser().getId());
         var valuation = portfolioValuationService.calculate(portfolio.getPortfolioId());
         return ResponseEntity.ok(ApiResponse.ok(valuation));

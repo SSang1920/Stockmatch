@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -30,6 +31,29 @@ public class TransactionService {
     private final SecurityRepository securityRepository;
     private final HoldingRepository holdingRepository;
     private final TransactionRepository transactionRepository;
+
+    /**
+     * 초기 보유분을 INITIAL_BUY로 기록
+     */
+    @Transactional
+    public Transaction recordInitialBuy(Portfolio portfolio, Security security, BigDecimal quantity, BigDecimal avgPrice, LocalDateTime tradeDate) {
+        if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
+            return null;
+        }
+
+        Transaction transaction = Transaction.builder()
+                .portfolio(portfolio)
+                .security(security)
+                .type(TradeType.INITIAL_BUY)
+                .quantity(quantity)
+                .price(avgPrice)
+                .fee(BigDecimal.ZERO)
+                .tradeAt(tradeDate)
+                .memo("초기 보유분 등록")
+                .build();
+
+        return transactionRepository.save(transaction);
+    }
 
     /**
      * 특정 포트폴리오의 거래 내역 전체 조회
