@@ -95,7 +95,7 @@
             // 종목별 포지션 상태 (securityId -> PositionState)
             HashMap<Long, PositionState> positionMap = new HashMap<>();
 
-            // 거래에 등장하는 종목 ID들만 모아서 미리 조회
+            // 거래에 등장하는 종목 securityId 목록 수집
             List<Long> securityIds = transactions.stream()
                     .map(transaction -> transaction.getSecurity().getId())
                     .distinct()
@@ -106,6 +106,11 @@
                             Security::getId,
                             s -> s
                     ));
+
+            // 거래가 있는데 종목이 DB에 없으면 데이터 이상
+            if (securityMap.size() != securityIds.size()) {
+                throw new BusinessException(ErrorCode.SECURITY_NOT_FOUND);
+            }
 
             int index = 0;
             int transactionCount = transactions.size();
