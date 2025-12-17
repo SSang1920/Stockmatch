@@ -14,7 +14,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
+import java.util.List;
 
 @Slf4j
 @Configuration
@@ -43,20 +43,26 @@ public class SecurityConfig {
 
                 // HTTP 요청 인가 설정
                 .authorizeHttpRequests(auth -> auth
-                        // 인증 없이 누구나 접근 가능
+                        // 정적/기본 엔드포인트
                         .requestMatchers(
                                 "/",
                                 "/error",
                                 "/health",
-                                "/health",
-                                "api/admin/**", "/api/auth/**", "/api/portfolio/**", "/api/stock/**", "/api/security/**",
                                 "/index.html", "/assets/**", "/favicon.ico"
                         ).permitAll()
-                        // ADMIN 역할을 가진 사용자만 접근 가능
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
 
-                        // 그외의 URL 요청은 인증되어야 사용 가능
+                        // 인증 없이 가능한 API
+                        .requestMatchers("/api/auth/**", "/api/stocks/**")
+                        .permitAll()
+
+                        // 관리자 전용
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // 로그인 사용자 전용
+                        .requestMatchers("/api/user/**", "/api/portfolio/**")
+                        .hasAnyRole("USER", "ADMIN")
+
+                        // 그 그외는 인증 필요
                         .anyRequest().authenticated()
                 )
         // API 요청이 securityFilterChain을 지나기 전에 동작
@@ -64,12 +70,13 @@ public class SecurityConfig {
 
         return http.build();
     }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000")); // 프론트엔드 주소
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // Vite React 기본 포트
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

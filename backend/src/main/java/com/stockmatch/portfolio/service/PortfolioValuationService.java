@@ -53,7 +53,6 @@
          * 매수 이전/전량 매도 후 기간은 자동으로 수량 0 -> 평가금 0
          * 휴장일/주말: 전 거래일 종가 사용
          */
-        @Transactional
         public List<PortfolioDailySummaryResponse> calculateDailyHistory(long portfolioId, LocalDate from, LocalDate to) {
             // 파라미터 검증
             if (from == null || to == null || from.isAfter(to)) {

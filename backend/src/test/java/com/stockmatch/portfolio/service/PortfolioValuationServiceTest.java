@@ -6,14 +6,12 @@ import com.stockmatch.exchangeRate.service.FxRateService;
 import com.stockmatch.portfolio.domain.TradeType;
 import com.stockmatch.portfolio.domain.Transaction;
 import com.stockmatch.portfolio.dto.PortfolioDailySummaryResponse;
-import com.stockmatch.portfolio.repository.HoldingRepository;
 import com.stockmatch.portfolio.repository.PortfolioRepository;
 import com.stockmatch.portfolio.repository.TransactionRepository;
 import com.stockmatch.stock.domain.Security;
 import com.stockmatch.stock.dto.DailyPriceResponse;
 import com.stockmatch.stock.repository.SecurityRepository;
 import com.stockmatch.stock.service.DailyPriceService;
-import com.stockmatch.stock.service.StockPriceService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,13 +35,9 @@ public class PortfolioValuationServiceTest {
     @Mock
     private PortfolioRepository portfolioRepository;
     @Mock
-    private HoldingRepository holdingRepository;
-    @Mock
     private TransactionRepository transactionRepository;
     @Mock
     private SecurityRepository securityRepository;
-    @Mock
-    private StockPriceService stockPriceService;
     @Mock
     private FxRateService fxRateService;
     @Mock
