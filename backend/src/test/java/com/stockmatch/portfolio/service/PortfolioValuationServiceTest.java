@@ -26,8 +26,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -510,20 +509,20 @@ public class PortfolioValuationServiceTest {
         given(securityRepository.findAllById(anyIterable()))
                 .willReturn(List.of(aapl));
 
-        given(fxRateService.getLatestUsdToKrwRate(any(LocalDate.class)))
-                .willReturn(new BigDecimal("1000"));    // 환율 고정
-
         given(dailyPriceService.getDailyPrices(eq("AAPL"), any(LocalDate.class), any(LocalDate.class)))
                 .willReturn(List.of());     // 빈 리스트
 
-        // when / then
-        assertThatThrownBy(() -> portfolioValuationService.calculateDailyHistory(
+        // when
+        Throwable thrown = catchThrowable(() -> portfolioValuationService.calculateDailyHistory(
                 portfolioId,
                 LocalDate.of(2025, 1, 11),
                 LocalDate.of(2025, 1, 11)
-        ))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining(ErrorCode.DAILY_PRICE_NOT_FOUND.getMessage());
+        ));
+
+        // then
+        assertThat(thrown).isInstanceOf(BusinessException.class);
+        BusinessException businessException = (BusinessException) thrown;
+        assertThat(businessException.getErrorCode()).isEqualTo(ErrorCode.DAILY_PRICE_NOT_FOUND);
 
         verify(dailyPriceService, atLeastOnce())
                 .getDailyPrices(eq("AAPL"), any(LocalDate.class), any(LocalDate.class));
