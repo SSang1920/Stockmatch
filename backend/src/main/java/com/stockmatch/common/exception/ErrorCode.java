@@ -24,6 +24,7 @@ public enum ErrorCode {
     OAUTH_USERINFO_FAILED("A006", "사용자 정보 조회에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     OAUTH_UNLINK_FAILED("A007", "소셜 서비스와의 연동 해제에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     REFRESH_TOKEN_NOT_FOUND("A008", "Refresh Token이 존재하지 않습니다. 다시 로그인해주세요.", HttpStatus.BAD_REQUEST),
+    INTERNAL_SERVER_ERROR("A009", "JWT키가 초기화되지 않았습니다..", HttpStatus.BAD_REQUEST),
 
     // 유저
     USER_NOT_FOUND("U001", "사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),

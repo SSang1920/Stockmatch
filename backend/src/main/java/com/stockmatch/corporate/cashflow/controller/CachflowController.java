@@ -1,10 +1,10 @@
-package com.stockmatch.corporate.cachflow.controller;
+package com.stockmatch.corporate.cashflow.controller;
 
 
 import com.stockmatch.common.api.ApiResponse;
 import com.stockmatch.config.security.CustomUserDetails;
-import com.stockmatch.corporate.cachflow.dto.CashflowDto;
-import com.stockmatch.corporate.cachflow.service.CachflowService;
+import com.stockmatch.corporate.cashflow.dto.CashflowDto;
+import com.stockmatch.corporate.cashflow.service.CachflowService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

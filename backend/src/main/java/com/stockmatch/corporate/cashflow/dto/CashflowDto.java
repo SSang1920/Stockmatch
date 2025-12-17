@@ -1,4 +1,4 @@
-package com.stockmatch.corporate.cachflow.dto;
+package com.stockmatch.corporate.cashflow.dto;
 
 import com.stockmatch.corporate.common.dto.CacheableData;
 import lombok.AllArgsConstructor;

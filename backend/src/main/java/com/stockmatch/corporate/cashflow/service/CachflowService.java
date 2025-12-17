@@ -1,6 +1,6 @@
-package com.stockmatch.corporate.cachflow.service;
+package com.stockmatch.corporate.cashflow.service;
 
-import com.stockmatch.corporate.cachflow.dto.CashflowDto;
+import com.stockmatch.corporate.cashflow.dto.CashflowDto;
 import com.stockmatch.corporate.common.cache.GenericCacheService;
 import com.stockmatch.corporate.common.infra.GenericAlphaVantageClient;
 import com.stockmatch.user.member.service.MemberService;

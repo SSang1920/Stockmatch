@@ -2,12 +2,10 @@ package com.stockmatch.config.jwt;
 
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
@@ -16,7 +14,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
-
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtUtil {
@@ -26,12 +24,23 @@ public class JwtUtil {
 
     @PostConstruct
     public void init() {
-        // JwtProperties에서 secretKey를 가져와 객체 생성후 캐싱
-        this.cachedSigningKey = Keys.hmacShaKeyFor(jwtProperties.getSecretKey().getBytes(StandardCharsets.UTF_8));
+        String secret = jwtProperties.getSecretKey();
+
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+
+        this.cachedSigningKey = Keys.hmacShaKeyFor(keyBytes);
+        log.info("JWT SecretKey 초기화 완료");
+    }
+
+    private void ensureKeyIsInitialized() {
+        if (this.cachedSigningKey == null) {
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
     }
 
     // AccessToken 생성
     public String generateAccessToken(String userPk, String role){
+        ensureKeyIsInitialized();
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.getAccessTokenExpirationTime());
 
@@ -46,6 +55,7 @@ public class JwtUtil {
 
     // RefreshToken 생성
     public String generateRefreshToken(String userPk) {
+        ensureKeyIsInitialized();
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.getRefreshTokenExpirationTime());
 
@@ -57,30 +67,51 @@ public class JwtUtil {
                 .compact();
     }
 
-    private Claims parseClaims(String token) {
+    /**
+     * 토큰의 유효성을 검증하고 예외가 발생하면 BusinessException
+     * @param token 검증할 토큰
+     */
+    public void validateTokenOrThrow(String token) {
+        ensureKeyIsInitialized();
         try {
-            return Jwts.parser()
-                    .verifyWith(cachedSigningKey) //검증에 사용할 비밀 키 설정
+            log.info("검증 시도 토큰: {}", token);
+
+            Jws<Claims> jws = Jwts.parser()
+                    .verifyWith(cachedSigningKey)
                     .build()
-                    .parseSignedClaims(token) // 검증
-                    .getPayload(); //내용물 추출 & 반환
+                    .parseSignedClaims(token);
 
-        } catch (ExpiredJwtException e) {
-            //토큰 만료시 에러 처리
-            throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
+            log.info("검증 성공 - 알고리즘: {}", jws.getHeader().getAlgorithm());
 
-        } catch (JwtException | IllegalArgumentException e) {
-            // 서명이 다르거나 형식이 잘못된 경우 에러 처리
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            log.error("서명 위조 감지!!: {}", e.getMessage());
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        } catch (Exception e) {
+            log.error("검증 실패: {}", e.getClass().getSimpleName());
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
     }
 
-    public String getUserPkFromToken (String token) {
-        return parseClaims(token).getSubject();
+    /**
+     * 페이로드(Claims)를 추출
+     * @param token 클레임을 추출할 토큰
+     * @return 토큰의 페이로드
+     */
+    private Claims getClaimsFromToken(String token) {
+        ensureKeyIsInitialized();
+        return Jwts.parser()
+                .verifyWith(cachedSigningKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
-    public void validateTokenOrThrow(String token){
-        parseClaims(token);
+    /**
+     * @param token 사용자 PK를 추출할 토큰
+     * @return 사용자 PK 문자열
+     */
+    public String getUserPkFromToken(String token) {
+        return getClaimsFromToken(token).getSubject();
     }
 
 }
