@@ -61,4 +61,33 @@ public class GenericAlphaVantageClient {
         // JSON -> DTO로 변환
         return objectMapper.convertValue(rawResponse, dto);
     }
+
+    public <T> T fetchDataWithParams(
+            String function,
+            Map<String, String> additionalParams,
+            String apiKey,
+            Class<T> dto
+    ){
+        String apiFunction = function.toUpperCase();
+
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(baseUrl).path("/query")
+                .queryParam("function", apiFunction)
+                .queryParam("apikey", apiKey);
+
+        if (additionalParams != null && !additionalParams.isEmpty()){
+            additionalParams.forEach(builder::queryParam);
+        }
+
+        URI uri = builder.build(true).toUri();
+
+        Map<String, Object> rawResponse = restTemplate.getForObject(uri, Map.class);
+
+        if (rawResponse == null || rawResponse.isEmpty() || rawResponse.containsKey("Information") || rawResponse.containsKey("Note")) {
+            log.warn("API returned an info/error message or empty response for: {}",  rawResponse);
+            // 잘못된 데이터가 캐시에 저장되는 것을 원천 방지
+            throw new BusinessException(ErrorCode.EXTERNAL_API_DATA_NOT_FOUND);
+        }
+
+        return objectMapper.convertValue(rawResponse, dto);
+    }
 }
