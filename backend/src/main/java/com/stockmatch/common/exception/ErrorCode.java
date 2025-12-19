@@ -62,7 +62,11 @@ public enum ErrorCode {
     UPSTREAM_DATA_EMPTY("E003", "외부 API 응답이 비어 있습니다.", HttpStatus.BAD_GATEWAY),
     INVALID_API_KEY("E004", "올바르지 않은 API KEY입니다. (AlphaVantage)", HttpStatus.BAD_REQUEST),
     EXTERNAL_API_DATA_NOT_FOUND("E005", "받아온 데이터의 값이 올바른 값이 아닙니다.", HttpStatus.BAD_REQUEST),
-    API_KEY_NOT_REGISTERED("E006", "API KEY가 존재하지 않습니다. (AlphaVantage)", HttpStatus.BAD_REQUEST);
+    API_KEY_NOT_REGISTERED("E006", "API KEY가 존재하지 않습니다. (AlphaVantage)", HttpStatus.BAD_REQUEST),
+    DART_FILE_ERROR("E007", "DART 데이터를 처리하는 중 파일 오류가 발생했습니다.(DART)", HttpStatus.BAD_REQUEST),
+    DART_SYNC_ERROR("E008", "DART 고유번호 동기화 중 오류가 발생했습니다.(DART)", HttpStatus.BAD_REQUEST),
+    DART_CORP_CODE_NOT_FOUNT("E009", "해당 종목의 DART 고유번호를 찾을 수 없습니다.(DART)", HttpStatus.BAD_REQUEST);
+
 
     private final String code;
     private final String message;
