@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 
 @Component
@@ -120,25 +121,27 @@ public class KisKorStockClient implements ExternalPriceClient {
 
         if (name == null || name.isBlank()) name = normCode;
 
-        double current = o.path("stck_prpr").asDouble();
-        double prevClose = o.path("stck_sdpr").asDouble();
-        double open = o.path("stck_oprc").asDouble();
-        double high = o.path("stck_hgpr").asDouble();
-        double low = o.path("stck_lwpr").asDouble();
+        BigDecimal current = new BigDecimal(o.path("stck_prpr").asText("0"));
+        BigDecimal prevClose = new BigDecimal(o.path("stck_sdpr").asText("0"));
+        BigDecimal open = new BigDecimal(o.path("stck_oprc").asText("0"));
+        BigDecimal high = new BigDecimal(o.path("stck_hgpr").asText("0"));
+        BigDecimal low = new BigDecimal(o.path("stck_lwpr").asText("0"));
 
-        double changePct = o.path("prdy_ctrt").asDouble();
-        double changeRate = changePct / 100.0;
+        BigDecimal changeAmount = new BigDecimal(o.path("prdy_vrss").asText("0"));
+        BigDecimal changePct = new BigDecimal(o.path("prdy_ctrt").asText("0"));
+        BigDecimal changeRate = changePct.divide(BigDecimal.valueOf(100));
 
         return StockPriceResponse.builder()
                 .region(Region.KR)
                 .ticker(normCode)
                 .name(name)
                 .currentPrice(current)
+                .changeAmount(changeAmount)
+                .changeRate(changeRate)
                 .prevClose(prevClose)
                 .openPrice(open)
                 .highPrice(high)
                 .lowPrice(low)
-                .changeRate(changeRate)
                 .build();
     }
 }

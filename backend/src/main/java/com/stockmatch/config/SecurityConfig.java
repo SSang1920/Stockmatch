@@ -52,7 +52,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // 인증 없이 가능한 API
-                        .requestMatchers("/api/auth/**", "/api/stocks/**")
+                        .requestMatchers("/api/auth/**", "/api/stocks/**", "/api/market/**")
                         .permitAll()
 
                         // 관리자 전용

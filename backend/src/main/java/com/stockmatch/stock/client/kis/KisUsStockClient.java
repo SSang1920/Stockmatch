@@ -18,6 +18,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.math.BigDecimal;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -129,16 +131,19 @@ public class KisUsStockClient implements ExternalPriceClient {
         String ticker = security.getTicker();
         String dbName = security.getName();
 
-        double current = o.path("last").asDouble();
-        double prevClose = o.path("base").asDouble();
-        double open = o.path("open").asDouble();
-        double high = o.path("high").asDouble();
-        double low = o.path("low").asDouble();
+        BigDecimal current = new BigDecimal(o.path("last").asText("0"));
+        BigDecimal prevClose = new BigDecimal(o.path("base").asText("0"));
+        BigDecimal open = new BigDecimal(o.path("open").asText("0"));
+        BigDecimal high = new BigDecimal(o.path("high").asText("0"));
+        BigDecimal low = new BigDecimal(o.path("low").asText("0"));
 
-        double changeRate = 0.0;
-        if (prevClose != 0.0) {
-            changeRate = (current - prevClose) / prevClose;
+        // 현재가가 0이면 전일 종가로 대체
+        if (current.compareTo(BigDecimal.ZERO) == 0 && prevClose.compareTo(BigDecimal.ZERO) > 0) {
+            current = prevClose;
         }
+
+        BigDecimal changeAmount = new BigDecimal(o.path("p_xdif").asText("0"));
+        BigDecimal changeRate = new BigDecimal(o.path("p_xrat").asText("0"));
 
         String name = (dbName != null && !dbName.isBlank()) ? dbName : ticker;
 
@@ -147,11 +152,12 @@ public class KisUsStockClient implements ExternalPriceClient {
                 .ticker(ticker)
                 .name(name)
                 .currentPrice(current)
+                .changeAmount(changeAmount)
+                .changeRate(changeRate)
                 .prevClose(prevClose)
                 .openPrice(open)
                 .highPrice(high)
                 .lowPrice(low)
-                .changeRate(changeRate)
                 .build();
     }
 }
