@@ -19,6 +19,8 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Component
@@ -40,6 +42,9 @@ public class KisUsStockClient implements ExternalPriceClient {
 
     @Value("${kis.tr-id.us.real-time}")
     private String trId;
+
+    @Value("${kis.tr-id.us.index}")
+    private String trIdIndex;
 
     @Override
     public StockPriceResponse getRealtime(String region, String ticker) {
@@ -64,6 +69,66 @@ public class KisUsStockClient implements ExternalPriceClient {
 
         JsonNode o = getUsPriceRaw(ticker, excd);
         return toUsStockPrice(security, o);
+    }
+
+    /**
+     * 해외 지수 시세 조회
+     */
+    public StockPriceResponse getUsIndexPrice(String ticker, String name) {
+        try {
+            // 조회 기간: 오늘 ~ 7일 전
+            LocalDate today = LocalDate.now();
+            String date1 = today.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+            String date2 = today.minusDays(7).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+            String url = UriComponentsBuilder
+                    .fromUriString(baseUrl + "/uapi/overseas-price/v1/quotations/inquire-daily-chartprice")
+                    .queryParam("FID_COND_MRKT_DIV_CODE", "N")
+                    .queryParam("FID_INPUT_ISCD", ticker)
+                    .queryParam("FID_INPUT_DATE_1", date2)
+                    .queryParam("FID_INPUT_DATE_2", date1)
+                    .queryParam("FID_PERIOD_DIV_CODE", "D")
+                    .toUriString();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("authorization", "Bearer " + kisTokenProvider.getAccessToken());
+            headers.set("appkey", appKey);
+            headers.set("appsecret", appSecret);
+            headers.set("tr_id", trIdIndex);
+
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
+
+            JsonNode output1 = response.getBody() != null ? response.getBody().get("output1") : null;
+
+            if (output1 == null || !output1.elements().hasNext()) {
+                log.warn("KIS US Index response empty or invalid for {}", ticker);
+                return StockPriceResponse.builder().build();
+            }
+
+            JsonNode latest = output1.get(output1.size() - 1);
+
+            // API 필드 매핑
+            BigDecimal current = parseBigDecimal(latest.path("ovrs_nmix_prpr").asText());
+            BigDecimal prevClose = parseBigDecimal(latest.path("ovrs_nmix_prdy_clpr").asText());
+            BigDecimal changeAmount = current.subtract(prevClose);
+            BigDecimal changeRate = parseBigDecimal(latest.path("prdy_ctrt").asText());
+
+            return StockPriceResponse.builder()
+                    .region(Region.US)
+                    .ticker(ticker)
+                    .name(name)
+                    .currentPrice(current)
+                    .changeAmount(changeAmount)
+                    .changeRate(changeRate)
+                    .prevClose(prevClose)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Failed to fetch US Index {}: {}", ticker, e.getMessage());
+            return StockPriceResponse.builder().build();
+        }
     }
 
     private String normalizeTicker(String ticker) {
@@ -159,5 +224,10 @@ public class KisUsStockClient implements ExternalPriceClient {
                 .highPrice(high)
                 .lowPrice(low)
                 .build();
+    }
+
+    private BigDecimal parseBigDecimal(String value) {
+        if (value == null || value.isBlank()) return BigDecimal.ZERO;
+        try { return new BigDecimal(value.trim()); } catch (NumberFormatException e) { return BigDecimal.ZERO; }
     }
 }

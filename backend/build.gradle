@@ -67,6 +67,9 @@ dependencies {
     // TestContainer
     testImplementation 'org.testcontainers:testcontainers:1.20.4'
     testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
+
+    // Yahoo Finance API Wrapper
+    implementation 'com.yahoofinance-api:YahooFinanceAPI:3.17.0'
 }
 
 test {

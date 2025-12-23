@@ -8,6 +8,7 @@ import com.stockmatch.stock.client.ExternalPriceClient;
 import com.stockmatch.stock.dto.Region;
 import com.stockmatch.stock.dto.StockPriceResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.math.BigDecimal;
 import java.time.Duration;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class KisKorStockClient implements ExternalPriceClient {
@@ -39,6 +41,9 @@ public class KisKorStockClient implements ExternalPriceClient {
     @Value("${kis.tr-id.kr.real-time}")
     private String trId;
 
+    @Value("${kis.tr-id.kr.index}")
+    private String trIdIndex;
+
     @Override
     public StockPriceResponse getRealtime(String region, String ticker) {
         if (!"KR".equalsIgnoreCase(region)) {
@@ -55,6 +60,54 @@ public class KisKorStockClient implements ExternalPriceClient {
         String normCode = nameCache.normizeTicker(code);
         JsonNode o = getKoreaPriceRaw(normCode);
         return toStockPrice(normCode, o);
+    }
+
+    /**
+     * 국내 지수 현재가 조회
+     */
+    public StockPriceResponse getKrIndexPrice(String ticker) {
+        try {
+            String url = UriComponentsBuilder
+                    .fromUriString(baseUrl + "/uapi/domestic-stock/v1/quotations/inquire-index-price")
+                    .queryParam("FID_COND_MRKT_DIV_CODE", "U")
+                    .queryParam("FID_INPUT_ISCD", ticker)
+                    .toUriString();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("authorization", "Bearer " + kisTokenProvider.getAccessToken());
+            headers.set("appkey", appKey);
+            headers.set("appsecret", appSecret);
+            headers.set("custtype", "P");
+            headers.set("tr_id", trIdIndex);
+
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
+
+            JsonNode output = response.getBody() != null ? response.getBody().get("output") : null;
+
+            if (output == null) {
+                log.warn("KIS KR Index response empty for {}", ticker);
+                return StockPriceResponse.builder().build();
+            }
+
+            // API 필드 매핑
+            BigDecimal current = parseBigDecimal(output.path("bstp_nmix_prpr").asText());               // 현재지수
+            BigDecimal changeAmount = parseBigDecimal(output.path("bstp_nmix_prdy_vrss").asText());     // 전일대비
+            BigDecimal changeRate = parseBigDecimal(output.path("bstp_nmix_prdy_ctrt").asText());       // 등락률
+
+            return StockPriceResponse.builder()
+                    .region(Region.KR)
+                    .ticker(ticker)
+                    .name(ticker.equals("0001") ? "KOSPI" : "KOSDAQ")
+                    .currentPrice(current)
+                    .changeAmount(changeAmount)
+                    .changeRate(changeRate)
+                    .build();
+        } catch (Exception e) {
+            log.error("Failed to fetch KR Index {}: {}", ticker, e.getMessage());
+            return StockPriceResponse.builder().build();
+        }
     }
 
     /**
@@ -143,5 +196,14 @@ public class KisKorStockClient implements ExternalPriceClient {
                 .highPrice(high)
                 .lowPrice(low)
                 .build();
+    }
+
+    private BigDecimal parseBigDecimal(String value) {
+        if (value == null || value.isBlank()) return BigDecimal.ZERO;
+        try {
+            return new BigDecimal(value.trim());
+        } catch (NumberFormatException e) {
+            return  BigDecimal.ZERO;
+        }
     }
 }
