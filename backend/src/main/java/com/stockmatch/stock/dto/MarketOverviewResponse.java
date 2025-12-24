@@ -28,6 +28,9 @@ public record MarketOverviewResponse(
      */
     @Builder
     public record ExchangeRateInfo(
-            BigDecimal rate         // 환율
+            String name,
+            BigDecimal rate,        // 환율
+            BigDecimal change,      // 전일비
+            BigDecimal changeRate   // 등락률
     ) {}
 }

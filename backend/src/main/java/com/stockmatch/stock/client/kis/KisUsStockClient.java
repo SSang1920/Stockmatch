@@ -72,10 +72,13 @@ public class KisUsStockClient implements ExternalPriceClient {
     }
 
     /**
-     * 해외 지수 시세 조회
+     * 해외 지수 시세 조회 및 환율 시세 조회
      */
     public StockPriceResponse getUsIndexPrice(String ticker, String name) {
         try {
+            // 티커가 FX로 시작하면 환율(X), 아니면 해외지수(N)
+            String marketDivCode = ticker.startsWith("FX") ? "X" : "N";
+
             // 조회 기간: 오늘 ~ 7일 전
             LocalDate today = LocalDate.now();
             String date1 = today.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
@@ -83,7 +86,7 @@ public class KisUsStockClient implements ExternalPriceClient {
 
             String url = UriComponentsBuilder
                     .fromUriString(baseUrl + "/uapi/overseas-price/v1/quotations/inquire-daily-chartprice")
-                    .queryParam("FID_COND_MRKT_DIV_CODE", "N")
+                    .queryParam("FID_COND_MRKT_DIV_CODE", marketDivCode)
                     .queryParam("FID_INPUT_ISCD", ticker)
                     .queryParam("FID_INPUT_DATE_1", date2)
                     .queryParam("FID_INPUT_DATE_2", date1)
@@ -99,8 +102,6 @@ public class KisUsStockClient implements ExternalPriceClient {
 
             HttpEntity<Void> entity = new HttpEntity<>(headers);
             ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
-
-            log.info("KIS US Index Raw Body ({}) : {}", ticker, response.getBody());
 
             JsonNode body = response.getBody();
             JsonNode output1 = (body != null) ? body.get("output1") : null;
