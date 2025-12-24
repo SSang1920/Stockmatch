@@ -21,8 +21,8 @@ public class MarketService {
 
     // KIS API 지수 코드
     private static final String CODE_KOSPI = "0001";      // 코스피
-    private static final String CODE_NASDAQ = "NAS@IXIC";     // 나스닥
-    private static final String CODE_SP500 = "SPI@SPX";     // S&P 500
+    private static final String CODE_NASDAQ = "COMP";    // 나스닥
+    private static final String CODE_SP500 = "SPX";      // S&P 500
 
     public MarketOverviewResponse getGlobalMarketOverview() {
         // 코스피 조회

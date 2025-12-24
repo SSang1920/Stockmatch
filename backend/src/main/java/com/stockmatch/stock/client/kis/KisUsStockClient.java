@@ -100,20 +100,21 @@ public class KisUsStockClient implements ExternalPriceClient {
             HttpEntity<Void> entity = new HttpEntity<>(headers);
             ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
 
-            JsonNode output1 = response.getBody() != null ? response.getBody().get("output1") : null;
+            log.info("KIS US Index Raw Body ({}) : {}", ticker, response.getBody());
 
-            if (output1 == null || !output1.elements().hasNext()) {
-                log.warn("KIS US Index response empty or invalid for {}", ticker);
+            JsonNode body = response.getBody();
+            JsonNode output1 = (body != null) ? body.get("output1") : null;
+
+            if (output1 == null || output1.isEmpty()) {
+                log.warn("KIS US Index response empty for {}", ticker);
                 return StockPriceResponse.builder().build();
             }
 
-            JsonNode latest = output1.get(output1.size() - 1);
-
             // API 필드 매핑
-            BigDecimal current = parseBigDecimal(latest.path("ovrs_nmix_prpr").asText());
-            BigDecimal prevClose = parseBigDecimal(latest.path("ovrs_nmix_prdy_clpr").asText());
+            BigDecimal current = parseBigDecimal(output1.path("ovrs_nmix_prpr").asText());
+            BigDecimal prevClose = parseBigDecimal(output1.path("ovrs_nmix_prdy_clpr").asText());
             BigDecimal changeAmount = current.subtract(prevClose);
-            BigDecimal changeRate = parseBigDecimal(latest.path("prdy_ctrt").asText());
+            BigDecimal changeRate = parseBigDecimal(output1.path("prdy_ctrt").asText());
 
             return StockPriceResponse.builder()
                     .region(Region.US)
