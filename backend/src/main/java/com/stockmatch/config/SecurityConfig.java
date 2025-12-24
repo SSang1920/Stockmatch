@@ -47,12 +47,12 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/",
                                 "/error",
-                                "/health",
+                                "/api/health",
                                 "/index.html", "/assets/**", "/favicon.ico"
                         ).permitAll()
 
                         // 인증 없이 가능한 API
-                        .requestMatchers("/api/auth/**", "/api/stocks/**", "/api/corporate/**")
+                        .requestMatchers("/api/auth/**", "/api/stocks/**", "/api/corporate/**", "/api/stocks/**", "/api/market/**")
                         .permitAll()
                         .requestMatchers("/api/admin/dart/sync").permitAll()
 

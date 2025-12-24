@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="#ffffff"></rect>
+  <path d="M14 40 L26 28 L36 34 L50 18" fill="none" stroke="#16a34a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path>
+  <path d="M50 18 L50 28" fill="none" stroke="#16a34a" stroke-width="5" stroke-linecap="round"></path>
+  <path d="M50 18 L40 18" fill="none" stroke="#16a34a" stroke-width="5" stroke-linecap="round"></path>
+  <text x="32" y="54" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="800" fill="#111827">SM</text>
+</svg>

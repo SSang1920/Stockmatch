@@ -352,7 +352,7 @@
             var price = security.isKorean()
                     ? stockPriceService.getKrStockPrice(ticker).getCurrentPrice()
                     : stockPriceService.getUsStockPrice(ticker).getCurrentPrice();
-            return BigDecimal.valueOf(price);
+            return price;
         }
 
         /**
