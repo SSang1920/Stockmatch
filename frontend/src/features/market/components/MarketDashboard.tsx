@@ -12,9 +12,6 @@ const MarketDashboard = () => {
     const loadData = async () => {
       try {
         const result = await fetchMarketOverview();
-
-        console.log("서버에서 받은 데이터:", result);
-        
         setData(result);
       } catch (e) {
         console.error(e);
@@ -29,7 +26,7 @@ const MarketDashboard = () => {
   if (!data) return <div>데이터 없음</div>;
 
   return (
-    <div className="market-container">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <MarketCard label="KOSPI" info={data.kospi} />
       <MarketCard label="NASDAQ" info={data.nasdaq} />
       <MarketCard label="S&P 500" info={data.sp500} />
