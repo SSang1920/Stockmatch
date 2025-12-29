@@ -36,14 +36,16 @@ public class MarketService {
      */
     public MarketOverviewResponse getGlobalMarketOverview() {
         try {
-            // Redis에서 데이터 조회
+            // Redis에서 데이터 조회 시도
             MarketOverviewResponse cacheData = (MarketOverviewResponse) redisTemplate.opsForValue().get(REDIS_KEY_MARKET_OVERVIEW);
-
             if (cacheData != null) {
                 return cacheData;
             }
         } catch (Exception e) {
-            log.error("Redis 조회 실패, API 직접 호출: {}", e.getMessage());
+            log.error("Redis 조회 실패(무시하고 API 호출 진행): {}", e.getMessage());
+            try {
+                redisTemplate.delete(REDIS_KEY_MARKET_OVERVIEW);
+            } catch (Exception ex) { /* 무시 */ }
         }
 
         // 캐시 없으면 API 호출 후 반환
