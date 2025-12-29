@@ -20,9 +20,10 @@ public class UsMasterService {
      * NASDAQ 종목 upsert
      */
     @Transactional
-    public int upsertUsNasdaq(String ticker, String name, String secType) {
+    public int upsertUsNasdaq(String ticker, String name, String englishName, String secType) {
         final String normTicker = normalizeTicker(ticker);
         final String normName = safe(name);
+        final String normEngName = safe(englishName);
 
         SecurityType type = resolveSecurity(secType);
 
@@ -33,9 +34,11 @@ public class UsMasterService {
                 .currency(Currency.USD)
                 .type(type)
                 .ticker(normTicker)
+                .englishName(normEngName)
                 .build());
 
         security.updateName(normName);
+        security.updateEnglishName(normEngName);
         security.updateType(type);
 
         securityRepository.save(security);
@@ -46,9 +49,10 @@ public class UsMasterService {
      * NYSE 종목 upsert
      */
     @Transactional
-    public int upsertUsNyse(String ticker, String name, String secType) {
+    public int upsertUsNyse(String ticker, String name, String englishName, String secType) {
         final String normTicker = normalizeTicker(ticker);
         final String normName = safe(name);
+        final String normEngName = safe(englishName);
 
         SecurityType type = resolveSecurity(secType);
 
@@ -59,9 +63,11 @@ public class UsMasterService {
                 .currency(Currency.USD)
                 .type(type)
                 .ticker(normTicker)
+                .englishName(normEngName)
                 .build());
 
         security.updateName(normName);
+        security.updateEnglishName(normEngName);
         security.updateType(type);
 
         securityRepository.save(security);

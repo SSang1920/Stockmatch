@@ -9,7 +9,8 @@ public record MarketOverviewResponse(
         IndexInfo kospi,
         IndexInfo nasdaq,
         IndexInfo sp500,
-        ExchangeRateInfo usdKrw
+        ExchangeRateInfo usdKrw,
+        String lastUpdateTime
 ) {
 
     /**

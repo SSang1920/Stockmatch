@@ -34,7 +34,10 @@ public class Security extends BaseEntity {
     private String ticker;      // 종목 코드
 
     @Column(length = 100)
-    private String name;        // 종목명
+    private String name;        // 한글 종목명
+
+    @Column(name = "english_name")
+    private String englishName;
 
     @Enumerated(EnumType.STRING)
     private Market market;      // 시장 구분 (KR, US)
@@ -62,6 +65,10 @@ public class Security extends BaseEntity {
 
     public void updateName(String name) {
         this.name = name;
+    }
+
+    public void updateEnglishName(String englishName) {
+        this.englishName = englishName;
     }
 
     public void updateType(SecurityType type) {

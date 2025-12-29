@@ -69,6 +69,7 @@ public class UsMasterLoader {
 
                 int idxTicker = indexOf(header, "Symbol");
                 int idxName = indexOf(header, "Korea name");
+                int idxEngName = indexOf(header, "English name");
                 int idxSecType = indexOf(header, "Security type(1:Index,2:Stock,3:ETP(ETF),4:Warrant)");
 
                 if (idxTicker < 0 || idxName < 0) {
@@ -79,7 +80,8 @@ public class UsMasterLoader {
                     processed++;
 
                     String ticker = record.get(idxTicker).trim();
-                    String name = record.get(idxName).trim();
+                    String nameKr = record.get(idxName).trim();
+                    String nameEng = (idxEngName >= 0) ? record.get(idxEngName).trim() : null;
                     String secType = (idxSecType >= 0) ? record.get(idxSecType).trim() : null;
 
                     if (ticker.isEmpty()) {
@@ -89,17 +91,17 @@ public class UsMasterLoader {
 
                     try {
                         if (exchange == Exchange.NASDAQ) {
-                            usMasterService.upsertUsNasdaq(ticker, name, secType);
+                            usMasterService.upsertUsNasdaq(ticker, nameKr, nameEng, secType);
                         } else if (exchange == Exchange.NYSE) {
-                            usMasterService.upsertUsNyse(ticker, name, secType);
+                            usMasterService.upsertUsNyse(ticker, nameKr, nameEng, secType);
                         }
 
                         success++;
                     } catch (Exception e) {
                         error++;
                         if (error <= 10) {
-                            log.warn("[row={}] upsert 실패: ticker={}, name={}, err={}",
-                                    processed, ticker, name, e.toString());
+                            log.warn("[row={}] upsert 실패: ticker={}, name={}, engName={}, err={}",
+                                    processed, ticker, nameKr, nameEng, e.toString());
                         }
                     }
                 }

@@ -4,6 +4,7 @@ import com.stockmatch.stock.client.kis.KisKorStockClient;
 import com.stockmatch.stock.client.kis.KisUsStockClient;
 import com.stockmatch.stock.dto.MarketOverviewResponse;
 import com.stockmatch.stock.dto.StockPriceResponse;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -11,6 +12,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -32,7 +35,18 @@ public class MarketService {
     private static final String CODE_EXCHANGE = "FX@KRW";   // 원달러 환율
 
     /**
+     * 서버 시작 시 즉시 실행
+     */
+    @PostConstruct
+    public void init() {
+        log.info("Initializing Market Overview Data...");
+        fetchAndCacheMarketData();
+    }
+
+    /**
      * 마켓 오버뷰 조회 (Redis 우선)
+     * 1차: Redis 조회
+     * 2차: 실패/없음 시 API 호출 후 갱신
      */
     public MarketOverviewResponse getGlobalMarketOverview() {
         try {
@@ -53,9 +67,9 @@ public class MarketService {
     }
 
     /**
-     * (스케쥴러) 5분마다 API 호출하여 Redis 갱신
+     * (스케쥴러) 정각기준 5분마다 API 호출하여 Redis 갱신
      */
-    @Scheduled(fixedRate = 300000)
+    @Scheduled(cron = "0 0/5 * * * ?")
     public void updateMarketOverviewCache() {
         log.info("Executing Scheduled Task: Update Market Overview Cache");
         fetchAndCacheMarketData();
@@ -75,6 +89,9 @@ public class MarketService {
         // 환율 조회
         StockPriceResponse usdRate = kisUsStockClient.getUsIndexPrice(CODE_EXCHANGE, "USD/KRW");
 
+        // 현재 시간 포맷
+        String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM.dd HH:mm"));
+
         MarketOverviewResponse response = MarketOverviewResponse.builder()
                 .kospi(mapToIndex(kospi, "KOSPI"))
                 .nasdaq(mapToIndex(nasdaq, "NASDAQ"))
@@ -85,6 +102,7 @@ public class MarketService {
                         .change(usdRate.getChangeAmount())
                         .changeRate(usdRate.getChangeRate())
                         .build())
+                .lastUpdateTime(now)
                 .build();
 
         // Redis 저장
