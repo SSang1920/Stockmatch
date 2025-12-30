@@ -19,4 +19,5 @@ export interface MarketOverviewResponse {
     nasdaq: IndexInfo;
     sp500: IndexInfo;
     usdKrw: ExchangeRateInfo;
+    lastUpdateTime: string;
 }

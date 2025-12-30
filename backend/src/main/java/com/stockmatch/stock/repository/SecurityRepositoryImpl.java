@@ -1,6 +1,8 @@
 package com.stockmatch.stock.repository;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.stockmatch.stock.domain.Security;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,16 @@ public class SecurityRepositoryImpl implements SecurityRepositoryCustom {
 
     @Override
     public List<Security> searchByKeyword(String keyword, Pageable pageable) {
+
+        // 정렬 순서 로직
+        // 1순위: 티커가 정확히 일치
+        // 2순위: 티커가 검색어로 시작
+        // 3순위: 그 외
+        NumberExpression<Integer> rankPath = new CaseBuilder()
+                .when(security.ticker.equalsIgnoreCase(keyword)).then(1)
+                .when(security.ticker.startsWithIgnoreCase(keyword)).then(2)
+                .otherwise(3);
+
         return queryFactory
                 .selectFrom(security)
                 .where(
@@ -24,6 +36,7 @@ public class SecurityRepositoryImpl implements SecurityRepositoryCustom {
                         .or(containsName(keyword))
                         .or(containsEnglishName(keyword))
                 )
+                .orderBy(rankPath.asc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
