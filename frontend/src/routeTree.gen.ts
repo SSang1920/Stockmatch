@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SurveyRouteImport } from './routes/survey'
 import { Route as ClerkRouteRouteImport } from './routes/clerk/route'
 import { Route as PublicRouteRouteImport } from './routes/_public/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -42,6 +43,11 @@ import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 
+const SurveyRoute = SurveyRouteImport.update({
+  id: '/survey',
+  path: '/survey',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClerkRouteRoute = ClerkRouteRouteImport.update({
   id: '/clerk',
   path: '/clerk',
@@ -210,6 +216,7 @@ const AuthenticatedErrorsErrorRoute =
 
 export interface FileRoutesByFullPath {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/survey': typeof SurveyRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
+  '/survey': typeof SurveyRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
@@ -272,6 +280,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_public': typeof PublicRouteRouteWithChildren
   '/clerk': typeof ClerkRouteRouteWithChildren
+  '/survey': typeof SurveyRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/clerk/(auth)': typeof ClerkauthRouteRouteWithChildren
   '/clerk/_authenticated': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -306,6 +315,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/clerk'
+    | '/survey'
     | '/settings'
     | '/forgot-password'
     | '/otp'
@@ -336,6 +346,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/clerk'
+    | '/survey'
     | '/forgot-password'
     | '/otp'
     | '/sign-in'
@@ -367,6 +378,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/_public'
     | '/clerk'
+    | '/survey'
     | '/_authenticated/settings'
     | '/clerk/(auth)'
     | '/clerk/_authenticated'
@@ -402,6 +414,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   PublicRouteRoute: typeof PublicRouteRouteWithChildren
   ClerkRouteRoute: typeof ClerkRouteRouteWithChildren
+  SurveyRoute: typeof SurveyRoute
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
   authSignInRoute: typeof authSignInRoute
@@ -416,6 +429,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/survey': {
+      id: '/survey'
+      path: '/survey'
+      fullPath: '/survey'
+      preLoaderRoute: typeof SurveyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/clerk': {
       id: '/clerk'
       path: '/clerk'
@@ -750,6 +770,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   PublicRouteRoute: PublicRouteRouteWithChildren,
   ClerkRouteRoute: ClerkRouteRouteWithChildren,
+  SurveyRoute: SurveyRoute,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
   authSignInRoute: authSignInRoute,
