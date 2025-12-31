@@ -28,7 +28,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { DatePicker } from '@/components/date-picker'
+import { DatePicker } from '@/_archive/components/date-picker'
 
 const languages = [
   { label: 'English', value: 'en' },
