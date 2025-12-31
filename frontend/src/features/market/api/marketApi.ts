@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { MarketOverviewResponse } from '../types/market';
-import { StockSearchResponse } from '../types/stock';
+import { StockSearchResponse, MarketTrendResponse } from '../types/stock';
 
 interface ApiResponse<T> {
     success: boolean;
@@ -22,5 +22,11 @@ export const searchStocks = async (query: string): Promise<StockSearchResponse[]
         params: { q: query }
     });
 
+    return response.data.data;
+}
+
+// 시장 트렌드 조회 API
+export const fetchMarketTrends = async (): Promise<MarketTrendResponse> => {
+    const response = await axios.get('/api/market/trends');
     return response.data.data;
 }
