@@ -1,9 +1,6 @@
 package com.stockmatch.stock.service;
 
-import com.stockmatch.stock.client.kis.KisRankClient;
-import com.stockmatch.stock.domain.Security;
 import com.stockmatch.stock.dto.StockTrendResponse;
-import com.stockmatch.stock.repository.SecurityRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,13 +9,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -26,8 +20,8 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class StockRankService {
 
-    private final KisRankClient kisRankClient;
-    private final SecurityRepository securityRepository;
+    private final DomesticTrendService domesticTrendService;
+    private final OverseasTrendService overseasTrendService;
 
     // Redis
     private final RedisTemplate<String, Object> redisTemplate;
@@ -38,7 +32,6 @@ public class StockRankService {
      */
     @PostConstruct
     public void init() {
-        log.info("Initializing Market Trend Data...");
         updateMarketTrendCache();
     }
 
@@ -46,11 +39,11 @@ public class StockRankService {
      * 트렌드 데이터 조회 (Redis 우선)
      */
     @SuppressWarnings("unchecked")
-    public Map<String, List<StockTrendResponse>> getMarketTrends() {
+    public Map<String, Object> getMarketTrends() {
         try {
             // Redis 조회
-            Map<String, List<StockTrendResponse>> cachedData =
-                    (Map<String, List<StockTrendResponse>>) redisTemplate.opsForValue().get(REDIS_KEY_MARKET_TREND);
+            Map<String, Object> cachedData =
+                    (Map<String, Object>) redisTemplate.opsForValue().get(REDIS_KEY_MARKET_TREND);
 
             if (cachedData != null) {
                 return cachedData;
@@ -67,25 +60,25 @@ public class StockRankService {
      * (스케쥴러) 10분마다 갱신
      */
     @Scheduled(cron = "0 0/10 * * * ?")
-    public Map<String, List<StockTrendResponse>> updateMarketTrendCache() {
+    public Map<String, Object> updateMarketTrendCache() {
         log.info("Updating Market Trend Cache...");
 
-        // KIS API 호출
-        List<KisRankClient.KisVolumeItem> rawVolumeData = kisRankClient.getDomesticVolumeRank();
-
-        // DB 병합 - 상위 10개 추출
-        List<StockTrendResponse> mostActive = mergeWithDbData(rawVolumeData, 10);
-
-        // 나중에 추가할 급등/급락 로직 (일단 가짜 데이터)
-        // List<StockTrendResponse> gainers = getGainers();
-        List<StockTrendResponse> gainers = Collections.emptyList();
-        List<StockTrendResponse> losers = Collections.emptyList();
-
         // 결과 맵 생성
-        Map<String, List<StockTrendResponse>> result = new HashMap<>();
-        result.put("mostActive", mostActive);
-        result.put("gainers", gainers);
-        result.put("losers", losers);
+        Map<String, Object> result = new HashMap<>();
+
+        // 국내 데이터 (KR)
+        Map<String, List<StockTrendResponse>> krData = new HashMap<>();
+        krData.put("mostActive", domesticTrendService.getMostActive(10));
+        krData.put("gainers", domesticTrendService.getGainers());
+        krData.put("losers", domesticTrendService.getLosers());
+        result.put("KR", krData);
+
+        // 해외 데이터 (US)
+        Map<String, List<StockTrendResponse>> usData = new HashMap<>();
+        usData.put("mostActive", overseasTrendService.getMostActive(10));
+        usData.put("gainers", overseasTrendService.getGainers());
+        usData.put("losers", overseasTrendService.getLosers());
+        result.put("US", usData);
 
         // Redis 저장
         try {
@@ -96,70 +89,5 @@ public class StockRankService {
         }
 
         return result;
-    }
-
-    /**
-     * API 데이터 + DB 데이터 병합 로직
-     */
-    private List<StockTrendResponse> mergeWithDbData(List<KisRankClient.KisVolumeItem> apiItems, int limit) {
-        if (apiItems == null || apiItems.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // 상위 N개 티커 추출
-        List<KisRankClient.KisVolumeItem> targetItems = apiItems.stream()
-                .limit(limit)
-                .toList();
-
-        List<String> tickers = targetItems.stream()
-                .map(KisRankClient.KisVolumeItem::getMkscShrnIscd)
-                .toList();
-
-        // DB Bulk 조회
-        List<Security> securities = securityRepository.findByTickerIn(tickers);
-        Map<String, Security> securityMap = securities.stream()
-                .collect(Collectors.toMap(Security::getTicker, Function.identity()));
-
-        // 변환 및 합치기
-        return targetItems.stream()
-                .map(item -> {
-                    String ticker = item.getMkscShrnIscd();
-                    Security dbSecurity = securityMap.get(ticker);
-
-                    String finalName = (dbSecurity != null) ? dbSecurity.getName() : item.getHtsKorIsnm();
-                    String market = (dbSecurity != null) ? dbSecurity.getMarket().name() : "KR";
-
-                    return mapToDto(item, finalName, market);
-                })
-                .filter(item -> item != null)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * DTO 변환 헬퍼
-     */
-    private StockTrendResponse mapToDto(KisRankClient.KisVolumeItem item, String name, String market) {
-        try {
-            long currentPrice = Long.parseLong(item.getStckPrpr().replace(",", ""));
-            long changeValue = Long.parseLong(item.getPrdyVrss().replace(",", ""));
-            double changeRate = Double.parseDouble(item.getPrdyCtrt().replace(",", ""));
-
-            String priceStr = String.format("%,d", currentPrice);
-            String sign = changeValue > 0 ? "+" : (changeValue < 0 ? "-" : "");
-            String changeStr = sign + " " + String.format("%,d", Math.abs(changeValue));
-            String rateStr = (changeRate > 0 ? "+" : "") + String.format("%.2f%%", changeRate);
-
-            return new StockTrendResponse(
-                    item.getMkscShrnIscd(),
-                    name,
-                    priceStr,
-                    changeStr,
-                    rateStr,
-                    market
-            );
-        } catch (Exception e) {
-            log.warn("Error parsing rank item: {}", item.getMkscShrnIscd());
-            return null;
-        }
     }
 }
