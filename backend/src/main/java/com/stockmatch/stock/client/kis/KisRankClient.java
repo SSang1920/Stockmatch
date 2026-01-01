@@ -31,6 +31,7 @@ public class KisRankClient {
     private String appSecret;
 
     private static final String TR_ID_KR_VOLUME_RANK = "FHPST01710000";
+    private static final String TR_ID_OV_VOLUME_RANK = "HHDFS76310010";
 
     /**
      * 국내 거래량 상위 조회
@@ -81,6 +82,50 @@ public class KisRankClient {
     }
 
     /**
+     * 해외 거래량 상위 조회
+     */
+    public List<KisOverseasVolumeItem> getOverseasVolumeRank(String excd) {
+        try {
+            // URL 생성
+            String url = UriComponentsBuilder
+                    .fromUriString(baseUrl + "/uapi/overseas-stock/v1/ranking/trade-vol")
+                    .queryParam("KEYB", "")
+                    .queryParam("AUTH", "")
+                    .queryParam("EXCD", excd)
+                    .queryParam("NDAY", "0")
+                    .queryParam("PRC1", "")
+                    .queryParam("PRC2", "")
+                    .queryParam("VOL_RANG", "0")
+                    .toUriString();
+
+            // 헤더 생성
+            HttpHeaders headers = createHeaders(TR_ID_OV_VOLUME_RANK);
+            headers.set("custtype", "P");
+
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            // API 호출
+            ResponseEntity<KisOverseasVolumeRankResponse> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    KisOverseasVolumeRankResponse.class
+            );
+
+            KisOverseasVolumeRankResponse body = response.getBody();
+            if (body == null || body.getOutput2() == null) {
+                return Collections.emptyList();
+            }
+
+            return body.getOutput2();
+
+        } catch (Exception e) {
+            log.error("[KIS-RANK] Overseas volume rank error (Market: {})", excd, e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
      * (공통) 헤더 생성
      */
     private HttpHeaders createHeaders(String trId) {
@@ -96,7 +141,7 @@ public class KisRankClient {
         return headers;
     }
 
-    // ====== 내부 DTO ======
+    // ====== 내부 DTO (국내용) ======
     @Getter
     public static class KisVolumeRankResponse {
         @JsonProperty("output")
@@ -112,5 +157,25 @@ public class KisRankClient {
         @JsonProperty("prdy_ctrt") private String prdyCtrt;             // 등락률
         @JsonProperty("acml_vol") private String acmlVol;               // 누적 거래량
         @JsonProperty("data_rank") private String dataRank;             // 순위
+    }
+
+    // ===== 내부 DTO (해외용) ======
+    @Getter
+    public static class KisOverseasVolumeRankResponse {
+        @JsonProperty("output2")
+        private List<KisOverseasVolumeItem> output2;
+    }
+
+    @Getter
+    public static class KisOverseasVolumeItem {
+        @JsonProperty("rank") private String rank;                      // 순위
+        @JsonProperty("rsym") private String rsym;                      // 티커
+        @JsonProperty("ename") private String ename;                    // 영문 종목명
+        @JsonProperty("name") private String name;                      // 한글 종목명
+        @JsonProperty("last") private String last;                      // 현재가
+        @JsonProperty("diff") private String diff;                      // 대비
+        @JsonProperty("rate") private String rate;                      // 등락률
+        @JsonProperty("tvol") private String tvol;                      // 거래량
+        @JsonProperty("excd") private String excd;                      // 거래소 코드
     }
 }
