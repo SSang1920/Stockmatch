@@ -18,9 +18,15 @@ export interface StockTrend {
     market: string;
 }
 
-// 시장 트렌드 API 전체 응답 구조
-export interface MarketTrendResponse {
+// 시장별 트렌드 데이터 구조
+export interface MarketTrendData {
     mostActive: StockTrend[];
     gainers: StockTrend[];
     losers: StockTrend[];
+}
+
+// 시장 트렌드 API 전체 응답 구조
+export interface MarketTrendResponse {
+    KR: MarketTrendData;
+    US: MarketTrendData;
 }

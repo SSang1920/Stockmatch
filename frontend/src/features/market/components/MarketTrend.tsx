@@ -1,15 +1,11 @@
 import { useEffect, useState } from "react"
-import { StockTrend } from "../types/stock"
+import { MarketTrendData, MarketTrendResponse, StockTrend } from "../types/stock"
 import { useNavigate } from "@tanstack/react-router";
 import { fetchMarketTrends } from "../api/marketApi";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const MarketTrend = () => {
-    const [data, setData] = useState<{
-        mostActive: StockTrend[];
-        gainers: StockTrend[];
-        losers: StockTrend[];
-    }>({ mostActive: [], gainers: [], losers: [] });
-
+    const [data, setData] = useState<MarketTrendResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
@@ -38,36 +34,70 @@ export const MarketTrend = () => {
     };
 
     if (loading) return <div className="h-64 bg-gray-50 rounded-xl animate-pulse"></div>
+    if (!data) return <div className="text-center py-10 text-red-500">데이터를 불러오지 못했습니다.</div>;
 
     return (
-        // PC 3열, 모바일 1열
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="w-full">
+            {/* 탭 컴포넌트 적용 */}
+            <Tabs defaultValue="KR" className="w-full">
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold text-gray-800">시장 트렌드 Top 10</h2>
+                    <TabsList>
+                        <TabsTrigger value="KR">국내 (KRX)</TabsTrigger>
+                        <TabsTrigger value="US">해외 (US)</TabsTrigger>
+                    </TabsList>
+                </div>
 
-            {/* 인기 거래 */}
-            <TrendListCard
-                title="거래량 상위"
-                items={data.mostActive}
-                onItemClick={handleClick}
-            />
+                {/* 국내 탭 내용 */}
+                <TabsContent value="KR" className="mt-0">
+                    <TrendGrid data={data.KR} onItemClick={handleClick} />
+                </TabsContent>
 
-            {/* 급등 */}
-            <TrendListCard
-                title="급등"
-                items={data.gainers}
-                onItemClick={handleClick}
-            />
-
-            {/* 급락 */}
-            <TrendListCard
-                title="급락"
-                items={data.losers}
-                onItemClick={handleClick}
-            />
+                {/* 해외 탭 내용 */}
+                <TabsContent value="US" className="mt-0">
+                    <TrendGrid data={data.US} onItemClick={handleClick} />
+                </TabsContent>
+            </Tabs>
         </div>
     );
 };
 
-const TrendListCard = ({ title, items, onItemClick }: any) => {
+// ===== 3열 그리드 컴포넌트 =====
+interface TrendGridProps {
+    data: MarketTrendData;
+    onItemClick: (item: StockTrend) => void;
+}
+
+const TrendGrid = ({ data, onItemClick }: TrendGridProps) => {
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <TrendListCard
+                title="거래량 상위"
+                items={data.mostActive}
+                onItemClick={onItemClick}
+            />
+            <TrendListCard
+                title="급등"
+                items={data.gainers}
+                onItemClick={onItemClick}
+            />
+            <TrendListCard
+                title="급락"
+                items={data.losers}
+                onItemClick={onItemClick}
+            />
+        </div>
+    );
+};
+    
+// ===== 개별 리스트 카드 컴포넌트 =====
+interface TrendListCardProps {
+    title: string;
+    items: StockTrend[];
+    onItemClick: (item: StockTrend) => void;
+}
+
+const TrendListCard = ({ title, items, onItemClick }: TrendListCardProps) => {
     return (
         <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col h-full">
             <h3 className="font-bold text-lg mb-4 text-gray-800 border-b pb-2">{title}</h3>

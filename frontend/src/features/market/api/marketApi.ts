@@ -27,6 +27,6 @@ export const searchStocks = async (query: string): Promise<StockSearchResponse[]
 
 // 시장 트렌드 조회 API
 export const fetchMarketTrends = async (): Promise<MarketTrendResponse> => {
-    const response = await axios.get('/api/market/trends');
+    const response = await axios.get<ApiResponse<MarketTrendResponse>>('/api/market/trends');
     return response.data.data;
 }
