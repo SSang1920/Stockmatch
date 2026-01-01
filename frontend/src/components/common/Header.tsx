@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { TrendingUp } from "lucide-react";
+import { LogOut, TrendingUp, User } from "lucide-react";
 import { Button } from "../ui/button";
 
 export function Header() {
+    const isLoggedIn = false;
+
     return (
         <header className="border-b bg-background">
             <div className="mx-auto flex max-w-7xl items-center justify-between p-4">
@@ -21,12 +23,26 @@ export function Header() {
 
                 {/* 우측 버튼 영역 */}
                 <div className="flex gap-2">
-                    <Button asChild variant="outline">
-                        <Link to="/sign-in">로그인</Link>
-                    </Button>
-                    <Button asChild>
-                        <Link to="/dashboard">대시보드</Link>
-                    </Button>
+                    {isLoggedIn ? (
+                        // 로그인 상태일 때: 내 프로필, 로그아웃
+                        <>
+                            <Button variant="ghost" asChild>
+                                <Link to="/profile" className="flex items-center gap-2">
+                                    <User className="h-4 w-4" />
+                                    <span>내 프로필</span>
+                                </Link>
+                            </Button>
+                            <Button variant="outline" className="gap-2">
+                                <LogOut className="h-4 w-4" />
+                                <span>로그아웃</span>
+                            </Button>
+                        </>
+                    ) : (
+                        // 비로그인 상태일 때: 로그인 버튼
+                        <Button asChild>
+                            <Link to="/sign-in">로그인</Link>
+                        </Button>
+                    )}
                 </div>
             </div>
         </header>
