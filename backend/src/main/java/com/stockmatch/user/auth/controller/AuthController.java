@@ -2,6 +2,7 @@ package com.stockmatch.user.auth.controller;
 
 import com.stockmatch.common.api.ApiResponse;
 import com.stockmatch.config.security.CustomUserDetails;
+import com.stockmatch.user.auth.dto.TokenResponseDto;
 import com.stockmatch.user.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,10 +37,10 @@ public class AuthController {
      * Refresh Token을 사용하여 새로운 Access Token을 발급합니다.
      */
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<Map<String, String>>> refreshAccessToken(
+    public ResponseEntity<ApiResponse<TokenResponseDto>> refreshAccessToken(
             @RequestHeader("Authorization") String refreshTokenHeader) {
 
-        Map<String, String> responseData = authService.refreshAccessToken(refreshTokenHeader);
+       TokenResponseDto responseData = authService.refreshAccessToken(refreshTokenHeader);
 
         return ResponseEntity.ok(ApiResponse.ok(responseData));
     }

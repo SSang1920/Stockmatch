@@ -39,6 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 헤더에서 토큰 추출
         String accessToken = resolveToken(request);
+        log.info("검증 시작 - 토큰: {}", accessToken); // 조작된 토큰이 맞는지 확인
 
         // 토큰이 없으면 다음 필터로 진행 (인증이 필요없는 페이지 접근)
         if (accessToken == null) {
@@ -50,6 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             // AccessToken 유효성 검사
             jwtUtil.validateTokenOrThrow(accessToken);
+            log.info("검증 통과함 - 이 로그가 보이면 안 됨(조작 시)");
 
             // 토큰에서 userPk 추출
             String userPk = jwtUtil.getUserPkFromToken(accessToken);
@@ -76,8 +78,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
         } catch (BusinessException e) {
-            log.warn("JWT Authentication Failed: {}", e.getMessage());
+            log.error("검증 실패로 차단됨: {}", e.getMessage());
             setErrorResponse(response, e.getErrorCode());
+            return;
+        } catch (Exception e) {
+            log.error("Unexpected error during JWT authentication", e);
+            setErrorResponse(response, ErrorCode.INTERNAL_SERVER_ERROR);
             return;
         }
 
@@ -87,7 +93,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String resolveToken(HttpServletRequest request){
         //헤더에서 authorization 값 가져옴
-        String bearerToken = request.getHeader("authorization");
+        String bearerToken = request.getHeader("Authorization");
+
+        if (bearerToken == null) {
+            bearerToken = request.getHeader("authorization");
+        }
 
         // 텍스트가 있는지와 "Bearer "로 시작하는지 확인
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")){

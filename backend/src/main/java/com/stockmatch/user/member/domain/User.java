@@ -47,9 +47,6 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private UserStatus status;
 
-    @Enumerated(EnumType.STRING)
-    private UserInvestmentType investmentType;
-
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
@@ -64,6 +61,9 @@ public class User extends BaseEntity {
 
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
     private AlphaVantageKey alphaVantageKey;
+
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserInvestmentProfile investmentProfile;
 
     // === 연관관계 편의 메서드 ===  //
     public void setPortfolio(Portfolio portfolio) {
@@ -110,6 +110,16 @@ public class User extends BaseEntity {
         if (name != null && !name.isBlank()) {
             this.name = name;
         }
+    }
+    public void registerInvestmentProfile(UserInvestmentProfile investmentProfile){
+        this.investmentProfile = investmentProfile;
+    }
+
+    public UserInvestmentType getInvestmentType() {
+        if (this.investmentProfile == null) {
+            return null;
+        }
+        return this.investmentProfile.getInvestmentType();
     }
 
     public void deactivate() {

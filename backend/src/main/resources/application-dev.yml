@@ -123,6 +123,12 @@ bok:
 alphavantage:
   base-url: "https://www.alphavantage.co"
 
+dart:
+  api:
+    key: ${DART_API_KEY}
+    base-url: "https://opendart.fss.or.kr/api"
+
 encryption:
   secret-key: ${ENCRYPTION_SECRET_KEY}
   salt: ${ENCRYPTION_SALT}
+

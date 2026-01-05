@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SurveyRouteImport } from './routes/survey'
 import { Route as PublicRouteRouteImport } from './routes/_public/route'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
@@ -23,6 +24,11 @@ import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
 import { Route as StocksMarketTickerRouteImport } from './routes/stocks.$market.$ticker'
 
+const SurveyRoute = SurveyRouteImport.update({
+  id: '/survey',
+  path: '/survey',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PublicRouteRoute = PublicRouteRouteImport.update({
   id: '/_public',
   getParentRoute: () => rootRouteImport,
@@ -89,6 +95,7 @@ const StocksMarketTickerRoute = StocksMarketTickerRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/survey': typeof SurveyRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/stocks/$market/$ticker': typeof StocksMarketTickerRoute
 }
 export interface FileRoutesByTo {
+  '/survey': typeof SurveyRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
@@ -119,6 +127,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_public': typeof PublicRouteRouteWithChildren
+  '/survey': typeof SurveyRoute
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/otp': typeof authOtpRoute
   '/(auth)/sign-in': typeof authSignInRoute
@@ -135,6 +144,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/survey'
     | '/forgot-password'
     | '/otp'
     | '/sign-in'
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/stocks/$market/$ticker'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/survey'
     | '/forgot-password'
     | '/otp'
     | '/sign-in'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_public'
+    | '/survey'
     | '/(auth)/forgot-password'
     | '/(auth)/otp'
     | '/(auth)/sign-in'
@@ -180,6 +192,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   PublicRouteRoute: typeof PublicRouteRouteWithChildren
+  SurveyRoute: typeof SurveyRoute
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
   authSignInRoute: typeof authSignInRoute
@@ -195,6 +208,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/survey': {
+      id: '/survey'
+      path: '/survey'
+      fullPath: '/survey'
+      preLoaderRoute: typeof SurveyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_public': {
       id: '/_public'
       path: ''
@@ -303,6 +323,7 @@ const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   PublicRouteRoute: PublicRouteRouteWithChildren,
+  SurveyRoute: SurveyRoute,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
   authSignInRoute: authSignInRoute,

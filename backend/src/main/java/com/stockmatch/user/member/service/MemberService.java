@@ -5,9 +5,13 @@ import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.user.auth.service.OAuthUnlinkService;
 import com.stockmatch.user.member.domain.AlphaVantageKey;
 import com.stockmatch.user.member.domain.User;
+import com.stockmatch.user.member.domain.UserInvestmentProfile;
+import com.stockmatch.user.member.domain.enums.UserInvestmentType;
+import com.stockmatch.user.member.dto.request.InvestmentResultRequest;
 import com.stockmatch.user.member.dto.response.UserInfoResponse;
 import com.stockmatch.user.member.dto.request.UserProfileUpdateRequest;
 import com.stockmatch.user.member.repository.AlphaVantageKeyRepository;
+import com.stockmatch.user.member.repository.UserInvestmentProfileRepository;
 import com.stockmatch.user.member.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
@@ -23,6 +27,7 @@ public class MemberService {
 
     private final UserRepository userRepository;
     private final AlphaVantageKeyRepository alphaVantageKeyRepository;
+    private final UserInvestmentProfileRepository userInvestmentProfileRepository;
     private final OAuthUnlinkService oAuthUnlinkService;
     private final TextEncryptor textEncryptor;
 
@@ -47,6 +52,38 @@ public class MemberService {
                 .orElseThrow(()-> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         user.updateProfile(request.getName());
+    }
+
+    /**
+     * 투자 성향 분석 결과 저장/업데이트
+     */
+    @Transactional
+    public void registerInvestmentProfile(Long userId, InvestmentResultRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        // 점수 기반 투자 타입 판별
+        UserInvestmentType type = UserInvestmentType.findByScore(request.getTotalScore());
+
+        // 프로필 존재 유무 확인
+        UserInvestmentProfile profile = user.getInvestmentProfile();
+
+        if (profile == null) {
+            profile = UserInvestmentProfile.builder()
+                    .user(user)
+                    .investmentType(type)
+                    .totalScore(request.getTotalScore())
+                    .rawAnswers(request.getRawAnswers())
+                    .build();
+
+            user.registerInvestmentProfile(profile);
+
+            userInvestmentProfileRepository.save(profile);
+        } else {
+            profile.updateProfile(type, request.getTotalScore(), request.getRawAnswers());
+        }
+
+
     }
 
     /**
