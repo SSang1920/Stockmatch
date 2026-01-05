@@ -40,12 +40,6 @@ function HomePage() {
 
       {/* 시장 트렌드/랭킹 */}
       <section className="mt-10">
-        <div className="flex items-end gap-2 mb-4">
-          <h2 className="text-xl font-bold">오늘의 시장 트렌드</h2>
-          <span className="text-xs text-muted-foreground pb-1">
-            거래량 상위 / 급등 / 급락
-          </span>
-        </div>
         <MarketTrend />
       </section>
     </div>

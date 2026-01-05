@@ -40,11 +40,11 @@ export const MarketTrend = () => {
         <div className="w-full">
             {/* 탭 컴포넌트 적용 */}
             <Tabs defaultValue="KR" className="w-full">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-bold text-gray-800">시장 트렌드 Top 10</h2>
                     <TabsList>
-                        <TabsTrigger value="KR">국내 (KRX)</TabsTrigger>
-                        <TabsTrigger value="US">해외 (US)</TabsTrigger>
+                        <TabsTrigger value="KR">국내</TabsTrigger>
+                        <TabsTrigger value="US">해외</TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -121,7 +121,7 @@ const TrendListCard = ({ title, items, onItemClick }: TrendListCardProps) => {
                             >
                                 <div className="flex items-center gap-3 overflow-hidden">
                                     {/* 1위, 2위, 3위 강조 */}
-                                    <span className={`font-bold w-5 text-center shrink-0 ${idx < 3 ? 'text-gray-900 text-lg' : 'text-gray-400'}`}>
+                                    <span className={`font-bold w-6 h-6 flex items-center justify-center rounded text-sm shrink-0 ${idx < 3 ? 'bg-primary/10 text-primary' : 'text-gray-400'}`}>
                                         {idx + 1}
                                     </span>
                                     <div className="min-w-0">
