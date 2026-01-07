@@ -1,5 +1,7 @@
 package com.stockmatch.exchangeRate.service;
 
+import com.stockmatch.common.exception.BusinessException;
+import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.exchangeRate.domain.ExchangeRate;
 import com.stockmatch.exchangeRate.domain.FromCurrency;
 import com.stockmatch.exchangeRate.domain.ToCurrency;
@@ -17,6 +19,11 @@ public class FxRateServiceImpl implements FxRateService {
 
     @Override
     public BigDecimal getUsdToKrwRate(LocalDate date) {
+        // 입력값 검증
+        if (date == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
         ExchangeRate rate = exchangeService.getExchangeRate(
                 date,
                 FromCurrency.USD,
@@ -28,6 +35,11 @@ public class FxRateServiceImpl implements FxRateService {
 
     @Override
     public BigDecimal getLatestUsdToKrwRate(LocalDate date) {
+        // 입력값 검증
+        if (date == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
         ExchangeRate rate = exchangeService.getLatestUsdToKrwRate(
                 date,
                 FromCurrency.USD,
