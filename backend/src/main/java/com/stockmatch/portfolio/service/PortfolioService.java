@@ -42,7 +42,7 @@ public class PortfolioService {
                         return portfolioRepository.save(newPortfolio);
                     } catch (DataIntegrityViolationException e) {
                         return portfolioRepository.findByUserId(user.getId())
-                                .orElseThrow(() -> e);
+                                .orElseThrow(() -> new BusinessException(ErrorCode.PORTFOLIO_ALREADY_EXISTS));
                     }
                 });
 

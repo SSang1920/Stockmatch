@@ -10,10 +10,11 @@ import com.stockmatch.stock.domain.Security;
 import com.stockmatch.stock.dto.Region;
 import com.stockmatch.stock.dto.StockPriceResponse;
 import com.stockmatch.stock.repository.SecurityRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -24,27 +25,16 @@ import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
-public class KisUsStockClient implements ExternalPriceClient {
+public class KisUsStockClient extends AbstractKisClient implements ExternalPriceClient {
 
-    private final RestTemplate restTemplate;
-    private final KisTokenProvider kisTokenProvider;
     private final SecurityRepository securityRepository;
 
-    @Value("${kis.base-url}")
-    private String baseUrl;
-
-    @Value("${kis.app-key}")
-    private String appKey;
-
-    @Value("${kis.app-secret}")
-    private String appSecret;
-
-    @Value("${kis.tr-id.us.real-time}")
-    private String trId;
-
-    @Value("${kis.tr-id.us.index}")
-    private String trIdIndex;
+    public KisUsStockClient(RestTemplate restTemplate,
+                            KisTokenProvider kisTokenProvider,
+                            SecurityRepository securityRepository) {
+        super(restTemplate, kisTokenProvider);
+        this.securityRepository = securityRepository;
+    }
 
     @Override
     public StockPriceResponse getRealtime(String region, String ticker) {
@@ -93,14 +83,9 @@ public class KisUsStockClient implements ExternalPriceClient {
                     .queryParam("FID_PERIOD_DIV_CODE", "D")
                     .toUriString();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("authorization", "Bearer " + kisTokenProvider.getAccessToken());
-            headers.set("appkey", appKey);
-            headers.set("appsecret", appSecret);
-            headers.set("tr_id", trIdIndex);
-
+            HttpHeaders headers = createHeaders(KisTrId.US_INDEX);
             HttpEntity<Void> entity = new HttpEntity<>(headers);
+
             ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
 
             JsonNode body = response.getBody();
@@ -166,15 +151,7 @@ public class KisUsStockClient implements ExternalPriceClient {
                     .queryParam("SYMB", ticker)
                     .toUriString();
 
-            String accessToken = kisTokenProvider.getAccessToken();
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("authorization", "Bearer " + accessToken);
-            headers.set("appkey", appKey);
-            headers.set("appsecret", appSecret);
-            headers.set("tr_id", trId);
-
+            HttpHeaders headers = createHeaders(KisTrId.US_REAL_TIME);
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             ResponseEntity<JsonNode> response =
@@ -226,10 +203,5 @@ public class KisUsStockClient implements ExternalPriceClient {
                 .highPrice(high)
                 .lowPrice(low)
                 .build();
-    }
-
-    private BigDecimal parseBigDecimal(String value) {
-        if (value == null || value.isBlank()) return BigDecimal.ZERO;
-        try { return new BigDecimal(value.trim()); } catch (NumberFormatException e) { return BigDecimal.ZERO; }
     }
 }

@@ -1,11 +1,14 @@
 package com.stockmatch.stock.service;
 
+import com.stockmatch.common.exception.BusinessException;
+import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.stock.client.ExternalDailyPriceClient;
 import com.stockmatch.stock.client.kis.KisDailyPriceClient;
 import com.stockmatch.stock.domain.DailyPrice;
 import com.stockmatch.stock.domain.Security;
 import com.stockmatch.stock.repository.DailyPriceRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DailyPriceSyncService {
@@ -25,38 +29,60 @@ public class DailyPriceSyncService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void syncRange(Security security, LocalDate from, LocalDate to) {
-        List<ExternalDailyPriceClient.DailyPriceItem> items =
-                kisDailyPriceClient.getDailyPrices(security.getTicker(), from, to);
+        // 입력값 검증
+        if (security == null) {
+            throw new BusinessException(ErrorCode.SECURITY_NOT_FOUND);
+        }
 
-        for (ExternalDailyPriceClient.DailyPriceItem item : items) {
-            DailyPrice entity = dailyPriceRepository.findBySecurityIdAndDate(security.getId(), item.date())
-                    .orElse(null);
+        if (from == null || to == null || from.isAfter(to)) {
+            throw new BusinessException(ErrorCode.INVALID_DATE_RANGE);
+        }
 
-            if (entity == null) {
-                entity = new DailyPrice(
-                        null,
-                        security,
-                        item.date(),
-                        item.openPrice(),
-                        item.closePrice(),
-                        item.highPrice(),
-                        item.lowPrice(),
-                        item.volume()
-                );
-            } else {
-                entity = new DailyPrice(
-                        entity.getId(),
-                        security,
-                        item.date(),
-                        item.openPrice(),
-                        item.closePrice(),
-                        item.highPrice(),
-                        item.lowPrice(),
-                        item.volume()
-                );
+        try {
+            // 외부 API 호출
+            List<ExternalDailyPriceClient.DailyPriceItem> items =
+                    kisDailyPriceClient.getDailyPrices(security.getTicker(), from, to);
+
+            // 데이터 저장/업데이트
+            for (ExternalDailyPriceClient.DailyPriceItem item : items) {
+                DailyPrice entity = dailyPriceRepository.findBySecurityIdAndDate(security.getId(), item.date())
+                        .orElse(null);
+
+                if (entity == null) {
+                    entity = new DailyPrice(
+                            null,
+                            security,
+                            item.date(),
+                            item.openPrice(),
+                            item.closePrice(),
+                            item.highPrice(),
+                            item.lowPrice(),
+                            item.volume()
+                    );
+                } else {
+                    entity = new DailyPrice(
+                            entity.getId(),
+                            security,
+                            item.date(),
+                            item.openPrice(),
+                            item.closePrice(),
+                            item.highPrice(),
+                            item.lowPrice(),
+                            item.volume()
+                    );
+                }
+
+                dailyPriceRepository.save(entity);
             }
-
-            dailyPriceRepository.save(entity);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to sync daily price. ticker={}, error={}", security.getTicker(), e.getMessage());
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR);
         }
     }
+
+
+
+
 }

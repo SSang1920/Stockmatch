@@ -7,10 +7,11 @@ import com.stockmatch.stock.cache.SecurityNameCacheService;
 import com.stockmatch.stock.client.ExternalPriceClient;
 import com.stockmatch.stock.dto.Region;
 import com.stockmatch.stock.dto.StockPriceResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -20,29 +21,18 @@ import java.time.Duration;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
-public class KisKorStockClient implements ExternalPriceClient {
+public class KisKorStockClient extends AbstractKisClient implements ExternalPriceClient {
 
-    private final RestTemplate restTemplate;
-    private final KisTokenProvider kisTokenProvider;
     private final SecurityNameCacheService nameCache;
 
     private static final Duration NAME_TTL = Duration.ofDays(7);
 
-    @Value("${kis.base-url}")
-    private String baseUrl;
-
-    @Value("${kis.app-key}")
-    private String appKey;
-
-    @Value("${kis.app-secret}")
-    private String appSecret;
-
-    @Value("${kis.tr-id.kr.real-time}")
-    private String trId;
-
-    @Value("${kis.tr-id.kr.index}")
-    private String trIdIndex;
+    public KisKorStockClient(RestTemplate restTemplate,
+                             KisTokenProvider kisTokenProvider,
+                             SecurityNameCacheService nameCache) {
+        super(restTemplate, kisTokenProvider);
+        this.nameCache = nameCache;
+    }
 
     @Override
     public StockPriceResponse getRealtime(String region, String ticker) {
@@ -73,13 +63,7 @@ public class KisKorStockClient implements ExternalPriceClient {
                     .queryParam("FID_INPUT_ISCD", ticker)
                     .toUriString();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("authorization", "Bearer " + kisTokenProvider.getAccessToken());
-            headers.set("appkey", appKey);
-            headers.set("appsecret", appSecret);
-            headers.set("custtype", "P");
-            headers.set("tr_id", trIdIndex);
+            HttpHeaders headers = createHeaders(KisTrId.KR_INDEX);
 
             HttpEntity<Void> entity = new HttpEntity<>(headers);
             ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
@@ -111,21 +95,6 @@ public class KisKorStockClient implements ExternalPriceClient {
     }
 
     /**
-     * 공통 요청 헤더
-     */
-    private HttpHeaders defaultHeaders(String accessToken) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("authorization", "Bearer " + accessToken);
-        headers.set("appkey", appKey);
-        headers.set("appsecret", appSecret);
-        headers.set("tr_id", trId);
-        headers.set("custtype", "P");
-
-        return headers;
-    }
-
-    /**
      * KIS 원본 JSON 응답 반환
      */
     public JsonNode getKoreaPriceRaw(String code) {
@@ -136,8 +105,8 @@ public class KisKorStockClient implements ExternalPriceClient {
                     .queryParam("FID_INPUT_ISCD", code)
                     .toUriString();
 
-            String accessToken = kisTokenProvider.getAccessToken();
-            HttpEntity<Void> entity = new HttpEntity<>(defaultHeaders(accessToken));
+            HttpHeaders headers = createHeaders(KisTrId.KR_REAL_TIME);
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
 
@@ -196,14 +165,5 @@ public class KisKorStockClient implements ExternalPriceClient {
                 .highPrice(high)
                 .lowPrice(low)
                 .build();
-    }
-
-    private BigDecimal parseBigDecimal(String value) {
-        if (value == null || value.isBlank()) return BigDecimal.ZERO;
-        try {
-            return new BigDecimal(value.trim());
-        } catch (NumberFormatException e) {
-            return  BigDecimal.ZERO;
-        }
     }
 }

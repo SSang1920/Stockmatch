@@ -28,6 +28,9 @@ public class ExchangeService {
 
     @Transactional
     public ExchangeRate getExchangeRate(LocalDate date, FromCurrency from, ToCurrency to) {
+        // 입력값 검증
+        validateInput(date, from, to);
+
         // 데이터가 없으면 fetchFromDbOrApi를 실행하여 결과를 캐시에 저장
         return cacheService.getOrLoadExchangeRate(date, from, to, () ->{
             //캐시에 데이터가 없을때 실행
@@ -38,13 +41,20 @@ public class ExchangeService {
 
     @Transactional
     public ExchangeRate getLatestUsdToKrwRate(LocalDate date, FromCurrency from, ToCurrency to) {
+        // 입력값 검증
+        validateInput(date, from, to);
+
         return cacheService.getOrLoadExchangeRate(date, from, to, () -> {
             log.info("Executing loader for Latest Exchange Rate. Date: {}, From: {}, To: {}", date, from, to);
             return fetchLastestFromDbOrApi(date, from, to);
         });
     }
 
+    /**
+     * 특정 날짜의 환율 조회 (DB -> API 조회)
+     */
     private ExchangeRate fetchFromDbOrApi(LocalDate date, FromCurrency from, ToCurrency to){
+        // 지원하지 않는 통화쌍 검증
         if (from != FromCurrency.USD || to != ToCurrency.KRW) {
             throw new BusinessException(ErrorCode.UNSUPPORTED_CURRENCY_CONVERSION);
         }
@@ -53,7 +63,16 @@ public class ExchangeService {
                 .orElseGet(() -> {
                     //  DB에 없으면, 외부 API 호출
                     log.info("No exchange rate in DB. Fetching from external API...");
-                    BigDecimal rate = bokApiClient.fetchUsdToKrwRate(date);
+
+                    BigDecimal rate;
+                    try {
+                        rate = bokApiClient.fetchUsdToKrwRate(date);
+                    } catch (BusinessException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        log.error("BOK API fetch failed", e);
+                        throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
+                    }
 
                     if (rate == null) {
                         log.warn("Failed to fetch rate from BOK API for date: {}", date);
@@ -72,6 +91,7 @@ public class ExchangeService {
     }
 
     private ExchangeRate fetchLastestFromDbOrApi(LocalDate date, FromCurrency from, ToCurrency to) {
+        // 지원하지 앟는 통화쌍 검증
         if (from != FromCurrency.USD || to != ToCurrency.KRW) {
             throw new BusinessException(ErrorCode.UNSUPPORTED_CURRENCY_CONVERSION);
         }
@@ -82,7 +102,6 @@ public class ExchangeService {
         for (int i = 0; i < 10; i++) {
             // DB에서 cursor 이하 중 가장 최근 환율 찾기
             var recentOpt = exchangeRepository.findTopByDateLessThanEqualAndFromCurrencyAndToCurrencyOrderByDateDesc(date, from, to);
-
             if (recentOpt.isPresent()) {
                 return recentOpt.get();
             }
@@ -95,17 +114,22 @@ public class ExchangeService {
                 }
 
                 default -> {
-                    BigDecimal rate = bokApiClient.fetchUsdToKrwRate(cursor);
+                    try {
+                        BigDecimal rate = bokApiClient.fetchUsdToKrwRate(cursor);
 
-                    if (rate != null) {
-                        ExchangeRate newExchangeRate = ExchangeRate.builder()
-                                .date(cursor)
-                                .fromCurrency(from)
-                                .toCurrency(to)
-                                .rate(rate)
-                                .build();
-                        return exchangeRepository.save(newExchangeRate);
+                        if (rate != null) {
+                            ExchangeRate newExchangeRate = ExchangeRate.builder()
+                                    .date(cursor)
+                                    .fromCurrency(from)
+                                    .toCurrency(to)
+                                    .rate(rate)
+                                    .build();
+                            return exchangeRepository.save(newExchangeRate);
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to fetch BOK API for cursor date: {}", cursor, e);
                     }
+
                     cursor = cursor.minusDays(1);
                 }
             }
@@ -115,18 +139,31 @@ public class ExchangeService {
     }
 
     /**
-     * 매일 오전 11시 30분 환율 정보를 조회하여 캐시에 저장
+     * 입력값 검증 공통 메서드
      */
-    @Scheduled(cron = "0 30 11 * * MON-FRI",zone = "Asia/Seoul")
-    public void scheduleDailyExchangeRateUpdate() {
-        LocalDate today = LocalDate.now();
-        log.info("scheduled task: Warming up daily exchange rate cache for {}", today);
-        try{
-            getExchangeRate(today, FromCurrency.USD, ToCurrency.KRW);
-        } catch (Exception e){
-            log.error("Scheduled exchange rate update failed", e);
+    private void validateInput(LocalDate date, FromCurrency from, ToCurrency to) {
+        if (date == null || from == null || to == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
+        if (date.isAfter(LocalDate.now())) {
+            throw new BusinessException(ErrorCode.INVALID_DATE_RANGE);
         }
     }
 
-
+    /**
+     * 매일 오전 11시 30분 환율 정보를 조회하여 캐시에 저장
+     */
+    @Scheduled(cron = "0 30 11 * * MON-FRI", zone = "Asia/Seoul")
+    public void scheduleDailyExchangeRateUpdate() {
+        LocalDate today = LocalDate.now();
+        log.info("scheduled task: Warming up daily exchange rate cache for {}", today);
+        try {
+            getExchangeRate(today, FromCurrency.USD, ToCurrency.KRW);
+        } catch (BusinessException e) {
+            log.warn("Scheduled update skipped: {}", e.getMessage());
+        } catch (Exception e) {
+            log.error("Scheduled exchange rate update failed", e);
+        }
+    }
 }

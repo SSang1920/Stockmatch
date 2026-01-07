@@ -7,10 +7,11 @@ import com.stockmatch.stock.client.ExternalDailyPriceClient;
 import com.stockmatch.stock.domain.Exchange;
 import com.stockmatch.stock.domain.Security;
 import com.stockmatch.stock.repository.SecurityRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -24,31 +25,19 @@ import java.util.List;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
-public class KisDailyPriceClient implements ExternalDailyPriceClient {
+public class KisDailyPriceClient extends AbstractKisClient implements ExternalDailyPriceClient {
 
-    private static final DateTimeFormatter KIS_DATE =
-            DateTimeFormatter.ofPattern("yyyyMMdd");
-    private static final int KOR_CHUNK_DAYS = 90;
-
-    private final RestTemplate restTemplate;
-    private final KisTokenProvider kisTokenProvider;
     private final SecurityRepository securityRepository;
 
-    @Value("${kis.base-url}")
-    private String baseUrl;
+    private static final DateTimeFormatter KIS_DATE = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final int KOR_CHUNK_DAYS = 90;
 
-    @Value("${kis.app-key}")
-    private String appKey;
-
-    @Value("${kis.app-secret}")
-    private String appSecret;
-
-    @Value("${kis.tr-id.kr.daily-price}")
-    private String krDailyTrId;
-
-    @Value("${kis.tr-id.us.daily-price}")
-    private String usDailyTrId;
+    public KisDailyPriceClient(RestTemplate restTemplate,
+                               KisTokenProvider kisTokenProvider,
+                               SecurityRepository securityRepository) {
+        super(restTemplate, kisTokenProvider);
+        this.securityRepository = securityRepository;
+    }
 
     @Override
     public List<DailyPriceItem> getDailyPrices(String ticker, LocalDate from, LocalDate to) {
@@ -124,8 +113,7 @@ public class KisDailyPriceClient implements ExternalDailyPriceClient {
                     .toUriString();
 
             // 헤더
-            HttpHeaders headers = createHeaders(krDailyTrId);
-            headers.set("custtype", "P");
+            HttpHeaders headers = createHeaders(KisTrId.KR_DAILY_PRICE);
 
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
@@ -258,7 +246,7 @@ public class KisDailyPriceClient implements ExternalDailyPriceClient {
                 .toUriString();
 
         // 헤더
-        HttpHeaders headers = createHeaders(usDailyTrId);
+        HttpHeaders headers = createHeaders(KisTrId.US_DAILY_PRICE);
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
@@ -295,21 +283,6 @@ public class KisDailyPriceClient implements ExternalDailyPriceClient {
                 low,
                 volume
         );
-    }
-
-    /**
-     * 헤더 생성 공통 유틸
-     */
-    private HttpHeaders createHeaders(String trId) {
-        String accessToken = kisTokenProvider.getAccessToken();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("authorization", "Bearer " + accessToken);
-        headers.set("appkey", appKey);
-        headers.set("appsecret", appSecret);
-        headers.set("tr_id", trId);
-        return headers;
     }
 
     /**

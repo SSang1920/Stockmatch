@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -33,6 +34,10 @@ public class HoldingService {
      */
     @Transactional
     public HoldingResponse addOrUpdateHolding(Long userId, HoldingRequest request) {
+        // 수량 검증
+        if (request.quantity() == null || request.quantity().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
 
         // 포트폴리오 조회
         Portfolio portfolio = portfolioRepository.findByUserId(userId)

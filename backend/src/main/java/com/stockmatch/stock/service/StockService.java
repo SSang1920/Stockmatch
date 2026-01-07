@@ -19,6 +19,7 @@ public class StockService {
     private final SecurityRepository securityRepository;
 
     public List<StockSearchResponse> searchStocks(String query) {
+        // 검색어가 없으면 빈 결과 반환
         if (query == null || query.trim().isEmpty()) {
             return List.of();
         }

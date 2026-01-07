@@ -2,10 +2,11 @@ package com.stockmatch.stock.client.kis;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -15,23 +16,11 @@ import java.util.List;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
-public class KisRankClient {
+public class KisVolumeClient extends AbstractKisClient {
 
-    private final RestTemplate restTemplate;
-    private final KisTokenProvider kisTokenProvider;
-
-    @Value("${kis.base-url}")
-    private String baseUrl;
-
-    @Value("${kis.app-key}")
-    private String appKey;
-
-    @Value("${kis.app-secret}")
-    private String appSecret;
-
-    private static final String TR_ID_KR_VOLUME_RANK = "FHPST01710000";
-    private static final String TR_ID_OV_VOLUME_RANK = "HHDFS76310010";
+    public KisVolumeClient(RestTemplate restTemplate, KisTokenProvider kisTokenProvider) {
+        super(restTemplate, kisTokenProvider);
+    }
 
     /**
      * 국내 거래량 상위 조회
@@ -55,7 +44,7 @@ public class KisRankClient {
                     .toUriString();
 
             // 헤더 생성
-            HttpHeaders headers = createHeaders(TR_ID_KR_VOLUME_RANK);
+            HttpHeaders headers = createHeaders(KisTrId.KR_RANK_VOLUME);
             headers.set("custtype", "P");
 
             HttpEntity<Void> entity = new HttpEntity<>(headers);
@@ -99,7 +88,7 @@ public class KisRankClient {
                     .toUriString();
 
             // 헤더 생성
-            HttpHeaders headers = createHeaders(TR_ID_OV_VOLUME_RANK);
+            HttpHeaders headers = createHeaders(KisTrId.US_RANK_VOLUME);
             headers.set("custtype", "P");
 
             HttpEntity<Void> entity = new HttpEntity<>(headers);
@@ -123,22 +112,6 @@ public class KisRankClient {
             log.error("[KIS-RANK] Overseas volume rank error (Market: {})", excd, e);
             return Collections.emptyList();
         }
-    }
-
-    /**
-     * (공통) 헤더 생성
-     */
-    private HttpHeaders createHeaders(String trId) {
-        String accessToken = kisTokenProvider.getAccessToken();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("authorization", "Bearer " + accessToken);
-        headers.set("appkey", appKey);
-        headers.set("appsecret", appSecret);
-        headers.set("tr_id", trId);
-
-        return headers;
     }
 
     // ====== 내부 DTO (국내용) ======

@@ -1,6 +1,8 @@
 package com.stockmatch.stock.service;
 
-import com.stockmatch.stock.client.kis.KisRankClient;
+import com.stockmatch.common.exception.BusinessException;
+import com.stockmatch.common.exception.ErrorCode;
+import com.stockmatch.stock.client.kis.KisVolumeClient;
 import com.stockmatch.stock.domain.Security;
 import com.stockmatch.stock.dto.StockTrendResponse;
 import com.stockmatch.stock.repository.SecurityRepository;
@@ -21,7 +23,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class DomesticTrendService {
 
-    private final KisRankClient kisRankClient;
+    private final KisVolumeClient kisVolumeClient;
     private final SecurityRepository securityRepository;
 
     /**
@@ -29,7 +31,19 @@ public class DomesticTrendService {
      */
     public List<StockTrendResponse> getMostActive(int limit) {
         // API 호출
-        List<KisRankClient.KisVolumeItem> rawData = kisRankClient.getDomesticVolumeRank();
+        List<KisVolumeClient.KisVolumeItem> rawData;
+        try {
+            rawData = kisVolumeClient.getDomesticVolumeRank();
+        } catch (Exception e) {
+            // API 호출 자체 실패 시
+            log.error("Failed to fetch domestic volume rank", e);
+            throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
+        }
+
+        // 데이터가 비어있을 경우 예외 처리
+        if (rawData == null || rawData.isEmpty()) {
+            throw new BusinessException(ErrorCode.UPSTREAM_DATA_EMPTY);
+        }
 
         // DB 병합 및 DTO 변환
         return mergeWithDbData(rawData, limit);
@@ -52,18 +66,18 @@ public class DomesticTrendService {
     /**
      * API 데이터 + DB 데이터 병합 로직
      */
-    private List<StockTrendResponse> mergeWithDbData(List<KisRankClient.KisVolumeItem> apiItems, int limit) {
+    private List<StockTrendResponse> mergeWithDbData(List<KisVolumeClient.KisVolumeItem> apiItems, int limit) {
         if (apiItems == null || apiItems.isEmpty()) {
             return Collections.emptyList();
         }
 
         // 상위 N개 티커 추출
-        List<KisRankClient.KisVolumeItem> targetItems = apiItems.stream()
+        List<KisVolumeClient.KisVolumeItem> targetItems = apiItems.stream()
                 .limit(limit)
                 .toList();
 
         List<String> tickers = targetItems.stream()
-                .map(KisRankClient.KisVolumeItem::getMkscShrnIscd)
+                .map(KisVolumeClient.KisVolumeItem::getMkscShrnIscd)
                 .toList();
 
         // DB Bulk 조회
@@ -87,7 +101,7 @@ public class DomesticTrendService {
     /**
      * DTO 변환 헬퍼
      */
-    private StockTrendResponse mapToDto(KisRankClient.KisVolumeItem item, String name) {
+    private StockTrendResponse mapToDto(KisVolumeClient.KisVolumeItem item, String name) {
         try {
             long currentPrice = Long.parseLong(item.getStckPrpr().replace(",", ""));
             long changeValue = Long.parseLong(item.getPrdyVrss().replace(",", ""));
@@ -108,7 +122,7 @@ public class DomesticTrendService {
             );
         } catch (Exception e) {
             log.warn("Error parsing rank item: {}", item.getMkscShrnIscd());
-            return null;
+            throw new BusinessException(ErrorCode.EXTERNAL_API_PARSING_ERROR);
         }
     }
 }

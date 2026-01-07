@@ -220,6 +220,11 @@
                     if (usdToKrw == null) {
                         // 해당 일자 기준 최신 환율 사용
                         usdToKrw = fxRateService.getLatestUsdToKrwRate(date);
+
+                        // 환율 조회 실패 시 예외 처리
+                        if (usdToKrw == null) {
+                            throw new BusinessException(ErrorCode.EXCHANGE_RATE_NOT_FOUND);
+                        }
                     }
 
                     fx = usdToKrw;

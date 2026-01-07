@@ -1,5 +1,7 @@
 package com.stockmatch.stock.service;
 
+import com.stockmatch.common.exception.BusinessException;
+import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.stock.client.kis.KisKorStockClient;
 import com.stockmatch.stock.client.kis.KisUsStockClient;
 import com.stockmatch.stock.dto.MarketOverviewResponse;
@@ -39,8 +41,13 @@ public class MarketService {
      */
     @PostConstruct
     public void init() {
-        log.info("Initializing Market Overview Data...");
-        fetchAndCacheMarketData();
+        try {
+            log.info("Initializing Market Overview Data...");
+            fetchAndCacheMarketData();
+        } catch (Exception e) {
+            log.error("Failed to initialize Market Overview Data. It will be retried by Scheduler.", e);
+        }
+
     }
 
     /**
@@ -56,13 +63,10 @@ public class MarketService {
                 return cacheData;
             }
         } catch (Exception e) {
-            log.error("Redis 조회 실패(무시하고 API 호출 진행): {}", e.getMessage());
-            try {
-                redisTemplate.delete(REDIS_KEY_MARKET_OVERVIEW);
-            } catch (Exception ex) { /* 무시 */ }
+            log.error("Redis operation failed: {}", e.getMessage());
         }
 
-        // 캐시 없으면 API 호출 후 반환
+        // 캐시 없거나 오류 시 API 호출
         return fetchAndCacheMarketData();
     }
 
@@ -71,50 +75,63 @@ public class MarketService {
      */
     @Scheduled(cron = "0 0/5 * * * ?")
     public void updateMarketOverviewCache() {
-        log.info("Executing Scheduled Task: Update Market Overview Cache");
-        fetchAndCacheMarketData();
+        try {
+            log.info("Executing Scheduled Task: Update Market Overview Cache");
+            fetchAndCacheMarketData();
+        } catch (Exception e) {
+            log.error("Scheduled Market Update Failed", e);
+        }
+
     }
 
     /**
      * API 호출 및 Redis 저장 로직
      */
     private MarketOverviewResponse fetchAndCacheMarketData() {
-        // 코스피 조회
-        StockPriceResponse kospi = kisKorStockClient.getKrIndexPrice(CODE_KOSPI);
-
-        // 나스닥, S&P 500 조회
-        StockPriceResponse nasdaq = kisUsStockClient.getUsIndexPrice(CODE_NASDAQ, "NASDAQ");
-        StockPriceResponse sp500 = kisUsStockClient.getUsIndexPrice(CODE_SP500, "S&P 500");
-
-        // 환율 조회
-        StockPriceResponse usdRate = kisUsStockClient.getUsIndexPrice(CODE_EXCHANGE, "USD/KRW");
-
-        // 현재 시간 포맷
-        String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM.dd HH:mm"));
-
-        MarketOverviewResponse response = MarketOverviewResponse.builder()
-                .kospi(mapToIndex(kospi, "KOSPI"))
-                .nasdaq(mapToIndex(nasdaq, "NASDAQ"))
-                .sp500(mapToIndex(sp500, "S&P 500"))
-                .usdKrw(MarketOverviewResponse.ExchangeRateInfo.builder()
-                        .name(usdRate.getName())
-                        .rate(usdRate.getCurrentPrice())
-                        .change(usdRate.getChangeAmount())
-                        .changeRate(usdRate.getChangeRate())
-                        .build())
-                .lastUpdateTime(now)
-                .build();
-
-        // Redis 저장
         try {
-            redisTemplate.opsForValue().set(REDIS_KEY_MARKET_OVERVIEW, response, 10, TimeUnit.MINUTES);
-            log.info("Market Overview cached successfully.");
-        } catch (Exception e) {
-            log.error("Failed to cache market data: {}", e.getMessage());
-        }
+            // 코스피 조회
+            StockPriceResponse kospi = kisKorStockClient.getKrIndexPrice(CODE_KOSPI);
 
-        return response;
+            // 나스닥, S&P 500 조회
+            StockPriceResponse nasdaq = kisUsStockClient.getUsIndexPrice(CODE_NASDAQ, "NASDAQ");
+            StockPriceResponse sp500 = kisUsStockClient.getUsIndexPrice(CODE_SP500, "S&P 500");
+
+            // 환율 조회
+            StockPriceResponse usdRate = kisUsStockClient.getUsIndexPrice(CODE_EXCHANGE, "USD/KRW");
+
+            // 현재 시간 포맷
+            String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM.dd HH:mm"));
+
+            MarketOverviewResponse response = MarketOverviewResponse.builder()
+                    .kospi(mapToIndex(kospi, "KOSPI"))
+                    .nasdaq(mapToIndex(nasdaq, "NASDAQ"))
+                    .sp500(mapToIndex(sp500, "S&P 500"))
+                    .usdKrw(MarketOverviewResponse.ExchangeRateInfo.builder()
+                            .name(usdRate.getName())
+                            .rate(usdRate.getCurrentPrice())
+                            .change(usdRate.getChangeAmount())
+                            .changeRate(usdRate.getChangeRate())
+                            .build())
+                    .lastUpdateTime(now)
+                    .build();
+
+            // Redis 저장
+            try {
+                redisTemplate.opsForValue().set(REDIS_KEY_MARKET_OVERVIEW, response, 10, TimeUnit.MINUTES);
+                log.info("Market Overview cached successfully.");
+            } catch (Exception e) {
+                log.error("Failed to cache market data: {}", e.getMessage());
+            }
+
+            return response;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error during market data fetch", e);
+            throw new BusinessException(ErrorCode.MARKET_DATA_FETCH_ERROR);
+        }
     }
+
 
     /**
      * StockPriceResponse -> MarketOverviewResponse.IndexInfo 변환 헬퍼 메서드

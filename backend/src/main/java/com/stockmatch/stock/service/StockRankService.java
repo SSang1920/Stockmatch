@@ -1,5 +1,7 @@
 package com.stockmatch.stock.service;
 
+import com.stockmatch.common.exception.BusinessException;
+import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.stock.dto.StockTrendResponse;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +34,12 @@ public class StockRankService {
      */
     @PostConstruct
     public void init() {
-        updateMarketTrendCache();
+        try {
+            log.info("Initializing Market Trend Cache...");
+            updateMarketTrendCache();
+        } catch (Exception e) {
+            log.error("Failed to initialize Market Trend Cache. It will be retried by Scheduler.");
+        }
     }
 
     /**
@@ -52,8 +59,15 @@ public class StockRankService {
             log.error("Redis trend fetch failed", e);
         }
 
-        // 캐시 없으면 갱신 후 반환
-        return updateMarketTrendCache();
+        // 캐시 없거나 실패 시 API 호출
+        try {
+            return updateMarketTrendCache();
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to fetch market trends", e);
+            throw new BusinessException(ErrorCode.MARKET_DATA_FETCH_ERROR);
+        }
     }
 
     /**
@@ -66,26 +80,33 @@ public class StockRankService {
         // 결과 맵 생성
         Map<String, Object> result = new HashMap<>();
 
-        // 국내 데이터 (KR)
-        Map<String, List<StockTrendResponse>> krData = new HashMap<>();
-        krData.put("mostActive", domesticTrendService.getMostActive(10));
-        krData.put("gainers", domesticTrendService.getGainers());
-        krData.put("losers", domesticTrendService.getLosers());
-        result.put("KR", krData);
+        try {
+            // 국내 데이터 (KR)
+            Map<String, List<StockTrendResponse>> krData = new HashMap<>();
+            krData.put("mostActive", domesticTrendService.getMostActive(10));
+            krData.put("gainers", domesticTrendService.getGainers());
+            krData.put("losers", domesticTrendService.getLosers());
+            result.put("KR", krData);
 
-        // 해외 데이터 (US)
-        Map<String, List<StockTrendResponse>> usData = new HashMap<>();
-        usData.put("mostActive", overseasTrendService.getMostActive(10));
-        usData.put("gainers", overseasTrendService.getGainers());
-        usData.put("losers", overseasTrendService.getLosers());
-        result.put("US", usData);
+            // 해외 데이터 (US)
+            Map<String, List<StockTrendResponse>> usData = new HashMap<>();
+            usData.put("mostActive", overseasTrendService.getMostActive(10));
+            usData.put("gainers", overseasTrendService.getGainers());
+            usData.put("losers", overseasTrendService.getLosers());
+            result.put("US", usData);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error collecting trend data", e);
+            throw new BusinessException(ErrorCode.MARKET_DATA_FETCH_ERROR);
+        }
 
         // Redis 저장
         try {
             redisTemplate.opsForValue().set(REDIS_KEY_MARKET_TREND, result, 20, TimeUnit.MINUTES);
             log.info("Market Trend cached successfully.");
         } catch (Exception e) {
-            log.error("Failed to cache trend data", e);
+            log.error("Failed to cache trend data in Redis", e);
         }
 
         return result;

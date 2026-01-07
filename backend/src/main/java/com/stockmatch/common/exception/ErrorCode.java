@@ -40,7 +40,7 @@ public enum ErrorCode {
     HOLDING_NOT_IN_PORTFOLIO("H003", "포트폴리오에 이 보유종목이 없습니다.", HttpStatus.FORBIDDEN),
     INSUFFICIENT_HOLDING_QUANTITY("H004", "보유 수량이 부족합니다.", HttpStatus.BAD_REQUEST),
 
-    // 환율(ExchangeRate
+    // 환율(ExchangeRate)
     UNSUPPORTED_CURRENCY_CONVERSION("E001", "지원하지 않는 통화 변환입니다.", HttpStatus.BAD_REQUEST ),
     EXCHANGE_RATE_NOT_FOUND("E002", "해당 날짜의 환율 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
@@ -56,6 +56,9 @@ public enum ErrorCode {
     // 일일 시세
     DAILY_PRICE_NOT_FOUND("D001", "일일 시세를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
+    // 시장
+    MARKET_DATA_FETCH_ERROR("M001", "시장 데이터 조회/갱신 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+
     // 외부 API
     EXTERNAL_API_ERROR("E001", "외부 API 호출 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
     UNSUPPORTED_REGION("E002", "지원하지 않는 지역입니다.", HttpStatus.BAD_REQUEST),
@@ -63,6 +66,9 @@ public enum ErrorCode {
     INVALID_API_KEY("E004", "올바르지 않은 API KEY입니다. (AlphaVantage)", HttpStatus.BAD_REQUEST),
     EXTERNAL_API_DATA_NOT_FOUND("E005", "받아온 데이터의 값이 올바른 값이 아닙니다.", HttpStatus.BAD_REQUEST),
     API_KEY_NOT_REGISTERED("E006", "API KEY가 존재하지 않습니다. (AlphaVantage)", HttpStatus.BAD_REQUEST),
+    EXTERNAL_API_PARSING_ERROR("E010", "외부 API 데이터 형식이 올바르지 않아 처리할 수 없습니다.", HttpStatus.BAD_GATEWAY),
+
+    // DART API
     DART_FILE_ERROR("E007", "DART 데이터를 처리하는 중 파일 오류가 발생했습니다.(DART)", HttpStatus.BAD_REQUEST),
     DART_SYNC_ERROR("E008", "DART 고유번호 동기화 중 오류가 발생했습니다.(DART)", HttpStatus.BAD_REQUEST),
     DART_CORP_CODE_NOT_FOUNT("E009", "해당 종목의 DART 고유번호를 찾을 수 없습니다.(DART)", HttpStatus.BAD_REQUEST);

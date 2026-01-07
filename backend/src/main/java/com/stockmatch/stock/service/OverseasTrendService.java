@@ -1,6 +1,8 @@
 package com.stockmatch.stock.service;
 
-import com.stockmatch.stock.client.kis.KisRankClient;
+import com.stockmatch.common.exception.BusinessException;
+import com.stockmatch.common.exception.ErrorCode;
+import com.stockmatch.stock.client.kis.KisVolumeClient;
 import com.stockmatch.stock.domain.Security;
 import com.stockmatch.stock.dto.StockTrendResponse;
 import com.stockmatch.stock.repository.SecurityRepository;
@@ -19,7 +21,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class OverseasTrendService {
 
-    private final KisRankClient kisRankClient;
+    private final KisVolumeClient kisVolumeClient;
     private final SecurityRepository securityRepository;
 
     /**
@@ -27,23 +29,25 @@ public class OverseasTrendService {
      */
     public List<StockTrendResponse> getMostActive(int limit) {
         // 나스닥 & 뉴욕 거래소 API 호출하여 합치기
-        List<KisRankClient.KisOverseasVolumeItem> allItems = new ArrayList<>();
+        List<KisVolumeClient.KisOverseasVolumeItem> allItems = new ArrayList<>();
 
         try {
-            allItems.addAll(kisRankClient.getOverseasVolumeRank("NAS"));
-            allItems.addAll(kisRankClient.getOverseasVolumeRank("NYS"));
+            allItems.addAll(kisVolumeClient.getOverseasVolumeRank("NAS"));
+            allItems.addAll(kisVolumeClient.getOverseasVolumeRank("NYS"));
         } catch (Exception e) {
             log.error("Failed to fetch overseas volume rank", e);
+            throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
         }
 
+        // 데이터가 비어있을 경우 예외 처리
         if (allItems.isEmpty()) {
-            return Collections.emptyList();
+            throw new BusinessException(ErrorCode.UPSTREAM_DATA_EMPTY);
         }
 
         // 거래량 기준으로 내림차순 정렬 후 상위 N개 추출
-        List<KisRankClient.KisOverseasVolumeItem> topItems = allItems.stream()
+        List<KisVolumeClient.KisOverseasVolumeItem> topItems = allItems.stream()
                 .filter(item -> item.getTvol() != null && !item.getTvol().isEmpty())
-                .sorted(Comparator.comparingLong((KisRankClient.KisOverseasVolumeItem item) ->
+                .sorted(Comparator.comparingLong((KisVolumeClient.KisOverseasVolumeItem item) ->
                         Long.parseLong(item.getTvol())).reversed())
                 .limit(limit)
                 .toList();
@@ -69,7 +73,7 @@ public class OverseasTrendService {
     /**
      * API 데이터 + DB 데이터 병합 로직
      */
-    private List<StockTrendResponse> mergeWithDbData(List<KisRankClient.KisOverseasVolumeItem> apiItems) {
+    private List<StockTrendResponse> mergeWithDbData(List<KisVolumeClient.KisOverseasVolumeItem> apiItems) {
         // 티커 목록 추출
         List<String> tickers = apiItems.stream()
                 .map(item -> parseTicker(item.getRsym()))
@@ -114,7 +118,7 @@ public class OverseasTrendService {
     /**
      * DTO 변환 헬퍼
      */
-    private StockTrendResponse mapToDto(KisRankClient.KisOverseasVolumeItem item, String name, String ticker) {
+    private StockTrendResponse mapToDto(KisVolumeClient.KisOverseasVolumeItem item, String name, String ticker) {
         try {
             double price = Double.parseDouble(item.getLast());
             double change = Double.parseDouble(item.getDiff());
@@ -135,7 +139,7 @@ public class OverseasTrendService {
             );
         } catch (Exception e) {
             log.warn("Overseas DTO parse error: {}", item.getRsym());
-            return null;
+            throw new BusinessException(ErrorCode.EXTERNAL_API_PARSING_ERROR);
         }
     }
 }

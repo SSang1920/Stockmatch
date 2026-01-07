@@ -75,6 +75,14 @@ public class TransactionService {
      */
     @Transactional
     public TransactionResponse buy(Long userId, Long portfolioId, TransactionCreateRequest request) {
+        // 수량, 가격 검증
+        if (request.price() == null || request.price().compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
+        if (request.quantity() == null || request.quantity().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
 
         // 포트폴리오 조회
         Portfolio portfolio = findPortfolioOfUser(userId, portfolioId);
@@ -108,6 +116,14 @@ public class TransactionService {
      */
     @Transactional
     public TransactionResponse sell(Long userId, Long portfolioId, TransactionCreateRequest request) {
+        // 수량, 가격 검증
+        if (request.price() == null || request.price().compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
+        if (request.quantity() == null || request.quantity().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
 
         // 포트폴리오 조회
         Portfolio portfolio = findPortfolioOfUser(userId, portfolioId);
