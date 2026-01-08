@@ -83,7 +83,7 @@ public class StockRankService {
         try {
             // 국내 데이터 (KR)
             Map<String, List<StockTrendResponse>> krData = new HashMap<>();
-            krData.put("mostActive", domesticTrendService.getMostActive(10));
+            krData.put("mostActive", domesticTrendService.getMostActive());
             krData.put("gainers", domesticTrendService.getGainers());
             krData.put("losers", domesticTrendService.getLosers());
             result.put("KR", krData);

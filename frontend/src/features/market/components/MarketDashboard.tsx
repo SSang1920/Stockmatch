@@ -51,7 +51,7 @@ const MarketDashboard = () => {
                 <MarketCard label="KOSPI" info={data.kospi} />
                 <MarketCard label="NASDAQ" info={data.nasdaq} />
                 <MarketCard label="S&P 500" info={data.sp500} />
-                <ExchangeCard info={data.usdKrw} />
+                <ExchangeCard label="USD/KRW" info={data.usdKrw} />
             </div>
         </div>
     );

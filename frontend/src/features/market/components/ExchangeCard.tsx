@@ -2,37 +2,46 @@ import React from 'react';
 import { ExchangeRateInfo } from '../types/market';
 
 interface Props {
-  info: ExchangeRateInfo;
+  label: string;
+  info: ExchangeRateInfo | null;
 }
 
-export const ExchangeCard = ({ info }: Props) => {
+export const ExchangeCard = ({ label, info }: Props) => {
 
   if (!info) {
     return (
       <div className="card p-4 border rounded-lg shadow-sm bg-white">
-        <h3 className="text-gray-500 font-bold">USD/KRW</h3>
-        <div className="text-sm text-gray-400">로딩 중...</div>
+        <h3 className="text-gray-500 font-bold">{label}</h3>
+        <div className="text-sm text-gray-400">데이터 없음</div>
       </div>
     );
   }
 
-  const isUp = info.change > 0;
-  const isDown = info.change < 0;
+  const rate = info.rate ?? 0;
+  const change = info.change ?? 0;
+  const changeRate = info.changeRate ?? 0;
 
-  let color = '#333';
-  if (isUp) color = '#ff3b30';
-  if (isDown) color = '#007aff';
+  const getColor = (val: number) => {
+    if (val > 0) return '#ef4444';
+    if (val < 0) return '#3b82f6';
+    return '#374151';
+  }
 
-  const sign = isUp ? '+' : '';
+  const color = getColor(change);
+  const sign = change > 0 ? '+' : '';
 
   return (
     <div className="card p-4 border rounded-lg shadow-sm bg-white">
-      <h3 className="font-bold text-lg">USD/KRW</h3>
+      <h3 className="font-bold text-lg">{label}</h3>
       <div className="text-2xl font-semibold my-1">
-        {info.rate.toLocaleString()} <span className="text-sm text-gray-500">원</span>
+        {rate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        <span className="text-lg font-normal ml-1">원</span>
       </div>
-      <div className="text-sm font-medium" style={{ color }}>
-        {sign}{info.change} ({sign}{info.changeRate}%)
+      <div className="text-sm font-medium flex items-center gap-1" style={{ color }}>
+        <span>
+          {sign}{change.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </span>
+         ({sign}{changeRate.toFixed(2)}%)
       </div>
     </div>
   );

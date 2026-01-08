@@ -2,6 +2,7 @@ package com.stockmatch.stock.service;
 
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
+import com.stockmatch.stock.client.kis.KisTrendClient;
 import com.stockmatch.stock.client.kis.KisVolumeClient;
 import com.stockmatch.stock.domain.Security;
 import com.stockmatch.stock.dto.StockTrendResponse;
@@ -24,12 +25,13 @@ import java.util.stream.Collectors;
 public class DomesticTrendService {
 
     private final KisVolumeClient kisVolumeClient;
+    private final KisTrendClient kisTrendClient;
     private final SecurityRepository securityRepository;
 
     /**
      * 거래량 순위 조회
      */
-    public List<StockTrendResponse> getMostActive(int limit) {
+    public List<StockTrendResponse> getMostActive() {
         // API 호출
         List<KisVolumeClient.KisVolumeItem> rawData;
         try {
@@ -46,47 +48,77 @@ public class DomesticTrendService {
         }
 
         // DB 병합 및 DTO 변환
-        return mergeWithDbData(rawData, limit);
+        return mergeVolumeData(rawData);
     }
 
     /**
      * 급등 순위 조회
      */
     public List<StockTrendResponse> getGainers() {
-        return Collections.emptyList();
+        // API 호출
+        List<KisTrendClient.KisTrendRankItem> rawData;
+        try {
+            rawData = kisTrendClient.getDomesticGainers();
+        } catch (Exception e) {
+            // API 호출 자체 실패 시
+            log.error("Failed to fetch domestic gainers rank", e);
+            throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
+        }
+
+        // 데이터가 비어있을 경우 예외 처리
+        if (rawData == null || rawData.isEmpty()) {
+            throw new BusinessException(ErrorCode.UPSTREAM_DATA_EMPTY);
+        }
+
+        // DB 병합 및 DTO 변환
+        return mergeTrendData(rawData);
     }
 
     /**
      * 급락 순위 조회
      */
     public List<StockTrendResponse> getLosers() {
-        return Collections.emptyList();
+        // API 호출
+        List<KisTrendClient.KisTrendRankItem> rawData;
+        try {
+            rawData = kisTrendClient.getDomesticLosers();
+        } catch (Exception e) {
+            // API 호출 자체 실패 시
+            log.error("Failed to fetch domestic losers rank", e);
+            throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
+        }
+
+        // 데이터가 비어있을 경우 예외 처리
+        if (rawData == null || rawData.isEmpty()) {
+            throw new BusinessException(ErrorCode.UPSTREAM_DATA_EMPTY);
+        }
+
+        // DB 병합 및 DTO 변환
+        return mergeTrendData(rawData);
     }
+
+    // ===== 거래량 로직 =====
 
     /**
      * API 데이터 + DB 데이터 병합 로직
      */
-    private List<StockTrendResponse> mergeWithDbData(List<KisVolumeClient.KisVolumeItem> apiItems, int limit) {
+    private List<StockTrendResponse> mergeVolumeData(List<KisVolumeClient.KisVolumeItem> apiItems) {
         if (apiItems == null || apiItems.isEmpty()) {
             return Collections.emptyList();
         }
 
-        // 상위 N개 티커 추출
-        List<KisVolumeClient.KisVolumeItem> targetItems = apiItems.stream()
-                .limit(limit)
-                .toList();
-
-        List<String> tickers = targetItems.stream()
+        // 티커 추출
+        List<String> tickers = apiItems.stream()
+                .limit(10)
                 .map(KisVolumeClient.KisVolumeItem::getMkscShrnIscd)
                 .toList();
 
         // DB Bulk 조회
-        List<Security> securities = securityRepository.findByTickerIn(tickers);
-        Map<String, Security> securityMap = securities.stream()
-                .collect(Collectors.toMap(Security::getTicker, Function.identity()));
+        Map<String, Security> securityMap = getSecurityMap(tickers);
 
         // 변환 및 합치기
-        return targetItems.stream()
+        return apiItems.stream()
+                .limit(10)
                 .map(item -> {
                     String ticker = item.getMkscShrnIscd();
                     Security dbSecurity = securityMap.get(ticker);
@@ -108,6 +140,8 @@ public class DomesticTrendService {
             double changeRate = Double.parseDouble(item.getPrdyCtrt().replace(",", ""));
 
             String priceStr = String.format("%,d원", currentPrice);
+
+            // 부호 처리
             String sign = changeValue > 0 ? "+" : (changeValue < 0 ? "-" : "");
             String changeStr = sign + String.format("%,d", Math.abs(changeValue));
             String rateStr = (changeRate > 0 ? "+" : "") + String.format("%.2f%%", changeRate);
@@ -125,4 +159,78 @@ public class DomesticTrendService {
             throw new BusinessException(ErrorCode.EXTERNAL_API_PARSING_ERROR);
         }
     }
+
+    // ===== 등락률 로직 =====
+    /**
+     * API 데이터 + DB 데이터 병합 로직
+     */
+    private List<StockTrendResponse> mergeTrendData(List<KisTrendClient.KisTrendRankItem> apiItems) {
+        if (apiItems == null || apiItems.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 티커 추출
+        List<String> tickers = apiItems.stream()
+                .limit(10)
+                .map(KisTrendClient.KisTrendRankItem::getTicker)
+                .toList();
+
+        // DB Bulk 조회
+        Map<String, Security> securityMap = getSecurityMap(tickers);
+
+        // 변환 및 합치기
+        return apiItems.stream()
+                .limit(10)
+                .map(item -> {
+                    String ticker = item.getTicker();
+                    Security dbSecurity = securityMap.get(ticker);
+
+                    String finalName = (dbSecurity != null) ? dbSecurity.getName() : item.getName();
+
+                    return mapTrendToDto(item, finalName);
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * DTO 변환 헬퍼
+     */
+    private StockTrendResponse mapTrendToDto(KisTrendClient.KisTrendRankItem item, String name) {
+        try {
+            long currentPrice = Long.parseLong(item.getCurrentPrice().replace(",", ""));
+            long changeValue = Long.parseLong(item.getChangeAmount().replace(",", ""));
+            double changeRate = Double.parseDouble(item.getChangeRate().replace(",", ""));
+
+            String priceStr = String.format("%,d원", currentPrice);
+
+            // 부호 처리
+            String sign = changeValue > 0 ? "+" : (changeValue < 0 ? "-" : "");
+            String changeStr = sign + String.format("%,d", Math.abs(changeValue));
+            String rateStr = (changeRate > 0 ? "+" : "") + String.format("%.2f%%", changeRate);
+
+            return new StockTrendResponse(
+                    item.getTicker(),
+                    name,
+                    priceStr,
+                    changeStr,
+                    rateStr,
+                    "KR"
+            );
+        } catch (Exception e) {
+            log.warn("Error parsing trend rank item: {}", item.getTicker());
+            throw new BusinessException(ErrorCode.EXTERNAL_API_PARSING_ERROR);
+        }
+    }
+
+    // ===== 공통 유틸 =====
+
+    /**
+     * 티커 리스트로 DB Security Map 조회
+     */
+    private Map<String, Security> getSecurityMap(List<String> tickers) {
+        List<Security> securities = securityRepository.findByTickerIn(tickers);
+        return securities.stream()
+                .collect(Collectors.toMap(Security::getTicker, Function.identity()));
+    }
+
 }
