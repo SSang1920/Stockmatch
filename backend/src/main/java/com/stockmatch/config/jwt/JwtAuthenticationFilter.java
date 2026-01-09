@@ -9,6 +9,7 @@ import com.stockmatch.user.member.domain.User;
 import com.stockmatch.user.member.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -94,16 +95,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private String resolveToken(HttpServletRequest request){
         //헤더에서 authorization 값 가져옴
         String bearerToken = request.getHeader("Authorization");
-
-        if (bearerToken == null) {
-            bearerToken = request.getHeader("authorization");
-        }
-
         // 텍스트가 있는지와 "Bearer "로 시작하는지 확인
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")){
             //7번 인덱스부터 끝까지의 문자열을 잘라내어 반환
             return bearerToken.substring(7);
         }
+
+       //헤더에 없다면 쿠키에서 accessToken 확인
+        jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+        if(cookies != null ){
+            for (jakarta.servlet.http.Cookie cookie : cookies) {
+                if("accessToken".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+
+
         return null;
     }
 

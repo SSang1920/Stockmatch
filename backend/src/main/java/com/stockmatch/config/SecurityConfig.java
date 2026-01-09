@@ -1,6 +1,7 @@
 package com.stockmatch.config;
 
 import com.stockmatch.config.jwt.JwtAuthenticationFilter;
+import jakarta.websocket.Endpoint;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -52,7 +53,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // 인증 없이 가능한 API
-                        .requestMatchers("/api/auth/**", "/api/stocks/**", "/api/corporate/**", "/api/stocks/**", "/api/market/**")
+                        .requestMatchers("/api/auth/**", "/oauth2/**", "/login/**" , "/api/stocks/**", "/api/corporate/**", "/api/stocks/**", "/api/market/**")
                         .permitAll()
                         .requestMatchers("/api/admin/dart/sync").permitAll()
 

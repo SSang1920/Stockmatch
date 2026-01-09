@@ -13,10 +13,9 @@ import { handleServerError } from '@/lib/handle-server-error'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'
-// Generated Routes
 import { routeTree } from './routeTree.gen'
-// Styles
 import './styles/index.css'
+import { SidebarProvider } from '@/components/ui/sidebar'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -97,7 +96,9 @@ if (!rootElement.innerHTML) {
         <ThemeProvider>
           <FontProvider>
             <DirectionProvider>
-              <RouterProvider router={router} />
+              <SidebarProvider>
+                <RouterProvider router={router} />
+              </SidebarProvider>
             </DirectionProvider>
           </FontProvider>
         </ThemeProvider>
