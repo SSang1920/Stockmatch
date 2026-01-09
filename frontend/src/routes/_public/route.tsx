@@ -1,8 +1,6 @@
 import { createFileRoute, Link, Outlet } from '@tanstack/react-router'
 import { TrendingUp, LineChart, Search, DollarSign, LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Header } from '@/components/common/header'
-import { Sidebar } from '@/components/common/Sidebar'
 
 export const Route = createFileRoute('/_public')({
   component: publicLayout,
@@ -24,5 +22,21 @@ function publicLayout() {
         </main>
       </div>
     </div>
+  )
+}
+
+function NavItem(props: {
+  to: string
+  icon: React.ReactNode
+  children: React.ReactNode
+}) {
+  return (
+    <Link
+      to={props.to}
+      className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted"
+    >
+      <span className="text-muted-foreground">{props.icon}</span>
+      <span>{props.children}</span>
+    </Link>
   )
 }

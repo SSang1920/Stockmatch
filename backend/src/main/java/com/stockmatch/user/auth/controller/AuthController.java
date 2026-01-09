@@ -4,12 +4,16 @@ import com.stockmatch.common.api.ApiResponse;
 import com.stockmatch.config.security.CustomUserDetails;
 import com.stockmatch.user.auth.dto.TokenResponseDto;
 import com.stockmatch.user.auth.service.AuthService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.Map;
 
 @Slf4j
@@ -21,16 +25,40 @@ public class AuthController {
     private final AuthService authService;
 
     @GetMapping("/callback/{provider}")
-    public ResponseEntity<ApiResponse<Map<String, String>>> callback(
+    public void callback(
             @PathVariable String provider,
             @RequestParam("code") String code,
-            @RequestParam(value = "state", required = false) String state) {
-
-        log.info("{} login callback code: {}, state: {}", provider, code, state);
+            @RequestParam(value = "state", required = false) String state,
+            HttpServletResponse response
+    ) throws IOException {
 
         Map<String, String> tokens = authService.login(provider, code, state);
 
-        return ResponseEntity.ok(ApiResponse.ok(tokens));
+        String accessToken = tokens.get("accessToken");
+        String refreshToken = tokens.get("refreshToken");
+
+        // accessToken 쿠키 생성
+        ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken)
+                .path("/")
+                .httpOnly(false) //프론트에서 읽을시 true
+                .secure(false) // 로컬 환경 false, 배포 환경 true
+                .sameSite("Lax") // 타 도메인간 리다이렉트 시 쿠키 전달 허용
+                .maxAge(60*60)
+                .build();
+
+        //refreshToken 쿠키 생성
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
+                .path("/")
+                .httpOnly(false) // refreshToken은 서버만 읽도록
+                .secure(false)
+                .sameSite("Lax")
+                .maxAge(7 * 24 * 60 * 60)
+                .build();
+
+        response.addHeader("Set-Cookie", accessCookie.toString());
+        response.addHeader("Set-Cookie", refreshCookie.toString());
+
+        response.sendRedirect("http://localhost:5173");
     }
 
     /**

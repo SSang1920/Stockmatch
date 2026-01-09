@@ -7,24 +7,23 @@ interface InvestmentRequest {
 
 export const submitInvestmentProfile = async (data: InvestmentRequest) => {
 
-    const token = useAuthStore.getState().auth.accessToken;
-
-    if (!token) {
-        throw new Error("로그인이 필요합니다.");
-        }
-
-    const response = await fetch('api/user/me/investment-profile', {
-        method: 'POST',
-        headers: {
-            'Content-Type' : 'application/json',
-            'Authorization' : `Bearer ${token}`,
+    const response = await fetch('/api/user/me/investment-profile', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
             },
-        body: JSON.stringify(data),
+            body: JSON.stringify(data),
+            //  쿠키를 백엔드로 보내기 위해 추가해야 함
+            credentials: 'include',
         });
 
-    if (!response.ok) {
-        throw new Error('투자 성향 저장 실패');
+        if (response.status === 401) {
+            throw new Error("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
         }
 
-    return response.status;
+        if (!response.ok) {
+            throw new Error('투자 성향 저장 실패');
+        }
+
+        return response.status;
 };
