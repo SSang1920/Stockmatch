@@ -96,9 +96,7 @@ if (!rootElement.innerHTML) {
         <ThemeProvider>
           <FontProvider>
             <DirectionProvider>
-              <SidebarProvider>
                 <RouterProvider router={router} />
-              </SidebarProvider>
             </DirectionProvider>
           </FontProvider>
         </ThemeProvider>
