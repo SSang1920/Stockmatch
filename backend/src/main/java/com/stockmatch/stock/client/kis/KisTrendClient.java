@@ -25,6 +25,7 @@ public class KisTrendClient extends AbstractKisClient {
         super(restTemplate, kisTokenProvider);
     }
 
+    // ===== 국내주식 급등/급락 =====
     /**
      * 국내 급등 순위 조회
      */
@@ -40,7 +41,7 @@ public class KisTrendClient extends AbstractKisClient {
     }
 
     /**
-     * 등락률 순위 API 호출
+     * 국내 등락률 순위 API 호출
      */
     private List<KisTrendRankItem> getDomesticFluctuationRank(String sortCode) {
         try {
@@ -85,7 +86,64 @@ public class KisTrendClient extends AbstractKisClient {
         }
     }
 
+    // ===== 해외주식 급등/급락 =====
+
+    /**
+     * 해외 급등 순위 조회
+     */
+    public List<KisOverseasTrendRankItem> getOverseasGainers(String excd) {
+        return getOverseasFluctuationRank("1", excd);
+    }
+
+    /**
+     * 해외 급락 순위 조회
+     */
+    public List<KisOverseasTrendRankItem> getOverseasLosers(String excd) {
+        return getOverseasFluctuationRank("0", excd);
+    }
+
+    /**
+     * 해외 등락률 순위 API 호출
+     */
+    private List<KisOverseasTrendRankItem> getOverseasFluctuationRank(String sortCode, String excd) {
+        try {
+            String url = UriComponentsBuilder
+                    .fromUriString(baseUrl + "/uapi/overseas-stock/v1/ranking/updown-rate")
+                    .queryParam("KEYB", "")
+                    .queryParam("AUTH", "")
+                    .queryParam("EXCD", excd)
+                    .queryParam("GUBN", sortCode)
+                    .queryParam("NDAY", "0")
+                    .queryParam("VOL_RANG", "0")
+                    .toUriString();
+
+            HttpHeaders headers = createHeaders(KisTrId.US_RANK_FLUCTUATION);
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<KisOverseasTrendResponse> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    KisOverseasTrendResponse.class
+            );
+
+            KisOverseasTrendResponse body = response.getBody();
+            if (body == null || body.getOutput2() == null) {
+                return Collections.emptyList();
+            }
+
+            return body.getOutput2();
+
+        } catch (Exception e) {
+            log.error("Failed to fetch overseas fluctuation rank (sort={})", sortCode, e);
+            throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
+        }
+    }
+
     // ===== 내부 DTO =====
+    /**
+     * 국내 응답 DTO
+     */
     @Getter
     public static class KisTrendRankResponse {
         @JsonProperty("output")
@@ -101,5 +159,27 @@ public class KisTrendClient extends AbstractKisClient {
         @JsonProperty("prdy_ctrt") private String changeRate;       // 등락률
         @JsonProperty("acml_vol") private String volume;            // 누적 거래량
         @JsonProperty("data_rank") private String rank;             // 순위
+    }
+
+    /**
+     * 해외 응답 DTO
+     */
+    @Getter
+    public static class KisOverseasTrendResponse {
+        @JsonProperty("output2")
+        private List<KisOverseasTrendRankItem> output2;
+    }
+
+    @Getter
+    public static class KisOverseasTrendRankItem {
+        @JsonProperty("rsym") private String ticker;            // 티커
+        @JsonProperty("excd") private String excd;              // 거래소
+        @JsonProperty("name") private String name;              // 한글 종목명
+        @JsonProperty("ename") private String ename;            // 영어 종목명
+        @JsonProperty("last") private String currentPrice;      // 현재가
+        @JsonProperty("diff") private String changeAmount;      // 전일대비
+        @JsonProperty("rate") private String changeRate;        // 등락률
+        @JsonProperty("tvol") private String volume;            // 누적 거래량
+        @JsonProperty("rank") private String rank;              // 순위
     }
 }

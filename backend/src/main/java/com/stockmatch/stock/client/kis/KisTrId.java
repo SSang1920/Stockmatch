@@ -24,5 +24,5 @@ public abstract class KisTrId {
     // 해외주식 거래량 순위
     public static final String US_RANK_VOLUME = "HHDFS76310010";
     // 해외주식 등락률 순위 (급등/급락)
-    public static final String US_RANK_FLUCTUATION = "FHPST01700000";
+    public static final String US_RANK_FLUCTUATION = "HHDFS76290000";
 }

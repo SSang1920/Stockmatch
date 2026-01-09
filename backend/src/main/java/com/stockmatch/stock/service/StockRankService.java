@@ -90,7 +90,7 @@ public class StockRankService {
 
             // 해외 데이터 (US)
             Map<String, List<StockTrendResponse>> usData = new HashMap<>();
-            usData.put("mostActive", overseasTrendService.getMostActive(10));
+            usData.put("mostActive", overseasTrendService.getMostActive());
             usData.put("gainers", overseasTrendService.getGainers());
             usData.put("losers", overseasTrendService.getLosers());
             result.put("US", usData);
