@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import axios from "axios";
 import { LogOut, TrendingUp, User } from "lucide-react";
 import { Button } from "../ui/button";
+import { getUserInfo, logoutApi } from "@/api/user";
 
-// 쿠키 포함 설정
-axios.defaults.withCredentials = true;
 
 export function Header() {
     // 유저 상태 관리
@@ -15,10 +13,11 @@ export function Header() {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const response = await axios.get("http://localhost:8080/api/user/me");
-                if (response.data && response.data.data) {
-                    console.log("Header: 유저 정보 로딩 성공", response.data.data.name);
-                    setUser(response.data.data);
+                const data = await getUserInfo();
+
+                if (data && data.data) {
+                    console.log("Header: 유저 정보 로딩 성공", data.data.name);
+                    setUser(data.data);
                 }
             } catch (error) {
                 console.log("Header: 비로그인 상태");
@@ -31,7 +30,7 @@ export function Header() {
     // 로그아웃 핸들러
     const handleLogout = async () => {
         try {
-            await axios.post('http://localhost:8080/api/auth/logout');
+            await logoutApi();
             console.log("서버 로그아웃 성공");
         } catch (error) {
             console.error("로그아웃 요청 중 에러 발생 ", error);
