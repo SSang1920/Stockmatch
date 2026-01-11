@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-
+import { Header } from '@/components/common/Header';
 import { SURVEY_QUESTIONS } from '@/config/survey-data';
 import { submitInvestmentProfile } from '@/api/investment';
 
@@ -10,22 +10,6 @@ export const Route = createFileRoute('/survey')({
     component: SurveyPage,
     });
 
-function SimpleHeader() {
-    return (
-        <header className="flex h-16 items-center justify-between border-b px-6 bg-white">
-            <Link to="/" className="text-xl font-bold text-gray-900 hover:opacity-80">
-                StockMatch
-            </Link>
-
-            <Link
-                to="/"
-                className="text-sm font-medium text-gray-500 hover:text-gray-900 flex items-center gap-1"
-            >
-                메인으로 나가기 ✕
-            </Link>
-        </header>
-    );
-}
 
 function SurveyPage() {
     const navigate = useNavigate();
@@ -72,7 +56,7 @@ function SurveyPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-                    <SimpleHeader />
+                    <Header />
 
         <div className="max-w-3xl mx-auto p-6 py-10">
           <h1 className="text-3xl font-bold mb-8 text-center text-gray-800">
