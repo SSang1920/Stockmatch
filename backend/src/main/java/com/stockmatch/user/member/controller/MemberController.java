@@ -59,6 +59,17 @@ public class MemberController {
         return ResponseEntity.ok(ApiResponse.ok());
     }
 
+    @GetMapping("/me/api-key/decrypted")
+    public ResponseEntity<ApiResponse<String>> getDecryptedApiKey(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        Long userId = userDetails.getUser().getId();
+        String realKey = userService.getDecryptedApiKey(userId);
+
+        return ResponseEntity.ok(ApiResponse.ok(realKey));
+    }
+
+
     @PostMapping("me/investment-profile")
     public ResponseEntity<Void> registerInvestmentProfile(
             @AuthenticationPrincipal CustomUserDetails userDetails,

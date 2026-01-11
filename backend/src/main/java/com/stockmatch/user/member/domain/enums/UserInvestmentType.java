@@ -2,6 +2,7 @@ package com.stockmatch.user.member.domain.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.util.Arrays;
 
@@ -19,7 +20,9 @@ public enum UserInvestmentType {
 
     AGGRESSIVE("공격투자형", "큰 변동성을 감수하고 고수익을 추구", 5);
 
+    @JsonValue
     private final String description;
+
     private final String detail;
     private final int riskLevel;
 
