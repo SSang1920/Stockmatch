@@ -1,6 +1,6 @@
 package com.stockmatch.stock.domain;
 
-import com.stockmatch.WatchItem.WatchItem;
+import com.stockmatch.watchlist.domain.WatchlistItem;
 import com.stockmatch.common.BaseEntity;
 import com.stockmatch.portfolio.domain.Currency;
 import jakarta.persistence.*;
@@ -61,7 +61,7 @@ public class Security extends BaseEntity {
     private List<DailyPrice> dailyPrices = new ArrayList<>();
 
     @OneToOne(mappedBy = "security", fetch = FetchType.LAZY)
-    private WatchItem watchItem;
+    private WatchlistItem watchlistItem;
 
     public void updateName(String name) {
         this.name = name;
@@ -84,13 +84,6 @@ public class Security extends BaseEntity {
         return market == Market.KR
                 || exchange == Exchange.KOSPI
                 || exchange == Exchange.KOSDAQ;
-    }
-
-    /**
-     * 해외 종목 여부 판별
-     */
-    public boolean isForeign() {
-        return !isKorean();
     }
 
     /**

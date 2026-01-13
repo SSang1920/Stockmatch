@@ -59,6 +59,10 @@ public enum ErrorCode {
     // 시장
     MARKET_DATA_FETCH_ERROR("M001", "시장 데이터 조회/갱신 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
 
+    // 관심 종목
+    WATCHLIST_NOT_FOUND("W001", "관심 종목을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    WATCHLIST_ITEM_NOT_FOUND("W002", "관심 종목 아이템을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
     // 외부 API
     EXTERNAL_API_ERROR("E001", "외부 API 호출 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
     UNSUPPORTED_REGION("E002", "지원하지 않는 지역입니다.", HttpStatus.BAD_REQUEST),
