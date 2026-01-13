@@ -40,7 +40,7 @@ public class AuthController {
         // accessToken 쿠키 생성
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken)
                 .path("/")
-                .httpOnly(false) //프론트에서 읽을시 true
+                .httpOnly(false) //프론트에서 읽을시 false
                 .secure(false) // 로컬 환경 false, 배포 환경 true
                 .sameSite("Lax") // 타 도메인간 리다이렉트 시 쿠키 전달 허용
                 .maxAge(60*60)
@@ -49,7 +49,7 @@ public class AuthController {
         //refreshToken 쿠키 생성
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .path("/")
-                .httpOnly(false) // refreshToken은 서버만 읽도록
+                .httpOnly(true) // refreshToken은 서버만 읽도록
                 .secure(false)
                 .sameSite("Lax")
                 .maxAge(7 * 24 * 60 * 60)
@@ -80,6 +80,12 @@ public class AuthController {
         Long userId = userDetails.getUser().getId();
         authService.logout(userId);
 
-        return ResponseEntity.ok(ApiResponse.ok());
+        ResponseCookie expiredAccess = ResponseCookie.from("accessToken", "").path("/").maxAge(0).build();
+        ResponseCookie expiredRefresh = ResponseCookie.from("refreshToken", "").path("/").httpOnly(true).maxAge(0).build();
+
+        return ResponseEntity.ok()
+                .header("Set-Cookie", expiredAccess.toString())
+                .header("Set-Cookie", expiredRefresh.toString())
+                .body(ApiResponse.ok());
     }
 }
