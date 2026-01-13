@@ -35,14 +35,14 @@ public class NaverUnlinker implements OAuthUnlinker {
 
     @Override
     public void unlink(User user){
-        String refreshToken = user.getRefreshToken();
+        String providerRefreshToken = user.getProviderRefreshToken();
 
-        if (refreshToken == null) {
+        if (providerRefreshToken == null) {
             throw new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
         }
 
         // 새 Access Token 갱신 ( 우리 서버 x, 네이버의 accessToken)
-        String newAccessToken = refreshNaverAccessToken(refreshToken);
+        String newAccessToken = refreshNaverAccessToken(providerRefreshToken);
 
         // 연동 해제 요청
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
@@ -61,12 +61,12 @@ public class NaverUnlinker implements OAuthUnlinker {
     /**
      * AccessToken 갱신
      */
-    private String refreshNaverAccessToken(String refreshToken) {
+    private String refreshNaverAccessToken(String providerRefreshToken) {
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("grant_type", "refresh_token");
         formData.add("client_id", naverClientId);
         formData.add("client_secret", naverClientSecret);
-        formData.add("refresh_token", refreshToken);
+        formData.add("refresh_token", providerRefreshToken);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, null);
         NaverTokenRefreshResponse response = restTemplate.postForObject(NAVER_TOKEN_URL, request, NaverTokenRefreshResponse.class);

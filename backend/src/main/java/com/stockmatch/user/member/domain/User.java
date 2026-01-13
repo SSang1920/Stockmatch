@@ -56,6 +56,9 @@ public class User extends BaseEntity {
     @Column(name = "refresh_token", length = 255)
     private String refreshToken;
 
+    @Column(name = "provider_refresh_token", length = 255)
+    private String providerRefreshToken;
+
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Portfolio portfolio;
 
@@ -131,4 +134,11 @@ public class User extends BaseEntity {
         this.refreshToken = refreshToken;
     }
 
+    public void updateProviderRefreshToken(String providerRefreshToken) {
+
+        if(providerRefreshToken != null && !providerRefreshToken.isBlank()){
+            this.providerRefreshToken = providerRefreshToken;
+        }
+
+    }
 }

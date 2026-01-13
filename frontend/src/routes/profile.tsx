@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Header } from '@/components/common/Header';
-import { getUserInfo, updateApiKey, fetchDecryptedApiKey } from '@/api/user';
+import { getUserInfo, updateApiKey, fetchDecryptedApiKey, deleteUser } from '@/api/user';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -55,6 +55,42 @@ function RouteComponent() {
             }
         });
 
+    const deleteMutation = useMutation({
+            mutationFn: deleteUser,
+            onSuccess: () => {
+                toast.success("회원 탈퇴가 완료되었습니다.");
+
+                document.cookie = "accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
+                localStorage.clear();
+
+                window.location.href = '/';
+            },
+            onError: (error :any) => {
+                const errorData = error.response?.data;
+
+                const errorCode = errorData?.error?.code || errorData?.code;
+                const isGoogleUser = user?.authprovider === 'GOOGLE';
+
+                if (errorCode === 'A008' && isGoogleUser) {
+                    if (window.confirm("구글 계정 연동 해제를 위해 보안 재인증이 필요합니다.\n확인을 누르면 구글 로그인 화면으로 이동합니다.")) {
+                        const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+                        const REDIRECT_URI = 'http://localhost:8080/api/auth/callback/google';
+                        const SCOPE = 'email profile';
+
+                        // prompt=consent와 access_type=offline을 강제로 붙여서 보냄
+                        const reauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${SCOPE}&prompt=consent&access_type=offline`;
+
+                        window.location.href = reauthUrl;
+                    }
+                    return;
+                }
+
+                console.error("회원 탈퇴 에러:", error);
+                toast.error(errorData?.message || "회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.");
+            }
+        });
+
     const handleToggleView = async () => {
             if (isVisible) {
                 // 숨기기 클릭 시
@@ -98,6 +134,12 @@ function RouteComponent() {
             return;
             }
         mutation.mutate(apiKey);
+        };
+
+    const handleDeleteAccount = () => {
+            if (window.confirm("정말로 탈퇴하시겠습니까?\n이 작업은 되돌릴 수 없으며, 모든 포트폴리오와 설정 정보가 삭제됩니다.")) {
+                deleteMutation.mutate();
+            }
         };
 
     if (!user) {
@@ -217,6 +259,23 @@ return (
                         </>
                         )}
                 </div>
+            </div>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-red-100 bg-red-50 p-6 shadow-sm">
+            <h2 className="mb-4 text-lg font-semibold text-red-700 border-b border-red-200 pb-2">회원 탈퇴</h2>
+            <div className="flex items-center justify-between">
+                <div className="text-sm text-red-600">
+                    <p>StockMatch 서비스를 더 이상 이용하지 않으시려면 회원 탈퇴를 진행해주세요.</p>
+                    <p className="mt-1 font-medium">※ 탈퇴 시 모든 포트폴리오 및 설정 정보가 즉시 삭제됩니다.</p>
+                </div>
+                <Button
+                    variant="destructive"
+                    onClick={handleDeleteAccount}
+                    disabled={deleteMutation.isPending}
+                >
+                    {deleteMutation.isPending ? "처리 중..." : "회원 탈퇴"}
+                </Button>
             </div>
         </div>
 

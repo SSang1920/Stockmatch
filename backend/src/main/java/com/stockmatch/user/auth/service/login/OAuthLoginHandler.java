@@ -42,7 +42,9 @@ public abstract class OAuthLoginHandler {
         String ourAccessToken = jwtUtil.generateAccessToken(String.valueOf(user.getId()), user.getRoleKey());
         String ourRefreshToken = jwtUtil.generateRefreshToken(String.valueOf(user.getId()));
 
-        user.updateRefreshToken(providerRefreshToken);
+        user.updateRefreshToken(ourRefreshToken);
+
+        user.updateProviderRefreshToken(providerRefreshToken);
 
         return Map.of("accessToken", ourAccessToken, "refreshToken", ourRefreshToken);
     }
