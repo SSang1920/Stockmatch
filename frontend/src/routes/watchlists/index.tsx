@@ -4,6 +4,12 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react';
 import { ChevronRight, Folder, Plus } from 'lucide-react';
 
+const checkAuth = () => {
+    try {
+        
+    }
+}
+
 export const Route = createFileRoute('/watchlists/')({
     component: WatchlistPage,
 });
