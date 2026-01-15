@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { StockSearchResponse } from "../types/stock";
+import { StockSearchResponse } from "../types";
 import { useNavigate } from "@tanstack/react-router";
 import { searchStocks } from "../api/marketApi";
 

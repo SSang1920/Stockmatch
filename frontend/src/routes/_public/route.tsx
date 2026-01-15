@@ -13,10 +13,10 @@ function PublicLayout() {
       <Header />
 
       {/* 본문: 좌측 사이드바 + 콘텐츠 */}
-      <div className="container mx-auto flex flex-1 gap-6 p-6">
+      <div className="container mx-auto flex flex-1 gap-6 p-6 items-start">
         
         {/* 사이드바 영역 지정 */}
-        <aside className="hidden md:block flex-shrink-0 w-64 lg:w-72">
+        <aside className="hidden md:block w-64 lg:w-72 flex-shrink-0 sticky top-24 h-[calc(100vh-140px)]">
            <Sidebar />
         </aside>
 

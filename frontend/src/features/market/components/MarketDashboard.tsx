@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { MarketOverviewResponse } from "../types/market"
+import { MarketOverviewResponse } from "../types"
 import { fetchMarketOverview } from "../api/marketApi";
 import { MarketCard } from './MarketCard';
 import { ExchangeCard } from './ExchangeCard';

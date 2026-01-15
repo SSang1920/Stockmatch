@@ -1,15 +1,15 @@
 import axios from 'axios';
-import { MarketOverviewResponse } from '../types/market';
-import { StockSearchResponse, MarketTrendResponse } from '../types/stock';
-
-interface ApiResponse<T> {
-    success: boolean;
-    data: T;
-}
+import { MarketOverviewResponse, StockSearchResponse, MarketTrendResponse } from '../types';
+import { ApiResponse } from '@/types/common';
 
 // 마켓 오버뷰 조회 API
 export const fetchMarketOverview = async (): Promise<MarketOverviewResponse> => {
     const response = await axios.get<ApiResponse<MarketOverviewResponse>>('/api/market/overview');
+
+    if (!response.data.success) {
+        throw new Error(response.data.error?.message || '마켓 오버뷰 조회 실패');
+    }
+
     return response.data.data;
 };
 
@@ -22,11 +22,20 @@ export const searchStocks = async (query: string): Promise<StockSearchResponse[]
         params: { q: query }
     });
 
+    if (!response.data.success) {
+        throw new Error(response.data.error?.message || '주식 검색 실패');
+    }
+
     return response.data.data;
-}
+};
 
 // 시장 트렌드 조회 API
 export const fetchMarketTrends = async (): Promise<MarketTrendResponse> => {
     const response = await axios.get<ApiResponse<MarketTrendResponse>>('/api/market/trends');
+
+    if (!response.data.success) {
+        throw new Error(response.data.error?.message || '시장 트렌드 조회 실패');
+    }
+
     return response.data.data;
-}
+};

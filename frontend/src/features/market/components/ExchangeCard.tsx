@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExchangeRateInfo } from '../types/market';
+import { ExchangeRateInfo } from '../types';
 
 interface Props {
   label: string;

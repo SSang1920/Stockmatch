@@ -1,10 +1,11 @@
 package com.stockmatch.user.auth.controller;
 
 import com.stockmatch.common.api.ApiResponse;
+import com.stockmatch.common.exception.BusinessException;
+import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.config.security.CustomUserDetails;
 import com.stockmatch.user.auth.dto.TokenResponseDto;
 import com.stockmatch.user.auth.service.AuthService;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -81,5 +82,26 @@ public class AuthController {
         authService.logout(userId);
 
         return ResponseEntity.ok(ApiResponse.ok());
+    }
+
+    /**
+     * 로그인 여부 및 내 정보 확인
+     */
+    @GetMapping("/check")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> checkAuth(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        if (userDetails == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN);
+        }
+
+        // 로그인 된 상태라면 간단한 유저 정보 반환
+        Map<String, Object> userInfo = Map.of(
+                "id", userDetails.getUser().getId(),
+                "name", userDetails.getUser().getName(),
+                "isAuthenticated", true
+        );
+
+        return ResponseEntity.ok(ApiResponse.ok(userInfo));
     }
 }
