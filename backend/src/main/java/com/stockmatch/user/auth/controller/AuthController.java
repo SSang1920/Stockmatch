@@ -41,7 +41,7 @@ public class AuthController {
         // accessToken 쿠키 생성
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken)
                 .path("/")
-                .httpOnly(false) //프론트에서 읽을시 true
+                .httpOnly(true) //프론트에서 읽을시 true
                 .secure(false) // 로컬 환경 false, 배포 환경 true
                 .sameSite("Lax") // 타 도메인간 리다이렉트 시 쿠키 전달 허용
                 .maxAge(60*60)

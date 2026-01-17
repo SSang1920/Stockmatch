@@ -1,16 +1,34 @@
 import { Watchlist } from '@/features/watchlist/types';
 import * as watchlistApi from '@/features/watchlist/api/watchlistApi';
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useEffect, useState } from 'react';
 import { ChevronRight, Folder, Plus } from 'lucide-react';
+import axios from 'axios';
 
-const checkAuth = () => {
+// 인증 체크 함수
+const checkAuth = async () => {
     try {
-        
+        await axios.get('/api/auth/check');
+        return true;
+    } catch (error) {
+        return false;
     }
 }
 
-export const Route = createFileRoute('/watchlists/')({
+export const Route = createFileRoute('/_public/watchlists/')({
+    // 페이지 로드 전 검사
+    beforeLoad: async ({ location }) => {
+        const isLoggedIn = await checkAuth();
+
+        if (!isLoggedIn) {
+            throw redirect({
+                to: '/login',
+                search: {
+                    redirect: location.href,
+                },
+            });
+        }
+    },
     component: WatchlistPage,
 });
 
