@@ -28,14 +28,14 @@ public class GoogleUnlink implements OAuthUnlinker {
 
     @Override
     public void unlink(User user) {
-        String refreshToken = user.getRefreshToken();
+        String providerRefreshToken = user.getProviderRefreshToken();
 
-        if (refreshToken == null) {
+        if (providerRefreshToken == null) {
             throw new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
         }
 
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-        formData.add("token", refreshToken);
+        formData.add("token", providerRefreshToken);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, null);
         String response = restTemplate.postForObject(GOOGLE_UNLINK_URL, request, String.class);

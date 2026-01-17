@@ -88,7 +88,12 @@ public class MemberController {
 
     @DeleteMapping("/me")
     public ResponseEntity<ApiResponse<Void>> deleteUser(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @CookieValue(name = "refreshToken", required=false) String refreshToken) {
+
+        if (refreshToken == null) {
+            throw new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
+        }
 
         Long userId = userDetails.getUser().getId();
         userService.deleteUser(userId);
