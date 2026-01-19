@@ -22,30 +22,34 @@ public class CompanyOverviewDto implements CacheableData {
 
     @JsonProperty("Symbol")
     private String symbol;
-    @JsonProperty("AssetType")
-    private String assetType;
     @JsonProperty("Name")
     private String name;
     @JsonProperty("Description")
     private String description;
-    @JsonProperty("CIK")
-    private String cik;
-    @JsonProperty("Exchange")
-    private String exchange;
+
+    //국가 및 통화
     @JsonProperty("Currency")
     private String currency;
     @JsonProperty("Country")
     private String country;
+
+
     @JsonProperty("Sector")
     private String sector;
     @JsonProperty("Industry")
     private String industry;
-    @JsonProperty("Address")
-    private String address;
+
+
     @JsonProperty("MarketCapitalization")
     private String marketCapitalization;
+
+    // 가치 평가 및 수익성
     @JsonProperty("PERatio")
     private String peRatio;
+    @JsonProperty("ForwardPE")
+    private String forwardPe;
+    @JsonProperty("PriceToSalesRatioTTM")
+    private String psRatio;
     @JsonProperty("EPS")
     private String eps;
     @JsonProperty("DividendPerShare")
@@ -54,6 +58,8 @@ public class CompanyOverviewDto implements CacheableData {
     private String dividendYield;
     @JsonProperty("BookValue")
     private String bookValue;
+
+    // 현재 주가 파악
     @JsonProperty("52WeekHigh")
     private String week52High;
     @JsonProperty("52WeekLow")

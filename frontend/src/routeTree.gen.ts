@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SurveyRouteImport } from './routes/survey'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as AnalysisRouteImport } from './routes/analysis'
 import { Route as PublicRouteRouteImport } from './routes/_public/route'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
@@ -29,6 +30,11 @@ const SurveyRoute = SurveyRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnalysisRoute = AnalysisRouteImport.update({
+  id: '/analysis',
+  path: '/analysis',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PublicRouteRoute = PublicRouteRouteImport.update({
@@ -77,6 +83,7 @@ const StocksMarketTickerRoute = StocksMarketTickerRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/analysis': typeof AnalysisRoute
   '/profile': typeof ProfileRoute
   '/survey': typeof SurveyRoute
   '/sign-in': typeof authSignInRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/stocks/$market/$ticker': typeof StocksMarketTickerRoute
 }
 export interface FileRoutesByTo {
+  '/analysis': typeof AnalysisRoute
   '/profile': typeof ProfileRoute
   '/survey': typeof SurveyRoute
   '/sign-in': typeof authSignInRoute
@@ -103,6 +111,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_public': typeof PublicRouteRouteWithChildren
+  '/analysis': typeof AnalysisRoute
   '/profile': typeof ProfileRoute
   '/survey': typeof SurveyRoute
   '/(auth)/sign-in': typeof authSignInRoute
@@ -117,6 +126,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/analysis'
     | '/profile'
     | '/survey'
     | '/sign-in'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/stocks/$market/$ticker'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/analysis'
     | '/profile'
     | '/survey'
     | '/sign-in'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_public'
+    | '/analysis'
     | '/profile'
     | '/survey'
     | '/(auth)/sign-in'
@@ -156,6 +168,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   PublicRouteRoute: typeof PublicRouteRouteWithChildren
+  AnalysisRoute: typeof AnalysisRoute
   ProfileRoute: typeof ProfileRoute
   SurveyRoute: typeof SurveyRoute
   authSignInRoute: typeof authSignInRoute
@@ -181,6 +194,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/analysis': {
+      id: '/analysis'
+      path: '/analysis'
+      fullPath: '/analysis'
+      preLoaderRoute: typeof AnalysisRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_public': {
@@ -263,6 +283,7 @@ const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   PublicRouteRoute: PublicRouteRouteWithChildren,
+  AnalysisRoute: AnalysisRoute,
   ProfileRoute: ProfileRoute,
   SurveyRoute: SurveyRoute,
   authSignInRoute: authSignInRoute,

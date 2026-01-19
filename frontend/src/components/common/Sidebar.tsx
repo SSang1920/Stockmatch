@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { DollarSign, LayoutDashboard, LineChart, Search } from "lucide-react";
+import { DollarSign, LayoutDashboard, LineChart, Search, BarChart3 } from "lucide-react";
 
 export function Sidebar() {
     return (
@@ -18,6 +18,10 @@ export function Sidebar() {
 
             <NavItem to="/dashboard" icon={<LayoutDashboard className="h-4 w-4" />}>
                 내 포트폴리오
+            </NavItem>
+
+            <NavItem to="/analysis" icon={<BarChart3 className="h-4 w-4" />}>
+                 종목 분석
             </NavItem>
         </nav>
     )

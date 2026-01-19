@@ -78,6 +78,7 @@ public enum ErrorCode {
     DART_CORP_CODE_NOT_FOUNT("E009", "해당 종목의 DART 고유번호를 찾을 수 없습니다.(DART)", HttpStatus.BAD_REQUEST);
 
 
+
     private final String code;
     private final String message;
     private final HttpStatus httpStatus;

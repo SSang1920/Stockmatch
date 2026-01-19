@@ -30,6 +30,7 @@ public class IncomeStatementDto implements CacheableData {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class AnnualReports{
+        private String fiscalDateEnding;
         private String totalRevenue;
         private String netIncome;
         private String operatingIncome;
