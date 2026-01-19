@@ -22,7 +22,7 @@ export const Route = createFileRoute('/_public/watchlists/')({
 
         if (!isLoggedIn) {
             throw redirect({
-                to: '/login',
+                to: '/sign-in',
                 search: {
                     redirect: location.href,
                 },

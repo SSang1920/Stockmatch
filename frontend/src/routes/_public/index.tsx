@@ -4,12 +4,23 @@ import MarketDashboard from '@/features/market/components/MarketDashboard'
 import { StockSearchBar } from '@/features/market/components/StockSearchBar'
 import { MarketTrend } from '@/features/market/components/MarketTrend'
 import { BarChart3 } from 'lucide-react'
+import { useEffect } from 'react'
 
 export const Route = createFileRoute('/_public/')({
   component: HomePage,
 })
 
 function HomePage() {
+
+  useEffect(() => {
+    const savedRedirect = localStorage.getItem('loginRedirect')
+
+    if (savedRedirect) {
+      localStorage.removeItem('loginRedirect')
+      window.location.href = savedRedirect
+    }
+  }, [])
+
   return (
     <div className="space-y-8 pb-10">
       {/* 헤더 영역 */}
