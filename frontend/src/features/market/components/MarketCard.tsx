@@ -1,5 +1,5 @@
 import React from 'react';
-import { IndexInfo } from '../types/market'; // 경로 확인 필요
+import { IndexInfo } from '../types';
 
 interface Props {
   label: string;

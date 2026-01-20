@@ -1,9 +1,9 @@
 import { Link } from "@tanstack/react-router";
-import { DollarSign, LayoutDashboard, LineChart, Search, BarChart3 } from "lucide-react";
+import { DollarSign, LayoutDashboard, LineChart, Star } from "lucide-react";
 
 export function Sidebar() {
     return (
-        <nav className="w-full space-y-1">
+        <nav className="h-full w-full overflow-y-auto space-y-1 pr-3">
             <NavItem to="/" icon={<LineChart className="h-4 w-4" />}>
                 시장 요약
             </NavItem>
@@ -16,6 +16,9 @@ export function Sidebar() {
 
             <div className="my-2 border-t" />
 
+            <NavItem to="/watchlists" icon={<Star className="h-4 w-4" />}>
+                관심 종목
+            </NavItem>
             <NavItem to="/dashboard" icon={<LayoutDashboard className="h-4 w-4" />}>
                 내 포트폴리오
             </NavItem>

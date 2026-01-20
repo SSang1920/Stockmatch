@@ -2,26 +2,20 @@ import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { PasswordInput } from '@/_archive/components/password-input'
-
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
+  redirectTo?: string;
 }
 
-export function UserAuthForm({className, ...props}: UserAuthFormProps) {
+export function UserAuthForm({ className, redirectTo, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState<string | null>(null)
 
   const handleSocialLogin = (provider: string) => {
       setIsLoading(provider)
+
+      if (redirectTo) {
+        localStorage.setItem('loginRedirect', redirectTo);
+      }
 
       const BACKEND_CALLBACK_URL = 'http://localhost:8080/api/auth/callback';
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { MarketTrendData, MarketTrendResponse, StockTrend } from "../types/stock"
+import { MarketTrendData, MarketTrendResponse, StockTrend } from "../types"
 import { useNavigate } from "@tanstack/react-router";
 import { fetchMarketTrends } from "../api/marketApi";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
