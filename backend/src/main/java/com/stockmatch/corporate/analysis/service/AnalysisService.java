@@ -20,6 +20,8 @@ import com.stockmatch.corporate.global.news.dto.NewsSentimentDto;
 import com.stockmatch.corporate.global.news.service.NewsService;
 import com.stockmatch.corporate.global.overview.dto.CompanyOverviewDto;
 import com.stockmatch.corporate.global.overview.service.OverviewService;
+import com.stockmatch.portfolio.dto.HoldingResponse;
+import com.stockmatch.portfolio.service.HoldingService;
 import com.stockmatch.user.member.domain.User;
 import com.stockmatch.user.member.repository.UserRepository;
 import com.stockmatch.user.member.service.MemberService;
@@ -47,6 +49,7 @@ public class AnalysisService {
     private final CachflowService cashflowService;
     private final NewsService newsService;
     private final EarningsService earningsService;
+    private final HoldingService holdingService;
 
     private final BusinessPerformanceMapper businessMapper;
     private final MarketMomentumMapper momentumMapper;
@@ -58,11 +61,13 @@ public class AnalysisService {
         User user = userRepository.findById(userId)
                 .orElseThrow(()-> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
+        List<HoldingResponse> myHoldings = holdingService.getMyHoldings(userId);
+
         var profile = user.getInvestmentProfile();
         UserContext userContext = UserContext.builder()
                 .investmentType(profile != null ? profile.getInvestmentType().name() : "UNDETERMINED")
                 .investmentScore(profile != null ? profile.getTotalScore() : 0)
-                .currentHoldings(new ArrayList<>()) // 추후 포트폴리오 연동
+                .currentHoldings(myHoldings) // 추후 포트폴리오 연동
                 .build();
 
         //데이터 수집

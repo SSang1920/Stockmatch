@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
+import { ensurePortfolio } from '@/api/user';
 import { type QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
@@ -21,8 +22,16 @@ export const Route = createRootRouteWithContext<{
       const checkLogin = async () => {
         try {
           const response = await axios.get('http://localhost:8080/api/user/me');
+
           if (response.data && response.data.data) {
             setUser(response.data.data); // 유저 정보 저장
+
+            try {
+              await ensurePortfolio();
+              console.log("Portfolio ensured successfully for:", userData.name);
+            } catch (portfolioError) {
+              console.error("Portfolio initialization failed:", portfolioError);
+            }
           }
         } catch (error) {
           setUser(null);

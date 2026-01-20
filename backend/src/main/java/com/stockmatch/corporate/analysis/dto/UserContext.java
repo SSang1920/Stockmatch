@@ -1,5 +1,6 @@
 package com.stockmatch.corporate.analysis.dto;
 
+import com.stockmatch.portfolio.dto.HoldingResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,7 +12,7 @@ import java.util.List;
 public class UserContext {
     private String investmentType;
     private Integer investmentScore;
-    private List<HoldingDto> currentHoldings;
+    private List<HoldingResponse> currentHoldings;
 
     @Getter
     @AllArgsConstructor

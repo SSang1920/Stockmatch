@@ -5,6 +5,11 @@ export const getUserInfo = async () => {
     return response.data;
   };
 
+export const ensurePortfolio = async () => {
+    const response = await axios.post('/portfolio/me/ensure');
+    return response.data;
+    }
+
 export const logoutApi = async () => {
     const response = await axios.post('/auth/logout');
     return response.data;
