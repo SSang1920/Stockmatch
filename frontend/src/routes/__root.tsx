@@ -24,7 +24,8 @@ export const Route = createRootRouteWithContext<{
           const response = await axios.get('http://localhost:8080/api/user/me');
 
           if (response.data && response.data.data) {
-            setUser(response.data.data); // 유저 정보 저장
+            const userData = response.data.data;
+            setUser(userData); // 유저 정보 저장
 
             try {
               await ensurePortfolio();

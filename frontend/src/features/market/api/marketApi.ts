@@ -1,10 +1,10 @@
-import axios from 'axios';
+import axios from '@/lib/axios';
 import { MarketOverviewResponse, StockSearchResponse, MarketTrendResponse } from '../types';
 import { ApiResponse } from '@/types/common';
 
 // 마켓 오버뷰 조회 API
 export const fetchMarketOverview = async (): Promise<MarketOverviewResponse> => {
-    const response = await axios.get<ApiResponse<MarketOverviewResponse>>('/api/market/overview');
+    const response = await axios.get<ApiResponse<MarketOverviewResponse>>('/market/overview');
 
     if (!response.data.success) {
         throw new Error(response.data.error?.message || '마켓 오버뷰 조회 실패');
@@ -31,7 +31,7 @@ export const searchStocks = async (query: string): Promise<StockSearchResponse[]
 
 // 시장 트렌드 조회 API
 export const fetchMarketTrends = async (): Promise<MarketTrendResponse> => {
-    const response = await axios.get<ApiResponse<MarketTrendResponse>>('/api/market/trends');
+    const response = await axios.get<ApiResponse<MarketTrendResponse>>('/market/trends');
 
     if (!response.data.success) {
         throw new Error(response.data.error?.message || '시장 트렌드 조회 실패');
