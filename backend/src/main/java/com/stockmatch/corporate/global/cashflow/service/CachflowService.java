@@ -20,7 +20,7 @@ public class CachflowService {
     private final MemberService memberService;
 
     private static final String function = "cash_flow";
-    private static final Duration CACHE_TTL = Duration.ofDays(1);
+    private static final Duration CACHE_TTL = Duration.ofDays(7);
 
     public CashflowDto getCachflow(Long userId, String symbol){
 

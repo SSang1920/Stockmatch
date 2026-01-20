@@ -20,7 +20,7 @@ public class EarningsService {
     private final MemberService memberService;
 
     private static final String function = "earnings";
-    private static final Duration CACHE_TTL = Duration.ofDays(1);
+    private static final Duration CACHE_TTL = Duration.ofDays(7);
 
     public EarningsDto getEarnings(Long userId, String symbol) {
 

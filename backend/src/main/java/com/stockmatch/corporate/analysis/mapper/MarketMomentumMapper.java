@@ -65,6 +65,10 @@ public class MarketMomentumMapper extends BaseMapper {
                         String rawDate = article.getTimePublished();
                         String publishedAt = rawDate.substring(0, 4) + "-" + rawDate.substring(4, 6) + "-" + rawDate.substring(6, 8);
 
+                        String summary = article.getSummary();
+                        if(summary != null && summary.length() >120 ){
+                            summary = summary.substring(0, 117) + "...";
+                        }
                         summaryBuilder.append("- ")
                                 .append(String.format("[%s] %s : %s\n",
                                         publishedAt,

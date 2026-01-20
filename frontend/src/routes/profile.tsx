@@ -49,6 +49,7 @@ function RouteComponent() {
             toast.success("Alpha Vantage Key가 저장되었습니다.");
             setHasSavedKey(true);
             setApiKey('');
+            setIsEditing(false);
             },
         onError: () => {
             toast.error("키 저장에 실패했습니다.");

@@ -67,15 +67,20 @@ public class AnalysisService {
 
         //데이터 수집
         var overview = safeFetch(()-> overviewService.getCompanyOverview(userId, symbol), "Market", "Overview", missingData);
-        sleep(2000);
+
+        waitApiLimit();
         var income = safeFetch(()-> incomeService.getIncomeStatement(userId, symbol), "Business", "Income", missingData);
-        sleep(2000);
+
+        waitApiLimit();
         var balance = safeFetch(()-> balancesheetService.getBalancesheet(userId, symbol), "Health", "BalanceSheet", missingData);
-        sleep(2000);
+
+        waitApiLimit();
         var cash = safeFetch(()-> cashflowService.getCachflow(userId, symbol), "Health", "CashFlow", missingData);
-        sleep(2000);
+
+        waitApiLimit();
         var news = safeFetch(()-> newsService.getNewsSentiment(symbol, user), "Market", "News", missingData);
-        sleep(2000);
+
+        waitApiLimit();
         var earnings = safeFetch(()-> earningsService.getEarnings(userId, symbol), "Market", "Earnings", missingData);
 
         return AnalysisPackage.builder()
@@ -96,14 +101,24 @@ public class AnalysisService {
                 return result;
 
          } catch (Exception e) {
-            missingData.add(new MissingDataItem(section, field, "데이터가 누락되었습니다."));
+            log.error("Error fetching {} {}: {}", section, field, e.getMessage());
+
+            String reason = "데이터가 누락되었습니다.";
+            if (e.getMessage() != null && e.getMessage().contains("rate limit")) {
+                reason ="일일 API 호출 한도를 초과했습니다. API를 변경하거나 내일 다시 시도해주세요.";
+            } else if (e.getMessage() != null && e.getMessage().contains("Information")){
+                reason = "데이터 제공처의 일시적인 제한이 있습니다. 잠시 후 시도해주세요.";
+            }
+
+            missingData.add(new MissingDataItem(section, field, reason));
             return null;
         }
     }
 
-    private void sleep(long millis) {
+    private void waitApiLimit() {
         try {
-            Thread.sleep(millis);
+            log.info("API 속도 제한을 위해 13초 대기중");
+            Thread.sleep(13000);
         } catch (InterruptedException e){
             Thread.currentThread().interrupt();
         }

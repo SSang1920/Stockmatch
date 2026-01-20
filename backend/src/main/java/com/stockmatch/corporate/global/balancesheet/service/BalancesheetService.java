@@ -20,7 +20,7 @@ public class BalancesheetService {
     private final MemberService memberService;
 
     private static final String function = "balance_sheet";
-    private static final Duration CACHE_TTL = Duration.ofDays(1);
+    private static final Duration CACHE_TTL = Duration.ofDays(7);
 
     public BalancesheetDto getBalancesheet(Long userId, String symbol){
 

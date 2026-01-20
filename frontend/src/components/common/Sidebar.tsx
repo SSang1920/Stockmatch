@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { DollarSign, LayoutDashboard, LineChart, Star } from "lucide-react";
+import { DollarSign, LayoutDashboard, LineChart, Star, Search, BarChart3 } from "lucide-react";
 
 export function Sidebar() {
     return (
