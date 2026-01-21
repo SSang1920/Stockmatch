@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SurveyRouteImport } from './routes/survey'
 import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as AnalysisRouteImport } from './routes/analysis'
 import { Route as PublicRouteRouteImport } from './routes/_public/route'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
@@ -21,6 +20,7 @@ import { Route as errors403RouteImport } from './routes/(errors)/403'
 import { Route as errors401RouteImport } from './routes/(errors)/401'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
 import { Route as PublicWatchlistsIndexRouteImport } from './routes/_public/watchlists/index'
+import { Route as PublicAnalysisIndexRouteImport } from './routes/_public/analysis/index'
 import { Route as StocksMarketTickerRouteImport } from './routes/stocks.$market.$ticker'
 
 const SurveyRoute = SurveyRouteImport.update({
@@ -31,11 +31,6 @@ const SurveyRoute = SurveyRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AnalysisRoute = AnalysisRouteImport.update({
-  id: '/analysis',
-  path: '/analysis',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PublicRouteRoute = PublicRouteRouteImport.update({
@@ -82,6 +77,11 @@ const PublicWatchlistsIndexRoute = PublicWatchlistsIndexRouteImport.update({
   path: '/watchlists/',
   getParentRoute: () => PublicRouteRoute,
 } as any)
+const PublicAnalysisIndexRoute = PublicAnalysisIndexRouteImport.update({
+  id: '/analysis/',
+  path: '/analysis/',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
 const StocksMarketTickerRoute = StocksMarketTickerRouteImport.update({
   id: '/stocks/$market/$ticker',
   path: '/stocks/$market/$ticker',
@@ -89,7 +89,6 @@ const StocksMarketTickerRoute = StocksMarketTickerRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/analysis': typeof AnalysisRoute
   '/profile': typeof ProfileRoute
   '/survey': typeof SurveyRoute
   '/sign-in': typeof authSignInRoute
@@ -100,10 +99,10 @@ export interface FileRoutesByFullPath {
   '/503': typeof errors503Route
   '/': typeof PublicIndexRoute
   '/stocks/$market/$ticker': typeof StocksMarketTickerRoute
+  '/analysis': typeof PublicAnalysisIndexRoute
   '/watchlists': typeof PublicWatchlistsIndexRoute
 }
 export interface FileRoutesByTo {
-  '/analysis': typeof AnalysisRoute
   '/profile': typeof ProfileRoute
   '/survey': typeof SurveyRoute
   '/sign-in': typeof authSignInRoute
@@ -114,12 +113,12 @@ export interface FileRoutesByTo {
   '/503': typeof errors503Route
   '/': typeof PublicIndexRoute
   '/stocks/$market/$ticker': typeof StocksMarketTickerRoute
+  '/analysis': typeof PublicAnalysisIndexRoute
   '/watchlists': typeof PublicWatchlistsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_public': typeof PublicRouteRouteWithChildren
-  '/analysis': typeof AnalysisRoute
   '/profile': typeof ProfileRoute
   '/survey': typeof SurveyRoute
   '/(auth)/sign-in': typeof authSignInRoute
@@ -130,12 +129,12 @@ export interface FileRoutesById {
   '/(errors)/503': typeof errors503Route
   '/_public/': typeof PublicIndexRoute
   '/stocks/$market/$ticker': typeof StocksMarketTickerRoute
+  '/_public/analysis/': typeof PublicAnalysisIndexRoute
   '/_public/watchlists/': typeof PublicWatchlistsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/analysis'
     | '/profile'
     | '/survey'
     | '/sign-in'
@@ -146,10 +145,10 @@ export interface FileRouteTypes {
     | '/503'
     | '/'
     | '/stocks/$market/$ticker'
+    | '/analysis'
     | '/watchlists'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/analysis'
     | '/profile'
     | '/survey'
     | '/sign-in'
@@ -160,11 +159,11 @@ export interface FileRouteTypes {
     | '/503'
     | '/'
     | '/stocks/$market/$ticker'
+    | '/analysis'
     | '/watchlists'
   id:
     | '__root__'
     | '/_public'
-    | '/analysis'
     | '/profile'
     | '/survey'
     | '/(auth)/sign-in'
@@ -175,12 +174,12 @@ export interface FileRouteTypes {
     | '/(errors)/503'
     | '/_public/'
     | '/stocks/$market/$ticker'
+    | '/_public/analysis/'
     | '/_public/watchlists/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   PublicRouteRoute: typeof PublicRouteRouteWithChildren
-  AnalysisRoute: typeof AnalysisRoute
   ProfileRoute: typeof ProfileRoute
   SurveyRoute: typeof SurveyRoute
   authSignInRoute: typeof authSignInRoute
@@ -206,13 +205,6 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/analysis': {
-      id: '/analysis'
-      path: '/analysis'
-      fullPath: '/analysis'
-      preLoaderRoute: typeof AnalysisRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_public': {
@@ -278,6 +270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicWatchlistsIndexRouteImport
       parentRoute: typeof PublicRouteRoute
     }
+    '/_public/analysis/': {
+      id: '/_public/analysis/'
+      path: '/analysis'
+      fullPath: '/analysis'
+      preLoaderRoute: typeof PublicAnalysisIndexRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
     '/stocks/$market/$ticker': {
       id: '/stocks/$market/$ticker'
       path: '/stocks/$market/$ticker'
@@ -290,11 +289,13 @@ declare module '@tanstack/react-router' {
 
 interface PublicRouteRouteChildren {
   PublicIndexRoute: typeof PublicIndexRoute
+  PublicAnalysisIndexRoute: typeof PublicAnalysisIndexRoute
   PublicWatchlistsIndexRoute: typeof PublicWatchlistsIndexRoute
 }
 
 const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicIndexRoute: PublicIndexRoute,
+  PublicAnalysisIndexRoute: PublicAnalysisIndexRoute,
   PublicWatchlistsIndexRoute: PublicWatchlistsIndexRoute,
 }
 
@@ -304,7 +305,6 @@ const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   PublicRouteRoute: PublicRouteRouteWithChildren,
-  AnalysisRoute: AnalysisRoute,
   ProfileRoute: ProfileRoute,
   SurveyRoute: SurveyRoute,
   authSignInRoute: authSignInRoute,
