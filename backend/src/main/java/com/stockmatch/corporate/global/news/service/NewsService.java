@@ -6,12 +6,14 @@ import com.stockmatch.corporate.global.news.dto.NewsSentimentDto;
 import com.stockmatch.user.member.domain.User;
 import com.stockmatch.user.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NewsService {
@@ -41,6 +43,7 @@ public class NewsService {
                         params.put("tickers", tickers);
                     }
 
+                    waitApiLimit();
                     return alphaVantageClient.fetchDataWithParams(
                             "NEWS_SENTIMENT",
                             params,
@@ -49,5 +52,15 @@ public class NewsService {
                     );
                 }
         );
+    }
+
+
+    private void waitApiLimit() {
+        try {
+            log.info("API 속도 제한을 위해 13초 대기중");
+            Thread.sleep(13000);
+        } catch (InterruptedException e){
+            Thread.currentThread().interrupt();
+        }
     }
 }

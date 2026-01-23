@@ -32,6 +32,7 @@ public class OverviewService {
                 () -> {
                     String apiKey = memberService.getDecryptedApiKey(userId);
 
+                    waitApiLimit();
                     return apiClient.fetchData(
                             function,
                             symbol,
@@ -39,6 +40,14 @@ public class OverviewService {
                             CompanyOverviewDto.class);
                 }
         );
+    }
 
+    private void waitApiLimit() {
+        try {
+            log.info("API 속도 제한을 위해 13초 대기중");
+            Thread.sleep(13000);
+        } catch (InterruptedException e){
+            Thread.currentThread().interrupt();
+        }
     }
 }

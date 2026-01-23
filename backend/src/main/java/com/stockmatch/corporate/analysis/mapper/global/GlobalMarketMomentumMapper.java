@@ -1,18 +1,19 @@
-package com.stockmatch.corporate.analysis.mapper;
+package com.stockmatch.corporate.analysis.mapper.global;
 
-import com.querydsl.codegen.utils.Symbols;
 import com.stockmatch.corporate.analysis.dto.sections.MarketMomentum;
+import com.stockmatch.corporate.analysis.mapper.common.BaseMapper;
 import com.stockmatch.corporate.global.earnings.dto.EarningsDto;
 import com.stockmatch.corporate.global.news.dto.NewsSentimentDto;
 import com.stockmatch.corporate.global.overview.dto.CompanyOverviewDto;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Component
-public class MarketMomentumMapper extends BaseMapper {
+public class GlobalMarketMomentumMapper extends BaseMapper {
 
     //Alpha Vantage 뉴스 시간 format
     private static final DateTimeFormatter NEWS_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
@@ -32,6 +33,7 @@ public class MarketMomentumMapper extends BaseMapper {
         String finalNewsSummary = "최근 분석된 요약이 없습니다.";
 
         if (news != null && news.getFeed() != null && !news.getFeed().isEmpty()){
+
             List<NewsSentimentDto.Article> articles = news.getFeed();
             LocalDateTime oneMonthAgo = LocalDateTime.now().minusMonths(1);
 
@@ -65,15 +67,12 @@ public class MarketMomentumMapper extends BaseMapper {
                         String rawDate = article.getTimePublished();
                         String publishedAt = rawDate.substring(0, 4) + "-" + rawDate.substring(4, 6) + "-" + rawDate.substring(6, 8);
 
-                        String summary = article.getSummary();
-                        if(summary != null && summary.length() >120 ){
-                            summary = summary.substring(0, 117) + "...";
-                        }
                         summaryBuilder.append("- ")
-                                .append(String.format("[%s] %s : %s\n",
-                                        publishedAt,
-                                        article.getTitle(),
-                                        article.getSummary()));
+                                .append(publishedAt)
+                                .append(" | ")
+                                .append(article.getTitle())
+                                .append("\n");
+
                         summaryCount++;
                     }
                     totalScore += tickerScore;
@@ -90,10 +89,9 @@ public class MarketMomentumMapper extends BaseMapper {
                 String publishedAt = rawDate.substring(0, 4) + "-" + rawDate.substring(4, 6) + "-" + rawDate.substring(6, 8);
 
                 finalSentimentScore = latest.getOverallSentimentScore();
-                finalNewsSummary = String.format("[%s] %s : %s\n",
+                finalNewsSummary = String.format("[%s] | %s",
                         publishedAt,
-                        latest.getTitle(),
-                        latest.getSummary());
+                        latest.getTitle());
             }
         }
 

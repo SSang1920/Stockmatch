@@ -24,7 +24,7 @@ public class KoreaFinanceService {
     private final DartCorpCodeRepository dartCorpCodeRepository;
 
     private static final String function = "korea_finance";
-    private static final Duration CACHE_TTL = Duration.ofDays(1);
+    private static final Duration CACHE_TTL = Duration.ofDays(7);
 
     /**
      * 요약된 재무 정보를 가져오는 메소드

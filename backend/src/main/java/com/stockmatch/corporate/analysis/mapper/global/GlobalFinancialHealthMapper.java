@@ -1,12 +1,14 @@
-package com.stockmatch.corporate.analysis.mapper;
+package com.stockmatch.corporate.analysis.mapper.global;
 
+import com.stockmatch.corporate.analysis.dto.UnitScale;
 import com.stockmatch.corporate.analysis.dto.sections.FinancialHealth;
+import com.stockmatch.corporate.analysis.mapper.common.BaseMapper;
 import com.stockmatch.corporate.global.balancesheet.dto.BalancesheetDto;
 import com.stockmatch.corporate.global.cashflow.dto.CashflowDto;
 import org.springframework.stereotype.Component;
 
 @Component
-public class FinancialHealthMapper extends BaseMapper {
+public class GlobalFinancialHealthMapper extends BaseMapper {
 
     public FinancialHealth map (
             BalancesheetDto balanceData,
@@ -28,27 +30,34 @@ public class FinancialHealthMapper extends BaseMapper {
         long currentAssets = parseLong(bsLatest.getTotalCurrentAssets());
         long currentLiabilities = parseLong(bsLatest.getTotalCurrentLiabilities());
 
+        long cashAndEquivalents = parseLong(bsLatest.getCashAndCashEquivalentsAtCarryingValue());
+
         // 현금 창출 능력 계산
         long operatingCash = parseLong(cfLatest.getOperatingCashflow());
         long capEx = parseLong(cfLatest.getCapitalExpenditures());
 
+        long capExOutflow = capEx > 0 ? -capEx : capEx;
+
         // 잉여현금흐름 = 영업현금흐름 + 자본지출( 만약 capEx가 양수일시 빼기로 수정)
-        long freeCashFlow = operatingCash + capEx;
+        long freeCashFlow = operatingCash + capExOutflow;
 
         return FinancialHealth.builder()
+                .currency(bsLatest.getReportedCurrency())
+                .unit(UnitScale.RAW)
                 // 부채 및 유동 비율
                 .debtToEquityRatio(calculateRatio(totalLiabilities, totalEquity))
                 .currentRatio(calculateRatio(currentAssets, currentLiabilities))
 
                 // 현금 흐름 지표
                 .operatingCashFlow((double) operatingCash)
-                .capitalExpenditures((double) capEx)
+                .capitalExpenditures((double) Math.abs(capEx))
                 .freeCashFlow((double) freeCashFlow)
                 .isCashFlowPositive(freeCashFlow > 0)
 
                 //자금 구조 수치
                 .totalAssets((double) totalAssets)
                 .totalLiabilities((double) totalLiabilities)
+                .cashAndEquivalents((double) cashAndEquivalents)
                 .build();
     }
 }

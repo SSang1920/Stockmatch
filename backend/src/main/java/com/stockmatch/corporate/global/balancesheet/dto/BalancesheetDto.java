@@ -1,5 +1,6 @@
 package com.stockmatch.corporate.global.balancesheet.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.stockmatch.corporate.common.dto.CacheableData;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,11 +31,13 @@ public class BalancesheetDto implements CacheableData {
     @NoArgsConstructor
     public static class AnnualReport {
 
+        private String reportedCurrency;
         private String totalAssets;
         private String totalLiabilities;
         private String totalShareholderEquity;
         private String totalCurrentAssets;
         private String totalCurrentLiabilities;
+        private String cashAndCashEquivalentsAtCarryingValue;
         private String longTermDebt;
 
     }

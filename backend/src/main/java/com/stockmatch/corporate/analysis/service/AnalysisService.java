@@ -5,35 +5,34 @@ import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.corporate.analysis.dto.AnalysisPackage;
 import com.stockmatch.corporate.analysis.dto.MissingDataItem;
 import com.stockmatch.corporate.analysis.dto.UserContext;
-import com.stockmatch.corporate.analysis.mapper.BusinessPerformanceMapper;
-import com.stockmatch.corporate.analysis.mapper.FinancialHealthMapper;
-import com.stockmatch.corporate.analysis.mapper.MarketMomentumMapper;
-import com.stockmatch.corporate.global.balancesheet.dto.BalancesheetDto;
+import com.stockmatch.corporate.analysis.mapper.global.GlobalBusinessPerformanceMapper;
+import com.stockmatch.corporate.analysis.mapper.global.GlobalFinancialHealthMapper;
+import com.stockmatch.corporate.analysis.mapper.global.GlobalMarketMomentumMapper;
+import com.stockmatch.corporate.analysis.mapper.korea.KoreaBusinessPerformanceMapper;
+import com.stockmatch.corporate.analysis.mapper.korea.KoreaFinancialHealthMapper;
 import com.stockmatch.corporate.global.balancesheet.service.BalancesheetService;
-import com.stockmatch.corporate.global.cashflow.dto.CashflowDto;
 import com.stockmatch.corporate.global.cashflow.service.CachflowService;
-import com.stockmatch.corporate.global.earnings.dto.EarningsDto;
 import com.stockmatch.corporate.global.earnings.service.EarningsService;
-import com.stockmatch.corporate.global.incomestatement.dto.IncomeStatementDto;
 import com.stockmatch.corporate.global.incomestatement.service.IncomeStatementService;
-import com.stockmatch.corporate.global.news.dto.NewsSentimentDto;
 import com.stockmatch.corporate.global.news.service.NewsService;
-import com.stockmatch.corporate.global.overview.dto.CompanyOverviewDto;
 import com.stockmatch.corporate.global.overview.service.OverviewService;
+import com.stockmatch.corporate.korea.finance.service.KoreaFinanceService;
 import com.stockmatch.portfolio.dto.HoldingResponse;
 import com.stockmatch.portfolio.service.HoldingService;
+import com.stockmatch.stock.domain.Market;
+import com.stockmatch.stock.domain.Security;
+import com.stockmatch.stock.repository.SecurityRepository;
 import com.stockmatch.user.member.domain.User;
 import com.stockmatch.user.member.repository.UserRepository;
-import com.stockmatch.user.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import  com.stockmatch.corporate.korea.finance.dto.DartFinancialRawResponse.RawAccountItem;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
-
-import static java.lang.Thread.sleep;
 
 
 @Slf4j
@@ -42,6 +41,16 @@ import static java.lang.Thread.sleep;
 public class AnalysisService {
 
     private final UserRepository userRepository;
+    private final HoldingService holdingService;
+    private final SecurityRepository securityRepository;
+
+    private final GlobalBusinessPerformanceMapper businessMapper;
+    private final GlobalMarketMomentumMapper momentumMapper;
+    private final GlobalFinancialHealthMapper financialMapper;
+
+    private final KoreaFinanceService koreaFinanceService;
+    private final KoreaBusinessPerformanceMapper koreaBusinessMapper;
+    private final KoreaFinancialHealthMapper koreaFinancialMapper;
 
     private final OverviewService overviewService;
     private final IncomeStatementService incomeService;
@@ -49,17 +58,16 @@ public class AnalysisService {
     private final CachflowService cashflowService;
     private final NewsService newsService;
     private final EarningsService earningsService;
-    private final HoldingService holdingService;
 
-    private final BusinessPerformanceMapper businessMapper;
-    private final MarketMomentumMapper momentumMapper;
-    private final FinancialHealthMapper financialMapper;
 
     public AnalysisPackage analyzeStock(Long userId, String symbol){
         List<MissingDataItem> missingData = new ArrayList<>();
 
         User user = userRepository.findById(userId)
                 .orElseThrow(()-> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        Security security = securityRepository.findByTicker(symbol)
+                .orElseThrow(() -> new BusinessException(ErrorCode.SECURITY_NOT_FOUND));
 
         List<HoldingResponse> myHoldings = holdingService.getMyHoldings(userId);
 
@@ -70,22 +78,79 @@ public class AnalysisService {
                 .currentHoldings(myHoldings) // 추후 포트폴리오 연동
                 .build();
 
+
+        if (security.getMarket() == Market.KR) {
+            return analyzeKoreanStock(userContext, symbol, missingData);
+        }else{
+            return analyzeGlobalStock(userContext, userId, symbol, missingData, user);
+        }
+
+
+    }
+
+    private AnalysisPackage analyzeKoreanStock(UserContext userContext, String symbol, List<MissingDataItem> missingData){
+        String reportCode = "11011";
+
+        List<RawAccountItem> currentReport = null;
+        int currentYearInt = LocalDate.now().getYear();
+
+        // 올해부터 역순으로 조회하며 레포트가 있는지 확인
+        int lookBackDepth = 4;
+        boolean found = false;
+
+        for(int i =0; i < lookBackDepth; i++){
+            int targetYear = currentYearInt - i;
+
+            try {
+                var result = koreaFinanceService.getFinancialData(symbol, String.valueOf(targetYear), reportCode);
+
+                if (result != null && !result.getAccountItems().isEmpty() && result.getAccountItems() != null ) {
+                    currentReport = result.getAccountItems();
+                    currentYearInt =targetYear;
+                    found = true;
+
+                    log.info("{}년도에 해당하는 데이터를 찾았습니다.", targetYear);
+                    break;
+                }
+            }  catch (Exception e){
+                log.debug(" {} 년도 데이터가 없습니다. 이전 년도로 검색합니다.", targetYear);
+
+            }
+        }
+
+        if (!found || currentReport == null) {
+            missingData.add(new MissingDataItem("Business", "Year", "최근 4년 내의 보고서가 없습니다."));
+
+            return AnalysisPackage.builder()
+                    .user(userContext)
+                    .missingData(missingData)
+                    .build();
+        }
+
+        // 검색된 보고서보다 1년전 보고서 호출
+        String prevYear = String.valueOf(currentYearInt -1);
+
+        var prevReport = safeFetch(() -> koreaFinanceService.getFinancialData(symbol, prevYear, reportCode), "Financial", "Report(Prev)", missingData);
+
+        missingData.add(new MissingDataItem ("Market", "Momentum", "국내 주식 시장 뉴스는 지원되지 않습니다. "));
+
+
+        return AnalysisPackage.builder()
+                .user(userContext)
+                .businessPerformance(koreaBusinessMapper.map(String.valueOf(currentYearInt), currentReport, prevReport != null ? prevReport.getAccountItems() : null))
+                .financialHealth(koreaFinancialMapper.map(currentReport))
+                .marketMomentum(null)
+                .missingData(missingData)
+                .build();
+    }
+
+    private AnalysisPackage analyzeGlobalStock(UserContext userContext, Long userId, String symbol, List<MissingDataItem> missingData, User user){
         //데이터 수집
         var overview = safeFetch(()-> overviewService.getCompanyOverview(userId, symbol), "Market", "Overview", missingData);
-
-        waitApiLimit();
         var income = safeFetch(()-> incomeService.getIncomeStatement(userId, symbol), "Business", "Income", missingData);
-
-        waitApiLimit();
         var balance = safeFetch(()-> balancesheetService.getBalancesheet(userId, symbol), "Health", "BalanceSheet", missingData);
-
-        waitApiLimit();
         var cash = safeFetch(()-> cashflowService.getCachflow(userId, symbol), "Health", "CashFlow", missingData);
-
-        waitApiLimit();
         var news = safeFetch(()-> newsService.getNewsSentiment(symbol, user), "Market", "News", missingData);
-
-        waitApiLimit();
         var earnings = safeFetch(()-> earningsService.getEarnings(userId, symbol), "Market", "Earnings", missingData);
 
         return AnalysisPackage.builder()
@@ -120,12 +185,5 @@ public class AnalysisService {
         }
     }
 
-    private void waitApiLimit() {
-        try {
-            log.info("API 속도 제한을 위해 13초 대기중");
-            Thread.sleep(13000);
-        } catch (InterruptedException e){
-            Thread.currentThread().interrupt();
-        }
-    }
+
 }
