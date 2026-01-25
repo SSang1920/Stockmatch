@@ -78,17 +78,22 @@ public class AnalysisService {
                 .currentHoldings(myHoldings) // 추후 포트폴리오 연동
                 .build();
 
+        AnalysisPackage.TargetStockInfo targetStockInfo = AnalysisPackage.TargetStockInfo.builder()
+                .ticker(security.getTicker())
+                .name(security.getName())
+                .market(security.getMarket().name())
+                .build();
 
         if (security.getMarket() == Market.KR) {
-            return analyzeKoreanStock(userContext, symbol, missingData);
+            return analyzeKoreanStock(userContext, symbol, missingData, targetStockInfo);
         }else{
-            return analyzeGlobalStock(userContext, userId, symbol, missingData, user);
+            return analyzeGlobalStock(userContext, userId, symbol, missingData, user, targetStockInfo);
         }
 
 
     }
 
-    private AnalysisPackage analyzeKoreanStock(UserContext userContext, String symbol, List<MissingDataItem> missingData){
+    private AnalysisPackage analyzeKoreanStock(UserContext userContext, String symbol, List<MissingDataItem> missingData, AnalysisPackage.TargetStockInfo targetStockInfo){
         String reportCode = "11011";
 
         List<RawAccountItem> currentReport = null;
@@ -123,6 +128,7 @@ public class AnalysisService {
 
             return AnalysisPackage.builder()
                     .user(userContext)
+                    .targetStock(targetStockInfo)
                     .missingData(missingData)
                     .build();
         }
@@ -137,6 +143,7 @@ public class AnalysisService {
 
         return AnalysisPackage.builder()
                 .user(userContext)
+                .targetStock(targetStockInfo)
                 .businessPerformance(koreaBusinessMapper.map(String.valueOf(currentYearInt), currentReport, prevReport != null ? prevReport.getAccountItems() : null))
                 .financialHealth(koreaFinancialMapper.map(currentReport))
                 .marketMomentum(null)
@@ -144,7 +151,7 @@ public class AnalysisService {
                 .build();
     }
 
-    private AnalysisPackage analyzeGlobalStock(UserContext userContext, Long userId, String symbol, List<MissingDataItem> missingData, User user){
+    private AnalysisPackage analyzeGlobalStock(UserContext userContext, Long userId, String symbol, List<MissingDataItem> missingData, User user, AnalysisPackage.TargetStockInfo targetStockInfo){
         //데이터 수집
         var overview = safeFetch(()-> overviewService.getCompanyOverview(userId, symbol), "Market", "Overview", missingData);
         var income = safeFetch(()-> incomeService.getIncomeStatement(userId, symbol), "Business", "Income", missingData);
@@ -155,6 +162,7 @@ public class AnalysisService {
 
         return AnalysisPackage.builder()
                 .user(userContext)
+                .targetStock(targetStockInfo)
                 .businessPerformance(businessMapper.map(income, balance))
                 .marketMomentum(momentumMapper.map(overview, news, earnings, symbol))
                 .financialHealth(financialMapper.map(balance, cash))
