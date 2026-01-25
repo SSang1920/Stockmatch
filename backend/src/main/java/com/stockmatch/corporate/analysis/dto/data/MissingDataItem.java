@@ -1,4 +1,4 @@
-package com.stockmatch.corporate.analysis.dto;
+package com.stockmatch.corporate.analysis.dto.data;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

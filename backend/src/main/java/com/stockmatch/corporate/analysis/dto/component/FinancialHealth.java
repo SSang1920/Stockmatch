@@ -1,6 +1,5 @@
-package com.stockmatch.corporate.analysis.dto.sections;
+package com.stockmatch.corporate.analysis.dto.component;
 
-import com.stockmatch.corporate.analysis.dto.UnitScale;
 import lombok.Builder;
 import lombok.Getter;
 

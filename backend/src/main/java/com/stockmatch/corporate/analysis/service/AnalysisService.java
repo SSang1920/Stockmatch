@@ -2,9 +2,9 @@ package com.stockmatch.corporate.analysis.service;
 
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
-import com.stockmatch.corporate.analysis.dto.AnalysisPackage;
-import com.stockmatch.corporate.analysis.dto.MissingDataItem;
-import com.stockmatch.corporate.analysis.dto.UserContext;
+import com.stockmatch.corporate.analysis.dto.data.AnalysisPackage;
+import com.stockmatch.corporate.analysis.dto.data.MissingDataItem;
+import com.stockmatch.corporate.analysis.dto.data.UserContext;
 import com.stockmatch.corporate.analysis.mapper.global.GlobalBusinessPerformanceMapper;
 import com.stockmatch.corporate.analysis.mapper.global.GlobalFinancialHealthMapper;
 import com.stockmatch.corporate.analysis.mapper.global.GlobalMarketMomentumMapper;

@@ -1,6 +1,6 @@
 package com.stockmatch.corporate.analysis.mapper.global;
 
-import com.stockmatch.corporate.analysis.dto.sections.BusinessPerformance;
+import com.stockmatch.corporate.analysis.dto.component.BusinessPerformance;
 import com.stockmatch.corporate.analysis.mapper.common.BaseMapper;
 import com.stockmatch.corporate.global.balancesheet.dto.BalancesheetDto;
 import com.stockmatch.corporate.global.incomestatement.dto.IncomeStatementDto;

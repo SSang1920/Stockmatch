@@ -1,4 +1,4 @@
-package com.stockmatch.corporate.analysis.dto.sections;
+package com.stockmatch.corporate.analysis.dto.component;
 
 import lombok.Builder;
 import lombok.Getter;

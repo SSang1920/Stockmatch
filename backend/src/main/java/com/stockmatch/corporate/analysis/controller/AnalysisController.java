@@ -2,7 +2,7 @@ package com.stockmatch.corporate.analysis.controller;
 
 import com.stockmatch.common.api.ApiResponse;
 import com.stockmatch.config.security.CustomUserDetails;
-import com.stockmatch.corporate.analysis.dto.AnalysisPackage;
+import com.stockmatch.corporate.analysis.dto.data.AnalysisPackage;
 import com.stockmatch.corporate.analysis.service.AnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

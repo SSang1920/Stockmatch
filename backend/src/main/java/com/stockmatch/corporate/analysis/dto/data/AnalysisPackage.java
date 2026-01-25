@@ -1,8 +1,8 @@
-package com.stockmatch.corporate.analysis.dto;
+package com.stockmatch.corporate.analysis.dto.data;
 
-import com.stockmatch.corporate.analysis.dto.sections.BusinessPerformance;
-import com.stockmatch.corporate.analysis.dto.sections.FinancialHealth;
-import com.stockmatch.corporate.analysis.dto.sections.MarketMomentum;
+import com.stockmatch.corporate.analysis.dto.component.BusinessPerformance;
+import com.stockmatch.corporate.analysis.dto.component.FinancialHealth;
+import com.stockmatch.corporate.analysis.dto.component.MarketMomentum;
 import lombok.Builder;
 import lombok.Getter;
 
