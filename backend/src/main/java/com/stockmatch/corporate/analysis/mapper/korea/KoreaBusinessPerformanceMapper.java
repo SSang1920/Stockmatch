@@ -1,6 +1,6 @@
 package com.stockmatch.corporate.analysis.mapper.korea;
 
-import com.stockmatch.corporate.analysis.dto.component.BusinessPerformance;
+import com.stockmatch.corporate.analysis.dto.components.BusinessPerformance;
 import com.stockmatch.corporate.analysis.mapper.common.KoreaBaseMapper;
 import com.stockmatch.corporate.korea.finance.dto.DartFinancialRawResponse.RawAccountItem;
 import org.springframework.stereotype.Component;

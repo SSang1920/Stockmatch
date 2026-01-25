@@ -1,7 +1,7 @@
 package com.stockmatch.corporate.analysis.mapper.global;
 
-import com.stockmatch.corporate.analysis.dto.component.UnitScale;
-import com.stockmatch.corporate.analysis.dto.component.FinancialHealth;
+import com.stockmatch.corporate.analysis.dto.components.UnitScale;
+import com.stockmatch.corporate.analysis.dto.components.FinancialHealth;
 import com.stockmatch.corporate.analysis.mapper.common.BaseMapper;
 import com.stockmatch.corporate.global.balancesheet.dto.BalancesheetDto;
 import com.stockmatch.corporate.global.cashflow.dto.CashflowDto;

@@ -1,7 +1,7 @@
 package com.stockmatch.corporate.analysis.mapper.korea;
 
-import com.stockmatch.corporate.analysis.dto.component.UnitScale;
-import com.stockmatch.corporate.analysis.dto.component.FinancialHealth;
+import com.stockmatch.corporate.analysis.dto.components.UnitScale;
+import com.stockmatch.corporate.analysis.dto.components.FinancialHealth;
 import com.stockmatch.corporate.analysis.mapper.common.KoreaBaseMapper;
 import com.stockmatch.corporate.korea.finance.dto.DartFinancialRawResponse.RawAccountItem;
 import org.springframework.stereotype.Component;
