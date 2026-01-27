@@ -72,7 +72,8 @@ public enum ErrorCode {
     EXTERNAL_API_DATA_NOT_FOUND("E005", "받아온 데이터의 값이 올바른 값이 아닙니다.", HttpStatus.BAD_REQUEST),
     API_KEY_NOT_REGISTERED("E006", "API KEY가 존재하지 않습니다. (AlphaVantage)", HttpStatus.BAD_REQUEST),
     EXTERNAL_API_PARSING_ERROR("E010", "외부 API 데이터 형식이 올바르지 않아 처리할 수 없습니다.", HttpStatus.BAD_GATEWAY),
-
+    INVALID_AI_RESPONSE("E011", "AI API로부터 응답이 오지 않았습니다.", HttpStatus.BAD_GATEWAY),
+    AI_REFUSAL_RESPONSE("E012", "AI 로부터 응답이 거절되었습니다.", HttpStatus.BAD_GATEWAY),
     // DART API
     DART_FILE_ERROR("E007", "DART 데이터를 처리하는 중 파일 오류가 발생했습니다.(DART)", HttpStatus.BAD_REQUEST),
     DART_SYNC_ERROR("E008", "DART 고유번호 동기화 중 오류가 발생했습니다.(DART)", HttpStatus.BAD_REQUEST),

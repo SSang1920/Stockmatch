@@ -122,3 +122,8 @@ encryption:
   secret-key: ${ENCRYPTION_SECRET_KEY}
   salt: ${ENCRYPTION_SALT}
 
+openai:
+  api:
+    url: "https://api.openai.com/v1/chat/completions"
+    key: ${OPENAI_API_KEY}
+    model: "gpt-4.1-mini"
