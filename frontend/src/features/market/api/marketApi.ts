@@ -18,7 +18,7 @@ export const searchStocks = async (query: string): Promise<StockSearchResponse[]
     // 검색어 없으면 빈 배열 리턴
     if (!query) return [];
 
-    const response = await axios.get<ApiResponse<StockSearchResponse[]>>(`/api/stocks/search`, {
+    const response = await axios.get<ApiResponse<StockSearchResponse[]>>(`/stocks/search`, {
         params: { q: query }
     });
 

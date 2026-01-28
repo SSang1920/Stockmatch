@@ -2,44 +2,52 @@ import React, { useState } from 'react';
 import { Sparkles, SearchX } from 'lucide-react';
 import { AnalysisSearchInput } from './AnalysisSearchInput';
 import { AnalysisResultCard } from './AnalysisResultCard';
-import { AnalysisResponse } from '../types';
+import { AiResponseDto, ApiResponse } from '../types';
 import { MOCK_ANALYSIS_RESULT } from '../api/mockData';
+
+import { fetchAiAnalysis } from '../api/analysis';
 
 export const AnalysisDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<AnalysisResponse | null>(null);
+  const [result, setResult] = useState<AiResponseDto | null>(null);
+  const [searchTicker, setSearchTicker] = useState<string>(''); // 현재 보여지는 티커
+  const [searchName, setSearchName] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleSearch = async (inputTicker: string) => {
-    // 1. 검색 시작: 상태 초기화 (로딩 시작, 기존 결과/에러 삭제)
+  const handleSearch = async (inputTicker: string, inputName?: string) => {
+    //  상태 초기화
     setIsLoading(true);
     setResult(null);
     setError(null);
+    setSearchTicker(inputTicker);
+    setSearchName(inputName || '');
 
-    // --- [여기서부터가 실제 로직이 들어갈 자리입니다] ---
+    try {
+      const response = await fetchAiAnalysis(inputTicker);
 
-    // 지금은 API가 없으니 setTimeout으로 흉내만 냅니다.
-    // 나중에 이 부분을 const response = await axios.get(...) 으로 바꾸면 됩니다.
-    setTimeout(() => {
+      if(response && response.data) {
+          setResult(response.data);
+          } else {
+              throw new Error("데이터 형식이 올바르지 않습니다.");
+          }
 
-      const mockDatabase = ['AAPL', 'NVDA', 'TSLA', 'MSFT', '삼성전자'];
 
-      // 2. 데이터 조회 시도
-      const dataFound = mockDatabase.includes(inputTicker); // 실제 코드: if (response.data)
+    } catch (err: any) {
+      console.error("API Error:", err);
 
-      if (!dataFound) {
-
-        setError(`'${inputTicker}'에 대한 분석 데이터가 존재하지 않습니다.`);
-        setIsLoading(false);
-        return;
+      // 에러 상황별 메시지 처리
+      if (err.response) {
+        if (err.response.status === 401) {
+            setError("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
+        } else if (err.response.status === 404) {
+            setError(`'${inputTicker}'에 대한 정보를 찾을 수 없습니다.`);
+        } else {
+            setError("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+        }
       }
-
-
-      const mockResponse = { ...MOCK_ANALYSIS_RESULT, ticker: inputTicker };
-      setResult(mockResponse);
+    } finally {
       setIsLoading(false);
-
-    }, 1500); // 1.5초 딜레이
+    }
   };
 
   return (
@@ -50,10 +58,9 @@ export const AnalysisDashboard = () => {
         <h1 className="text-2xl font-bold text-gray-900">포트폴리오 맞춤 분석</h1>
       </div>
 
-      {/* 메인 컨텐츠 박스 */}
+      {/* 메인 박스 */}
       <div className="rounded-xl border bg-white text-card-foreground shadow-sm min-h-[500px]">
         <div className="p-6">
-
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-1">포트폴리오 맞춤 분석 AI 서비스</h2>
             <p className="text-sm text-gray-500">
@@ -61,63 +68,50 @@ export const AnalysisDashboard = () => {
             </p>
           </div>
 
-          {/* 검색창 */}
+          {/* 검색 입력창 */}
           <div className="mb-8">
              <AnalysisSearchInput onSearch={handleSearch} isLoading={isLoading} />
           </div>
 
-          {/* --- [상태에 따른 화면 전환] --- */}
-
-          {/* (1) 로딩 중 */}
+          {/*  로딩 화면 */}
           {isLoading && (
             <div className="py-20 text-center border-t border-gray-100 animate-in fade-in">
               <div className="inline-block w-10 h-10 border-4 border-gray-100 border-t-blue-600 rounded-full animate-spin mb-6"></div>
               <h3 className="text-lg font-semibold text-gray-900">AI가 분석 중입니다...</h3>
-              <p className="text-sm text-gray-500 mt-2">서버에서 최신 데이터를 조회하고 있습니다.</p>
+              <p className="text-sm text-gray-500 mt-2">최대 1~2분 정도 소요될 수 있습니다.</p>
             </div>
           )}
 
-          {/* (2) 실패: 데이터가 Null일 때 (검색은 했으나 결과가 없음) */}
+          {/* 에러 화면 */}
           {!isLoading && error && (
-             <div className="py-20 text-center border-t border-gray-100 animate-in fade-in slide-in-from-bottom-2">
+             <div className="py-20 text-center border-t border-gray-100 animate-in fade-in">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 mb-6">
                     <SearchX className="h-8 w-8 text-red-400" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">데이터를 찾을 수 없습니다</h3>
-                <p className="text-gray-500 max-w-sm mx-auto mb-6">
-                    {error}
-                </p>
-                <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600 inline-block text-left">
-                    <p className="font-bold mb-2">💡 확인해주세요:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                        <li>티커(심볼) 철자가 정확한지 확인하세요. (예: GOOG)</li>
-                        <li>지원하지 않는 종목이거나 상장 폐지된 종목일 수 있습니다.</li>
-                    </ul>
-                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">분석 실패</h3>
+                <p className="text-gray-500 max-w-sm mx-auto">{error}</p>
              </div>
           )}
 
-          {/* (3) 성공: 데이터가 있을 때 */}
+          {/*성공 결과 화면 */}
           {!isLoading && !error && result && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 mt-6 pt-6 border-t border-gray-100">
-              <div className="mb-4 flex items-center gap-2">
-                 <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-md">Analysis Complete</span>
-                 <p className="text-sm text-gray-600">요청하신 종목 분석이 완료되었습니다.</p>
-              </div>
-              <AnalysisResultCard data={result} />
+              <AnalysisResultCard ticker={searchTicker} name={searchName} data={result} />
             </div>
           )}
 
-          {/* (4) 초기 상태: 아무것도 안 했을 때 (예시 보여주기) */}
+          {/*  초기 예시 화면 */}
           {!isLoading && !error && !result && (
-            <div className="mt-12 py-12 border-t border-dashed border-gray-200 text-center opacity-60">
-                <p className="text-sm font-medium text-gray-400 mb-2">검색 예시 화면</p>
-                <div className="pointer-events-none select-none grayscale blur-[1px] scale-95 origin-top">
-                    <AnalysisResultCard data={{...MOCK_ANALYSIS_RESULT, ticker: 'AAPL'}} />
-                </div>
-            </div>
+              <div className="mt-8 pt-8 border-t border-gray-100">
+                  <div className="flex items-center justify-between mb-4 px-2">
+                      <span className="text-sm font-bold text-gray-500">검색 예시 화면</span>
+                      <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded font-medium">Example</span>
+                  </div>
+                  <div className="opacity-100 scale-100">
+                      <AnalysisResultCard ticker="AAPL" data={MOCK_ANALYSIS_RESULT} />
+                  </div>
+              </div>
           )}
-
         </div>
       </div>
     </div>

@@ -8,9 +8,14 @@ import axios from 'axios'
         }
 });
 
-//추후 header에 token넣을때 사용
 instance.interceptors.request.use(
     (config) => {
+        const token = localStorage.getItem('accessToken');
+
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+
         return config;
         },
     (error) => {
