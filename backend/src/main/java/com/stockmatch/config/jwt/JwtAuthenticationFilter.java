@@ -7,6 +7,7 @@ import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.config.security.CustomUserDetails;
 import com.stockmatch.user.member.domain.User;
 import com.stockmatch.user.member.repository.UserRepository;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -88,6 +89,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             //SecurityContext에 인증정보저장
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
+        } catch (ExpiredJwtException e){
+            log.error("토큰 만료됨 (401 전송 시도)");
+            setErrorResponse(response, ErrorCode.UNAUTHORIZED);
+            return;
         } catch (BusinessException e) {
             log.error("검증 실패로 차단됨: {}", e.getMessage());
             setErrorResponse(response, e.getErrorCode());

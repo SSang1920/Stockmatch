@@ -67,9 +67,13 @@ public class AuthController {
      */
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<TokenResponseDto>> refreshAccessToken(
-            @RequestHeader("Authorization") String refreshTokenHeader) {
+            @CookieValue(name = "refreshToken", required = false) String refreshToken) {
 
-       TokenResponseDto responseData = authService.refreshAccessToken(refreshTokenHeader);
+        if (refreshToken == null) {
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        }
+
+        TokenResponseDto responseData = authService.refreshAccessToken(refreshToken);
 
         return ResponseEntity.ok(ApiResponse.ok(responseData));
     }

@@ -50,8 +50,7 @@ public class AuthService {
     /**
      * Refresh Token 을 사용하여 새로운 Access Token 발급
      */
-    public TokenResponseDto refreshAccessToken(String refreshTokenHeader) {
-        String refreshToken = resolveToken(refreshTokenHeader);
+    public TokenResponseDto refreshAccessToken(String refreshToken) {
 
         //토큰 유효성 검사
         jwtUtil.validateTokenOrThrow(refreshToken);
@@ -66,9 +65,6 @@ public class AuthService {
         //DB에 저장된 refresh Token과 클라이언트가 보낸 토큰의 일치여부 비교
         String savedOurRefreshToken = user.getOurRefreshToken();
 
-        log.info("--- 재발급 시도 ---");
-        log.info("클라이언트 토큰: [{}]", refreshToken);
-        log.info("DB에서 꺼낸 토큰: [{}]", savedOurRefreshToken);
 
         if (savedOurRefreshToken == null || !savedOurRefreshToken.equals(refreshToken)) {
             log.warn("Refresh Token 불일치. userPk: {}", userPk);

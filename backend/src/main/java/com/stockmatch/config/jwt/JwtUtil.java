@@ -83,6 +83,8 @@ public class JwtUtil {
 
             log.info("검증 성공 - 알고리즘: {}", jws.getHeader().getAlgorithm());
 
+        } catch (ExpiredJwtException e){
+            throw e;
         } catch (io.jsonwebtoken.security.SignatureException e) {
             log.error("서명 위조 감지!!: {}", e.getMessage());
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
