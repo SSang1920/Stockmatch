@@ -91,6 +91,19 @@ public class WatchlistController {
     // ===== 관심종목 아이템 =====
 
     /**
+     * 관심종목 아이템 조회
+     */
+    @GetMapping("/{watchlistId}")
+    public ResponseEntity<ApiResponse<WatchlistDetailResponse>> getWatchlistDetail(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long watchlistId
+    ) {
+        Long userId = userDetails.getUser().getId();
+        WatchlistDetailResponse item = watchlistItemService.getWatchlistDetail(userId, watchlistId);
+        return ResponseEntity.ok(ApiResponse.ok(item));
+    }
+
+    /**
      * 관심종목 아이템 추가
      */
     @PostMapping("/{watchlistId}/items")

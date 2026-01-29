@@ -31,7 +31,7 @@ public class WatchlistService {
      * 내 관심종목 폴더 목록 조회
      */
     public List<WatchlistResponse> getMyWatchlists(Long userId) {
-        return watchlistRepository.findAllByUserIdOrderByOrderNoAsc(userId).stream()
+        return watchlistRepository.findAllByUserIdWithItems(userId).stream()
                 .map(WatchlistResponse::from)
                 .collect(Collectors.toList());
     }
@@ -64,7 +64,7 @@ public class WatchlistService {
     @Transactional
     public void sortWatchlists(Long userId, WatchlistSortRequest request) {
         // 유저의 모든 폴더를 가져옴
-        List<Watchlist> watchlists = watchlistRepository.findAllByUserIdOrderByOrderNoAsc(userId);
+        List<Watchlist> watchlists = watchlistRepository.findAllByUserIdWithItems(userId);
         Map<Long, Watchlist> watchlistMap = watchlists.stream()
                 .collect(Collectors.toMap(Watchlist::getId, Function.identity()));
 

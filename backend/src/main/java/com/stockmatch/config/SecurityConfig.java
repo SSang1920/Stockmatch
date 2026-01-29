@@ -1,7 +1,6 @@
 package com.stockmatch.config;
 
 import com.stockmatch.config.jwt.JwtAuthenticationFilter;
-import jakarta.websocket.Endpoint;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -61,7 +60,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         // 로그인 사용자 전용
-                        .requestMatchers("/api/user/**", "/api/portfolio/**")
+                        .requestMatchers("/api/user/**", "/api/portfolio/**", "/api/watchlists/**")
                         .hasAnyRole("USER", "ADMIN")
 
                         // 그 그외는 인증 필요
@@ -77,7 +76,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:5173")); // Vite React 기본 포트
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 
