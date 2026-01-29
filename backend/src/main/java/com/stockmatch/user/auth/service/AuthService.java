@@ -63,13 +63,18 @@ public class AuthService {
         User user = userRepository.findById(Long.parseLong(userPk))
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-//        //DB에 저장된 refresh Token과 클라이언트가 보낸 토큰의 일치여부 비교
-//        String savedRefreshToken = user.getRefreshToken();
-//        if (savedRefreshToken == null || !savedRefreshToken.equals(refreshToken)) {
-//            log.warn("Refresh Token 불일치. userPk: {}", userPk);
-//            // DB에 토큰이 없거나, 보낸 토큰과 다르면 에러 발생
-//            throw new BusinessException(ErrorCode.TOKEN_INVALID);
-//        }
+        //DB에 저장된 refresh Token과 클라이언트가 보낸 토큰의 일치여부 비교
+        String savedOurRefreshToken = user.getOurRefreshToken();
+
+        log.info("--- 재발급 시도 ---");
+        log.info("클라이언트 토큰: [{}]", refreshToken);
+        log.info("DB에서 꺼낸 토큰: [{}]", savedOurRefreshToken);
+
+        if (savedOurRefreshToken == null || !savedOurRefreshToken.equals(refreshToken)) {
+            log.warn("Refresh Token 불일치. userPk: {}", userPk);
+            // DB에 토큰이 없거나, 보낸 토큰과 다르면 에러 발생
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        }
 
         //새로운 AccessToken 발급
         String newAccessToken = jwtUtil.generateAccessToken(String.valueOf(user.getId()), user.getRoleKey());
@@ -96,7 +101,7 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-            user.updateRefreshToken(null);
+            user.updateOurRefreshToken(null);
         log.info("로그아웃 처리 완료. userPk: {}", userId);
     }
 }

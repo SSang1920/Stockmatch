@@ -52,11 +52,9 @@ public class GoogleLoginHandler extends OAuthLoginHandler {
         String providerRefreshToken = socialTokens.get("refresh_token");
 
         Map<String, Object> rawProfile = fetchUserProfile(providerAccessToken);
-
         OAuthAttributes attributes = mapToOAuthAttributes(rawProfile);
 
-        User user = saveOrUpdate(attributes);
-        return createAndSaveTokens(user, providerRefreshToken);
+        return processLoginResponse(attributes, providerRefreshToken);
     }
 
     private Map<String, String> exchangeTokens(String code) {

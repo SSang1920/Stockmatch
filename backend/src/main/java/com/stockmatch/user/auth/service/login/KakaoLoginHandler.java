@@ -55,8 +55,8 @@ public class KakaoLoginHandler extends OAuthLoginHandler {
         Map<String, Object> rawProfile = fetchUserProfile(providerAccessToken);
         OAuthAttributes attributes = mapToOAuthAttributes(rawProfile);
 
-        User user = saveOrUpdate(attributes);
-        return createAndSaveTokens(user, providerRefreshToken);
+
+        return processLoginResponse(attributes, providerRefreshToken);
     }
 
     private Map<String, String> exchangeTokens(String code) {

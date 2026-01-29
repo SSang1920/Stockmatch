@@ -54,7 +54,7 @@ public class User extends BaseEntity {
     private LocalDateTime deletedAt;
 
     @Column(name = "refresh_token", length = 255)
-    private String refreshToken;
+    private String ourRefreshToken;
 
     @Column(name = "provider_refresh_token", length = 255)
     private String providerRefreshToken;
@@ -130,8 +130,8 @@ public class User extends BaseEntity {
         this.deletedAt = LocalDateTime.now();
     }
 
-    public void updateRefreshToken(String refreshToken) {
-        this.refreshToken = refreshToken;
+    public void updateOurRefreshToken(String ourRefreshToken) {
+        this.ourRefreshToken = ourRefreshToken;
     }
 
     public void updateProviderRefreshToken(String providerRefreshToken) {
