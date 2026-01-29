@@ -16,7 +16,7 @@ export const AnalysisSearchInput = ({ onSearch, isLoading } : Props) => {
 
     // LocalStorage에서 최근 검색어 불러오기
     useEffect(() => {
-        const saved = localStorage.getItem('recentStocks');
+        const saved = localStorage.getItem('recentAnalysisStocks');
         if (saved) {
             try {
                 setRecentSearches(JSON.parse(saved));
@@ -37,7 +37,7 @@ export const AnalysisSearchInput = ({ onSearch, isLoading } : Props) => {
         const newRecent = [stock, ...filtered].slice(0, 5);
 
         setRecentSearches(newRecent);
-        localStorage.setItem('recentStocks', JSON.stringify(newRecent));
+        localStorage.setItem('recentAnalysisStocks', JSON.stringify(newRecent));
     };
 
     // 최근 검색어 개별 삭제 함수
@@ -45,7 +45,7 @@ export const AnalysisSearchInput = ({ onSearch, isLoading } : Props) => {
         e.stopPropagation();
         const newRecent = recentSearches.filter((item) => item.ticker != ticker);
         setRecentSearches(newRecent);
-        localStorage.setItem('recentStocks', JSON.stringify(newRecent));
+        localStorage.setItem('recentAnalysisStocks', JSON.stringify(newRecent));
     };
 
     // 입력값이 바뀔 때마다 검색
