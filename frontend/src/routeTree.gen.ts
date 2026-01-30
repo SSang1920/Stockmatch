@@ -21,7 +21,7 @@ import { Route as errors401RouteImport } from './routes/(errors)/401'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
 import { Route as PublicWatchlistsIndexRouteImport } from './routes/_public/watchlists/index'
 import { Route as PublicAnalysisIndexRouteImport } from './routes/_public/analysis/index'
-import { Route as StocksMarketTickerRouteImport } from './routes/stocks.$market.$ticker'
+import { Route as PublicStocksMarketTickerRouteImport } from './routes/_public/stocks.$market.$ticker'
 
 const SurveyRoute = SurveyRouteImport.update({
   id: '/survey',
@@ -82,11 +82,12 @@ const PublicAnalysisIndexRoute = PublicAnalysisIndexRouteImport.update({
   path: '/analysis/',
   getParentRoute: () => PublicRouteRoute,
 } as any)
-const StocksMarketTickerRoute = StocksMarketTickerRouteImport.update({
-  id: '/stocks/$market/$ticker',
-  path: '/stocks/$market/$ticker',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const PublicStocksMarketTickerRoute =
+  PublicStocksMarketTickerRouteImport.update({
+    id: '/stocks/$market/$ticker',
+    path: '/stocks/$market/$ticker',
+    getParentRoute: () => PublicRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
@@ -98,9 +99,9 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/': typeof PublicIndexRoute
-  '/stocks/$market/$ticker': typeof StocksMarketTickerRoute
   '/analysis': typeof PublicAnalysisIndexRoute
   '/watchlists': typeof PublicWatchlistsIndexRoute
+  '/stocks/$market/$ticker': typeof PublicStocksMarketTickerRoute
 }
 export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
@@ -112,9 +113,9 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/': typeof PublicIndexRoute
-  '/stocks/$market/$ticker': typeof StocksMarketTickerRoute
   '/analysis': typeof PublicAnalysisIndexRoute
   '/watchlists': typeof PublicWatchlistsIndexRoute
+  '/stocks/$market/$ticker': typeof PublicStocksMarketTickerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -128,9 +129,9 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/_public/': typeof PublicIndexRoute
-  '/stocks/$market/$ticker': typeof StocksMarketTickerRoute
   '/_public/analysis/': typeof PublicAnalysisIndexRoute
   '/_public/watchlists/': typeof PublicWatchlistsIndexRoute
+  '/_public/stocks/$market/$ticker': typeof PublicStocksMarketTickerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -144,9 +145,9 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/'
-    | '/stocks/$market/$ticker'
     | '/analysis'
     | '/watchlists'
+    | '/stocks/$market/$ticker'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/profile'
@@ -158,9 +159,9 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/'
-    | '/stocks/$market/$ticker'
     | '/analysis'
     | '/watchlists'
+    | '/stocks/$market/$ticker'
   id:
     | '__root__'
     | '/_public'
@@ -173,9 +174,9 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_public/'
-    | '/stocks/$market/$ticker'
     | '/_public/analysis/'
     | '/_public/watchlists/'
+    | '/_public/stocks/$market/$ticker'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -188,7 +189,6 @@ export interface RootRouteChildren {
   errors404Route: typeof errors404Route
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
-  StocksMarketTickerRoute: typeof StocksMarketTickerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -277,12 +277,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicAnalysisIndexRouteImport
       parentRoute: typeof PublicRouteRoute
     }
-    '/stocks/$market/$ticker': {
-      id: '/stocks/$market/$ticker'
+    '/_public/stocks/$market/$ticker': {
+      id: '/_public/stocks/$market/$ticker'
       path: '/stocks/$market/$ticker'
       fullPath: '/stocks/$market/$ticker'
-      preLoaderRoute: typeof StocksMarketTickerRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof PublicStocksMarketTickerRouteImport
+      parentRoute: typeof PublicRouteRoute
     }
   }
 }
@@ -291,12 +291,14 @@ interface PublicRouteRouteChildren {
   PublicIndexRoute: typeof PublicIndexRoute
   PublicAnalysisIndexRoute: typeof PublicAnalysisIndexRoute
   PublicWatchlistsIndexRoute: typeof PublicWatchlistsIndexRoute
+  PublicStocksMarketTickerRoute: typeof PublicStocksMarketTickerRoute
 }
 
 const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicIndexRoute: PublicIndexRoute,
   PublicAnalysisIndexRoute: PublicAnalysisIndexRoute,
   PublicWatchlistsIndexRoute: PublicWatchlistsIndexRoute,
+  PublicStocksMarketTickerRoute: PublicStocksMarketTickerRoute,
 }
 
 const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(
@@ -313,7 +315,6 @@ const rootRouteChildren: RootRouteChildren = {
   errors404Route: errors404Route,
   errors500Route: errors500Route,
   errors503Route: errors503Route,
-  StocksMarketTickerRoute: StocksMarketTickerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

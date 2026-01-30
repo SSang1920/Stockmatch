@@ -25,4 +25,5 @@ public class StockPriceResponse {
     private BigDecimal openPrice;       // 시가
     private BigDecimal highPrice;       // 고가
     private BigDecimal lowPrice;        // 저가
+    private BigDecimal volume;          // 거래량
 }

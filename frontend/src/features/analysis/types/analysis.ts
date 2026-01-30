@@ -18,6 +18,7 @@ export interface ApiResponse<T> {
     message: string | null;
     data : T;
 }
+
 export interface AnalysisHistoryListResponse {
     id: number;
     symbol: string;

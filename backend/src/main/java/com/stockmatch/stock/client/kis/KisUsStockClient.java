@@ -20,6 +20,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -181,13 +182,19 @@ public class KisUsStockClient extends AbstractKisClient implements ExternalPrice
         BigDecimal high = new BigDecimal(o.path("high").asText("0"));
         BigDecimal low = new BigDecimal(o.path("low").asText("0"));
 
+        BigDecimal volume = new BigDecimal(o.path("tvol").asText("0"));
+
         // 현재가가 0이면 전일 종가로 대체
         if (current.compareTo(BigDecimal.ZERO) == 0 && prevClose.compareTo(BigDecimal.ZERO) > 0) {
             current = prevClose;
         }
 
-        BigDecimal changeAmount = new BigDecimal(o.path("p_xdif").asText("0"));
-        BigDecimal changeRate = new BigDecimal(o.path("p_xrat").asText("0"));
+        BigDecimal changeAmount = current.subtract(prevClose);
+        BigDecimal changeRate = BigDecimal.ZERO;
+        if (prevClose.compareTo(BigDecimal.ZERO) != 0) {
+            changeRate = changeAmount.divide(prevClose, 4, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(100));
+        }
 
         String name = (dbName != null && !dbName.isBlank()) ? dbName : ticker;
 
@@ -202,6 +209,7 @@ public class KisUsStockClient extends AbstractKisClient implements ExternalPrice
                 .openPrice(open)
                 .highPrice(high)
                 .lowPrice(low)
+                .volume(volume)
                 .build();
     }
 }

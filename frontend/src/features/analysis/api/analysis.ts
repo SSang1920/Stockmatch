@@ -1,5 +1,5 @@
 import axios from '@/lib/axios';
-import {ApiResponse, AiResponseDto} from '../types';
+import {ApiResponse, AiResponseDto, AnalysisHistoryListResponse} from '../types';
 
 export const fetchAiAnalysis = async (ticker : string) => {
     const response = await axios.get<ApiResponse<AiResponseDto>>(`/analysis/${ticker}/ai`);

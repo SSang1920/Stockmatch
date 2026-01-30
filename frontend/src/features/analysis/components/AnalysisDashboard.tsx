@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Sparkles, SearchX, History, X } from 'lucide-react';
 import { AnalysisSearchInput } from './AnalysisSearchInput';
 import { AnalysisResultCard } from './AnalysisResultCard';
-import { AiResponseDto, ApiResponse, AnalysisHistoryResponse } from '../types';
+import { AiResponseDto, AnalysisHistoryResponse, AnalysisHistoryListResponse } from '../types';
 import { MOCK_ANALYSIS_RESULT } from '../api/mockData';
 import { fetchAiAnalysis, fetchUserHistoryList, fetchHistoryDetail } from '../api/analysis';
 

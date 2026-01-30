@@ -148,6 +148,7 @@ public class KisKorStockClient extends AbstractKisClient implements ExternalPric
         BigDecimal open = new BigDecimal(o.path("stck_oprc").asText("0"));
         BigDecimal high = new BigDecimal(o.path("stck_hgpr").asText("0"));
         BigDecimal low = new BigDecimal(o.path("stck_lwpr").asText("0"));
+        BigDecimal volume = new BigDecimal(o.path("acml_vol").asText("0"));
 
         BigDecimal changeAmount = new BigDecimal(o.path("prdy_vrss").asText("0"));
         BigDecimal changePct = new BigDecimal(o.path("prdy_ctrt").asText("0"));
@@ -164,6 +165,7 @@ public class KisKorStockClient extends AbstractKisClient implements ExternalPric
                 .openPrice(open)
                 .highPrice(high)
                 .lowPrice(low)
+                .volume(volume)
                 .build();
     }
 }

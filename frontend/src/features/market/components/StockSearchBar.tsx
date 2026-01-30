@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { StockSearchResponse } from "../types";
 import { useNavigate } from "@tanstack/react-router";
-import { searchStocks } from "../api/marketApi";
+import { searchStocks } from "../api/stockApi";
 
 export const StockSearchBar = () => {
     const [query, setQuery] = useState('');

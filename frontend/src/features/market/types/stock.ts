@@ -8,25 +8,15 @@ export interface StockSearchResponse {
     exchange: string;
 }
 
-// 시장 트렌드/랭킹 주식 정보
-export interface StockTrend {
+export interface StockDetailResponse {
     ticker: string;
-    name: string;
-    price: string;
-    change: string;
-    changeRate: string;
-    market: string;
-}
-
-// 시장별 트렌드 데이터 구조
-export interface MarketTrendData {
-    mostActive: StockTrend[];
-    gainers: StockTrend[];
-    losers: StockTrend[];
-}
-
-// 시장 트렌드 API 전체 응답 구조
-export interface MarketTrendResponse {
-    KR: MarketTrendData;
-    US: MarketTrendData;
+    name?: string;
+    currentPrice: number;
+    changeAmount: number;
+    changeRate: number;
+    openPrice: number;
+    highPrice: number;
+    lowPrice: number;
+    volume: number;
+    previousClose: number;
 }

@@ -1,6 +1,6 @@
 import { StockSearchResponse } from "@/features/market/types";
 import { useEffect, useState } from "react";
-import * as stockApi from '@/features/market/api/marketApi'
+import * as stockApi from '@/features/market/api'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
