@@ -5,7 +5,6 @@ import com.stockmatch.config.security.CustomUserDetails;
 import com.stockmatch.corporate.analysis.dto.data.AnalysisPackage;
 import com.stockmatch.corporate.analysis.dto.response.AiResponseDto;
 import com.stockmatch.corporate.analysis.dto.response.AnalysisHistoryListResponse;
-import com.stockmatch.corporate.analysis.dto.response.AnalysisHistoryResponse;
 import com.stockmatch.corporate.analysis.service.AiAnalysisService;
 import com.stockmatch.corporate.analysis.service.AnalysisService;
 import lombok.RequiredArgsConstructor;

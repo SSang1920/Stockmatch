@@ -9,7 +9,6 @@ import com.stockmatch.corporate.analysis.Entity.AiAnalysisLog;
 import com.stockmatch.corporate.analysis.dto.data.AnalysisPackage;
 import com.stockmatch.corporate.analysis.dto.response.AiResponseDto;
 import com.stockmatch.corporate.analysis.dto.response.AnalysisHistoryListResponse;
-import com.stockmatch.corporate.analysis.dto.response.AnalysisHistoryResponse;
 import com.stockmatch.corporate.analysis.repository.AiAnalysisLogRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
