@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { AxiosError } from 'axios'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -57,4 +58,19 @@ export function getPageNumbers(currentPage: number, totalPages: number) {
   }
 
   return rangeWithDots
+}
+
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof AxiosError) {
+    if (error.response?.data?.error?.message) {
+      return error.response.data.error.message;
+    }
+
+    return error.message || '알 수 없는 오류가 발생했습니다.'
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return '알 수 없는 오류가 발생했습니다.';
 }

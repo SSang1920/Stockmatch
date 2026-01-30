@@ -48,7 +48,7 @@ public enum ErrorCode {
     // 종목(Security)
     SECURITY_NOT_FOUND("S001", "종목을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     SECURITY_ALREADY_EXISTS("S002", "이미 존재하는 종목입니다.", HttpStatus.CONFLICT),
-    DUPLICATE_TICKER("S003", "중복된 종목 코드입니다.", HttpStatus.CONFLICT),
+    DUPLICATE_STOCK("S003", "이미 추가된 종목입니다.", HttpStatus.CONFLICT),
 
     // 거래
     TRANSACTION_NOT_FOUND("T001", "거래를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),

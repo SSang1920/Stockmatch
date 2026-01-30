@@ -3,7 +3,11 @@ import * as watchlistApi from '@/features/watchlist/api/watchlistApi';
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useEffect, useState } from 'react';
 import { ChevronRight, Folder, Plus } from 'lucide-react';
+import { WatchlistDialog, SortableWatchlistCard, WatchlistDetail } from '@/features/watchlist/components';
 import axios from 'axios';
+import { DndContext, DragEndEvent, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { Button } from '@/components/ui/button';
 
 // 인증 체크 함수
 const checkAuth = async () => {
@@ -37,6 +41,16 @@ function WatchlistPage() {
     const [watchlists, setWatchlists] = useState<Watchlist[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // 모달 상태 관리
+    const [isCreateOpen, setIsCreateOpen] = useState(false)
+    const [editTarget, setEditTarget] = useState<{ id: number, name: string } | null>(null)
+
+    // 마우스, 터치, 키보드 지원
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 8 } }), // 8px 움직여야 드래그
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    )
+
     // 데이터 로딩
     const loadWatchlists = async () => {
         try {
@@ -50,21 +64,53 @@ function WatchlistPage() {
         }
     };
 
-    useEffect(() => {
-        loadWatchlists();
-    }, [selectedWatchlistId]);
+    useEffect(() => { loadWatchlists() }, [selectedWatchlistId]);
 
-    // 관심종목 폴더 생성 핸들러
-    const handleCreate = async () => {
-        const name = prompt('새 폴더 이름을 입력하세요.');
-        if (!name) return;
-        try {
-            await watchlistApi.createWatchlist(name);
-            loadWatchlists();
-        } catch (e: any) {
-            alert(e.message);
-        }
+    // [Handler] 폴더 생성
+    const handleCreate = async (name: string) => {
+        await watchlistApi.createWatchlist(name);
+        await loadWatchlists();
     };
+
+    // [Handler] 폴더 이름 수정
+    const handleRename = async (name: string) => {
+        if (!editTarget) return;
+        await watchlistApi.updateWatchlist(editTarget.id, name);
+        await loadWatchlists();
+        setEditTarget(null);
+    }
+
+    // [Handler] 폴더 삭제
+    const handleDelete = async (id: number) => {
+        if (!confirm("정말 삭제하시겠습니까?")) return;
+        try {
+            await watchlistApi.deleteWatchlist(id);
+            await loadWatchlists();
+        } catch (error) { alert("삭제 실패"); }
+    }
+
+    // [Handler] 드래그 종료 시 (순서 변경)
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event
+
+        if (over && active.id !== over.id) {
+            // UI 업데이트
+            const oldIndex = watchlists.findIndex((w) => w.id === active.id)
+            const newIndex = watchlists.findIndex((w) => w.id === over.id)
+
+            const newOrder = arrayMove(watchlists, oldIndex, newIndex)
+            setWatchlists(newOrder)
+
+            // API 호출
+            try {
+                const newOrderIds = newOrder.map(w => w.id);
+                await watchlistApi.sortWatchlists(newOrderIds);
+            } catch (error) {
+                console.error("순서 변경 실패", error)
+                loadWatchlists()
+            }
+        }
+    }
 
     // 상세 화면 렌더링
     if (selectedWatchlistId !== null) {
@@ -85,51 +131,70 @@ function WatchlistPage() {
                     <h1 className="text-2xl font-bold">관심종목</h1>
                     <p className="text-muted-foreground mt-1">나만의 투자 리스트를 관리해보세요.</p>
                 </div>
-                <button
-                    onClick={handleCreate}
-                    className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
-                >
-                    <Plus className="h-4 w-4" />
+                <Button
+                    onClick={() => setIsCreateOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
                     새 폴더
-                </button>
+                </Button>
             </div>
 
-            {/* 폴더 리스트 그리드 */}
-            {loading ? (
-                <div className="py-10 text-center text-muted-foreground">로딩 중...</div>
-            ) : watchlists.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed rounded-xl bg-muted/10">
-                    <Folder className="h-10 w-10 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground mb-4">만들어진 폴더가 없습니다.</p>
-                    <button onClick={handleCreate} className="text-primary font-medium hover:underline">
-                        첫 번째 폴더 만들기
-                    </button>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {watchlists.map((watchlist) => (
-                        <div
-                            key={watchlist.id}
-                            onClick={() => setSelectedWatchlistId(watchlist.id)} // 클릭 시 상세 보기 상태로 변경
-                            className="group cursor-pointer relative flex flex-col justify-between p-6 border rounded-xl bg-card shadow-sm hover:shadow-md hover:border-primary/50 transition-all"
-                        >
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="p-3 bg-primary/10 rounded-lg text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                                    <Folder className="h-6 w-6" />
-                                </div>
-                                <ChevronRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-
-                            <div>
-                                <h3 className="font-bold text-lg mb-1">{watchlist.name}</h3>
-                                <p className="text-sm text-muted-foreground">
-                                    {watchlist.items.length}개 종목 포함
-                                </p>
-                            </div>
+            {/* 폴더 리스트 */}
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+            >
+                <SortableContext
+                    items={watchlists.map(w => w.id)}
+                    strategy={rectSortingStrategy}
+                >
+                    {loading ? (
+                        <div className="py-10 text-center text-muted-foreground">로딩 중...</div>
+                    ) : watchlists.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed rounded-xl bg-muted/10">
+                            <Folder className="h-10 w-10 text-muted-foreground mb-4" />
+                            <p className="text-muted-foreground mb-4">만들어진 폴더가 없습니다.</p>
+                            <Button variant="link" onClick={() => setIsCreateOpen(true)}>
+                                첫 번째 폴더 만들기
+                            </Button>
                         </div>
-                    ))}
-                </div>
-            )}
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {watchlists.map((watchlist) => (
+                                <SortableWatchlistCard
+                                    key={watchlist.id}
+                                    watchlist={watchlist}
+                                    onClick={() => setSelectedWatchlistId(watchlist.id)}
+                                    onEdit={(e) => {
+                                        e.stopPropagation();
+                                        setEditTarget({ id: watchlist.id, name: watchlist.name });
+                                    }}
+                                    onDelete={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(watchlist.id);
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </SortableContext>
+            </DndContext>
+
+            {/* 생성 모달 */}
+            <WatchlistDialog
+                open={isCreateOpen}
+                onOpenChange={setIsCreateOpen}
+                mode="create"
+                onSubmit={handleCreate}
+            />
+
+            {/* 수정 모달 */}
+            <WatchlistDialog
+                open={!!editTarget}
+                onOpenChange={(open) => !open && setEditTarget(null)}
+                mode="edit"
+                onSubmit={handleRename}
+            />
         </div>
     );
 }

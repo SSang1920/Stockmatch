@@ -1,6 +1,5 @@
 package com.stockmatch.stock.domain;
 
-import com.stockmatch.watchlist.domain.WatchlistItem;
 import com.stockmatch.common.BaseEntity;
 import com.stockmatch.portfolio.domain.Currency;
 import jakarta.persistence.*;
@@ -59,9 +58,6 @@ public class Security extends BaseEntity {
     @Builder.Default
     @OneToMany(mappedBy = "security")
     private List<DailyPrice> dailyPrices = new ArrayList<>();
-
-    @OneToOne(mappedBy = "security", fetch = FetchType.LAZY)
-    private WatchlistItem watchlistItem;
 
     public void updateName(String name) {
         this.name = name;

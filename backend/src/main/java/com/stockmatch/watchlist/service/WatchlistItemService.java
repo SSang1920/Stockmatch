@@ -6,9 +6,7 @@ import com.stockmatch.stock.domain.Security;
 import com.stockmatch.stock.repository.SecurityRepository;
 import com.stockmatch.watchlist.domain.Watchlist;
 import com.stockmatch.watchlist.domain.WatchlistItem;
-import com.stockmatch.watchlist.dto.WatchlistAddItemRequest;
-import com.stockmatch.watchlist.dto.WatchlistItemSortRequest;
-import com.stockmatch.watchlist.dto.WatchlistItemUpdateRequest;
+import com.stockmatch.watchlist.dto.*;
 import com.stockmatch.watchlist.repository.WatchlistItemRepository;
 import com.stockmatch.watchlist.repository.WatchlistRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,28 +27,60 @@ public class WatchlistItemService {
     private final WatchlistItemRepository watchlistItemRepository;
     private final SecurityRepository securityRepository;
 
+    /**
+     * 관심종목 조회
+     */
+    public WatchlistDetailResponse getWatchlistDetail(Long userId, Long watchlistId) {
+        // 폴더 조회
+        Watchlist watchlist = watchlistRepository.findById(watchlistId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.WATCHLIST_NOT_FOUND));
+
+        // 내 폴더가 맞는지 확인
+        if (!watchlist.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
+        // 엔티티 -> DTO 변환
+        return WatchlistDetailResponse.from(watchlist);
+    }
 
     /**
      * 관심종목 추가
      */
     @Transactional
     public Long addItem(Long userId, Long watchlistId, WatchlistAddItemRequest request) {
+        // 폴더 확인
         Watchlist watchlist = validateWatchlistOwner(userId, watchlistId);
+
+        // 권한 확인
+        if (!watchlist.getUser().getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
+        // 종목 확인
         Security security = securityRepository.findByTicker(request.ticker())
                 .orElseThrow(() -> new BusinessException(ErrorCode.SECURITY_NOT_FOUND));
+
+        // 중복 체크
+        boolean exists = watchlist.getWatchlistItems().stream()
+                .anyMatch(item -> item.getSecurity().getTicker().equals(request.ticker()));
+        if (exists) {
+            throw new BusinessException(ErrorCode.DUPLICATE_STOCK);
+        }
 
         // 해당 폴더의 마지막 순서 구하기
         Integer maxOrder = watchlistItemRepository.findMaxOrderNoByWatchlistId(watchlistId);
         int nextOrder = (maxOrder == null) ? 1 : maxOrder + 1;
 
         WatchlistItem item = WatchlistItem.builder()
+                .watchlist(watchlist)
                 .security(security)
                 .memo(request.memo())
                 .orderNo(nextOrder)
                 .build();
 
         watchlist.addItem(item);
-
+        watchlistItemRepository.save(item);
         return item.getId();
     }
 
