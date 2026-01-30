@@ -11,42 +11,7 @@ export const AnalysisSearchInput = ({ onSearch, isLoading } : Props) => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<StockSearchResponse[]>([]);
     const [isOpen, setIsOpen] = useState(false);
-    const [recentSearches, setRecentSearches] = useState<StockSearchResponse[]>([]);
     const wrapperRef = useRef<HTMLDivElement>(null);
-
-    // LocalStorage에서 최근 검색어 불러오기
-    useEffect(() => {
-        const saved = localStorage.getItem('recentAnalysisStocks');
-        if (saved) {
-            try {
-                setRecentSearches(JSON.parse(saved));
-            } catch (e) {
-                console.error('Failed to parse recent searches', e);
-            }
-        }
-    }, []);
-
-    // 최근 검색어 추가 함수 (중복 제거 + 최대 5개 제한)
-    const addToRecent = (stock: StockSearchResponse) => {
-        const prev = [...recentSearches];
-
-        // 중복 방지
-        const filtered = prev.filter((item) => item.ticker !== stock.ticker);
-
-        // 새 종목 맨 앞 추가 및 최대 5개 제한
-        const newRecent = [stock, ...filtered].slice(0, 5);
-
-        setRecentSearches(newRecent);
-        localStorage.setItem('recentAnalysisStocks', JSON.stringify(newRecent));
-    };
-
-    // 최근 검색어 개별 삭제 함수
-    const removeRecent = (e: React.MouseEvent, ticker: string) => {
-        e.stopPropagation();
-        const newRecent = recentSearches.filter((item) => item.ticker != ticker);
-        setRecentSearches(newRecent);
-        localStorage.setItem('recentAnalysisStocks', JSON.stringify(newRecent));
-    };
 
     // 입력값이 바뀔 때마다 검색
     useEffect(() => {
@@ -71,7 +36,6 @@ export const AnalysisSearchInput = ({ onSearch, isLoading } : Props) => {
 
     // 검색 결과 클릭 시 상세 페이지로 이동
     const handleSelect = (stock: StockSearchResponse) => {
-        addToRecent(stock);     // 최근 검색어 저장
 
         setQuery(`${stock.ticker} (${stock.name})`);
         setIsOpen(false);
@@ -127,25 +91,6 @@ export const AnalysisSearchInput = ({ onSearch, isLoading } : Props) => {
                    disabled={isLoading} //로딩 중 입력 비활성화
                />
            </form>
-
-           {!query && recentSearches.length > 0 && (
-               <div className="mt-3 flex flex-wrap gap-2 items-center">
-                   <span className="text-xs text-gray-500 mr-1">최근 검색:</span>
-                   {recentSearches.map((stock) => (
-                       <div
-                           key={stock.ticker}
-                           onClick={() => handleSelect(stock)}
-                           className="flex items-center gap-1 px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-full cursor-pointer transition-colors"
-                       >
-                           <span>{stock.name}</span>
-                           <button
-                               onClick={(e) => removeRecent(e, stock.ticker)}
-                               className="hover:text-red-500 focus:outline-none"
-                           >X</button>
-                       </div>
-                   ))}
-               </div>
-           )}
 
            {isOpen && results.length > 0 && (
                <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">

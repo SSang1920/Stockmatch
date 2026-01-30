@@ -64,6 +64,10 @@ public enum ErrorCode {
     WATCHLIST_NOT_FOUND("W001", "관심 종목을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     WATCHLIST_ITEM_NOT_FOUND("W002", "관심 종목 아이템을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
+    //분석
+    LOG_NOT_FOUND("E001", "분석 기록이 없습니다.", HttpStatus.NOT_FOUND),
+    INVALID_JSON_FORMAT("E002", "올바른 JSON 데이터 값이 아닙니다.", HttpStatus.BAD_GATEWAY),
+
     // 외부 API
     EXTERNAL_API_ERROR("E001", "외부 API 호출 중 오류가 발생했습니다.", HttpStatus.BAD_GATEWAY),
     UNSUPPORTED_REGION("E002", "지원하지 않는 지역입니다.", HttpStatus.BAD_REQUEST),

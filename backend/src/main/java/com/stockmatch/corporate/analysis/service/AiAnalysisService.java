@@ -8,6 +8,8 @@ import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.corporate.analysis.Entity.AiAnalysisLog;
 import com.stockmatch.corporate.analysis.dto.data.AnalysisPackage;
 import com.stockmatch.corporate.analysis.dto.response.AiResponseDto;
+import com.stockmatch.corporate.analysis.dto.response.AnalysisHistoryListResponse;
+import com.stockmatch.corporate.analysis.dto.response.AnalysisHistoryResponse;
 import com.stockmatch.corporate.analysis.repository.AiAnalysisLogRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -168,8 +170,8 @@ public class AiAnalysisService {
             JsonNode response = restTemplate.postForObject(apiUrl, entity, JsonNode.class);
 
             AiResponseDto resultDto = parseAiResponse(response);
-
-            saveAnalysisLog(userId, symbol, resultDto);
+            String companyName = analysisPackage.getTargetStock().getName();
+            saveAnalysisLog(userId, symbol, companyName, resultDto);
 
             return resultDto;
         } catch (BusinessException e){
@@ -252,13 +254,13 @@ public class AiAnalysisService {
                 .build();
     }
 
-    private void saveAnalysisLog(Long userId, String symbol, AiResponseDto dto){
+    private void saveAnalysisLog(Long userId, String symbol,String companyName ,AiResponseDto dto){
         try{
             String jsonResult = objectMapper.writeValueAsString(dto);
 
             AiAnalysisLog logEntity = AiAnalysisLog.builder()
                     .userId(userId)
-                    .symbol(symbol)
+                    .symbol(companyName + " (" + symbol + ")")
                     .aiResponseJson(jsonResult)
                     .build();
 
@@ -269,19 +271,27 @@ public class AiAnalysisService {
         }
     }
 
-    public List<AiResponseDto> getUserHistory(Long userId) {
-         List<AiAnalysisLog> logs = logRepository.findAllByUserIdOrderByAnalyzedAtDesc(userId);
+    public List<AnalysisHistoryListResponse> getHistoryList(long userId) {
+        List<AiAnalysisLog> logs = logRepository.findAllByUserIdOrderByAnalyzedAtDesc(userId);
 
-         return logs.stream()
-                 .map(logEntity -> {
-                     try {
-                         return objectMapper.readValue(logEntity.getAiResponseJson(), AiResponseDto.class);
-                     } catch (Exception e) {
-                         log.error("히스토리 파싱 실패");
-                         return null;
-                     }
-                 })
-                 .filter(Objects::nonNull)
-                 .toList();
+        return logs.stream()
+                .map(logEntity -> AnalysisHistoryListResponse.builder()
+                        .id(logEntity.getId())
+                        .symbol(logEntity.getSymbol())
+                        .analyzedAt(logEntity.getAnalyzedAt())
+                        .build())
+                .toList();
+    }
+
+    public AiResponseDto getHistoryDetail(Long id) {
+        AiAnalysisLog logEntity = logRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.DART_CORP_CODE_NOT_FOUNT));
+
+        try{
+            return objectMapper.readValue(logEntity.getAiResponseJson(), AiResponseDto.class);
+        } catch (Exception e){
+            log.error("상세 데이터 파싱 실패: {}", e.getMessage());
+            throw new BusinessException(ErrorCode.INVALID_JSON_FORMAT);
+        }
     }
 }

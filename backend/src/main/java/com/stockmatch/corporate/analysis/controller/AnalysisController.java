@@ -4,6 +4,8 @@ import com.stockmatch.common.api.ApiResponse;
 import com.stockmatch.config.security.CustomUserDetails;
 import com.stockmatch.corporate.analysis.dto.data.AnalysisPackage;
 import com.stockmatch.corporate.analysis.dto.response.AiResponseDto;
+import com.stockmatch.corporate.analysis.dto.response.AnalysisHistoryListResponse;
+import com.stockmatch.corporate.analysis.dto.response.AnalysisHistoryResponse;
 import com.stockmatch.corporate.analysis.service.AiAnalysisService;
 import com.stockmatch.corporate.analysis.service.AnalysisService;
 import lombok.RequiredArgsConstructor;
@@ -51,15 +53,19 @@ public class AnalysisController {
         return ResponseEntity.ok(ApiResponse.ok(aiResult));
     }
 
-    @GetMapping("history")
-    public ResponseEntity<ApiResponse<List<AiResponseDto>>> getMyAnalysisHistory(
+    @GetMapping("/history")
+    public ResponseEntity<ApiResponse<List<AnalysisHistoryListResponse>>> getHistoryList(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        Long userId = userDetails.getUser().getId();
 
-        List<AiResponseDto> history = aiAnalysisService.getUserHistory(userId);
+        return ResponseEntity.ok(ApiResponse.ok(aiAnalysisService.getHistoryList(userDetails.getUser().getId())));
+    }
 
-        return ResponseEntity.ok(ApiResponse.ok(history));
+    @GetMapping("/history/{id}")
+    public ResponseEntity<ApiResponse<AiResponseDto>> getHistoryDetail(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(ApiResponse.ok(aiAnalysisService.getHistoryDetail(id)));
     }
 
 }
