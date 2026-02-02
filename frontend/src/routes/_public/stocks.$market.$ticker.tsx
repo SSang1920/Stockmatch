@@ -1,10 +1,12 @@
-import { StockDetailResponse } from '@/features/market/types';
+import { StockChartItem, StockDetailResponse } from '@/features/market/types';
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as stockApi from '@/features/market/api'
 import { ArrowLeft, Loader2, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import ReactApexChart from 'react-apexcharts';
+import { ApexOptions } from 'apexcharts';
 
 // 라우트 정의
 export const Route = createFileRoute('/_public/stocks/$market/$ticker')({
@@ -35,13 +37,20 @@ function StockDetailPage() {
   const [data, setData] = useState<StockDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [ chartData, setChartData] = useState<StockChartItem[]>([]);
 
   const loadData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await stockApi.getStockDetail(market, ticker);
-      setData(result);
+      const [detailResult, chartResult] = await Promise.all([
+        stockApi.getStockDetail(market, ticker),
+        stockApi.getStockChart(ticker)
+      ]);
+
+      setData(detailResult);
+      setChartData(chartResult);
+
     } catch (err: any) {
       setError(err.message || '정보를 불러오는데 실패했습니다.');
     } finally {
@@ -52,6 +61,98 @@ function StockDetailPage() {
   useEffect(() => {
     loadData();
   }, [market, ticker]);
+
+  const apexSeries = useMemo(() => {
+    if (chartData.length === 0) return [];
+    return [{
+      data: chartData.map(item => ({
+        x: item.date,
+        y: [item.open, item.high, item.low, item.close]
+      }))
+    }];
+  }, [chartData]);
+
+  const apexOptions: ApexOptions = useMemo(() => ({
+    chart: {
+      type: 'candlestick',
+      height: 350,
+      toolbar: { 
+        show: true,
+        tools: {
+          download: false,
+        }
+      },
+      zoom: {
+        enabled: true,
+        type: 'x',
+        autoScaleYaxis: true
+      },
+    },
+    title: {
+      text: '주가 핸들 차트 (일봉)',
+      align: 'left',
+      style: { fontSize: '16px', fontWeight: 'bold', color: '#374151' }
+    },
+    xaxis: {
+      type: 'category',
+      labels: {
+        formatter: function(val) {
+          if (!val) return '';
+          const parts = String(val).split('-');
+          if (parts.length === 3) {
+            return `${parts[1]}-${parts[2]}`;
+          }
+
+          return String(val);
+        },
+        style: {
+          fontSize: '11px',
+        }
+      },
+      tickAmount: 10,
+      tooltip: {
+        enabled: false
+      }
+    },
+    yaxis: {
+      tooltip: { enabled: true },
+      labels: {
+        formatter: (value) => value.toLocaleString()
+      },
+      forceNiceScale: true
+    },
+    plotOptions: {
+      candlestick: {
+        colors: {
+          upward: '#ef4444',
+          downward: '#3b82f6'
+        },
+        wick: {
+          useFillColor: true,
+        }
+      }
+    },
+    tooltip: {
+      enabled: true,
+      theme: 'light',
+      x: {
+        formatter: function(val) {
+          if (!val) return '';
+          const date = new Date(val);
+          return date.toISOString().split('T')[0];
+        }
+      }
+    },
+    grid: {
+      borderColor: '#e5e7eb',
+      xaxis: {
+        lines: { show: false }
+      },
+      yaxis: {
+        lines: { show: true }
+      }
+    }
+  }), []);
 
   if (loading) {
     return (
@@ -75,6 +176,8 @@ function StockDetailPage() {
   const changeRate = data.changeRate ?? 0;
   const volume = data.volume ?? 0;
 
+  const isKr = ['KOSPI', 'KOSDAQ', 'KR'].includes(market.toUpperCase());
+
   return (
     <div className="container mx-auto p-4 space-y-6 max-w-5xl animate-in fade-in duration-500">
       
@@ -89,10 +192,10 @@ function StockDetailPage() {
               <span className="text-sm font-bold bg-muted px-2 py-0.5 rounded text-muted-foreground">
                 {market}
               </span>
-              <h1 className="text-2xl font-bold tracking-tight">{ticker}</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{data.name || ticker}</h1>
             </div>
             {/* 종목명 (API 응답에 name이 있다면 표시) */}
-            {data.name && <p className="text-muted-foreground">{data.name}</p>}
+            {data.name && <p className="text-muted-foreground">{ticker}</p>}
           </div>
         </div>
         <Button variant="outline" size="sm" onClick={loadData}>
@@ -102,16 +205,19 @@ function StockDetailPage() {
 
       {/* 2. 메인 가격 정보 섹션 */}
       <div className="flex items-end gap-4 pb-4 border-b">
-        <span className={`text-4xl font-bold ${getPriceColor(data.changeRate)}`}>
-          {formatPrice(data.currentPrice, market)}
+        <span className={`text-4xl font-bold ${getPriceColor(changeRate)}`}>
+          {formatPrice(currentPrice, market)}
         </span>
-        <div className={`flex items-center gap-2 text-lg font-medium mb-1 ${getPriceColor(data.changeRate)}`}>
+        <div className={`flex items-center gap-2 text-lg font-medium mb-1 ${getPriceColor(changeRate)}`}>
           <span>
-            {data.changeAmount > 0 ? '▲' : data.changeAmount < 0 ? '▼' : ''} 
-            {Math.abs(data.changeAmount).toLocaleString()}
+            {changeAmount > 0 ? '+' : ''} 
+            {changeAmount.toLocaleString(undefined, {
+              minimumFractionDigits: isKr ? 0 : 2,
+              maximumFractionDigits: 2
+            })}
           </span>
           <span>
-            ({data.changeRate > 0 ? '+' : ''}{data.changeRate}%)
+            ({changeRate > 0 ? '+' : ''}{changeRate.toFixed(2)}%)
           </span>
         </div>
       </div>
@@ -127,12 +233,23 @@ function StockDetailPage() {
         )}
       </div>
 
-      {/* 4. 차트 영역 (플레이스홀더) */}
-      <Card className="min-h-[300px] flex items-center justify-center bg-muted/20">
-        <div className="text-center text-muted-foreground">
-          <p>차트 데이터가 준비중입니다.</p>
-          <p className="text-sm">(TradingView 등 차트 라이브러리 연동 예정)</p>
-        </div>
+      {/* 4. 차트 영역 */}
+      <Card className="p-4">
+        <CardContent className="h-[400px] w-full pl-0">
+          {chartData.length > 0 ? (
+            <ReactApexChart
+              options={apexOptions}
+              series={apexSeries}
+              type="candlestick"
+              height="100%"
+              width="100%"
+            />
+          ) : (
+            <div className="h-full flex items-center justify-center text-muted-foreground bg-muted/10 rounded-lg">
+              <p>표시할 차트 데이터가 없습니다.</p>
+            </div>
+          )}
+        </CardContent>
       </Card>
       
     </div>

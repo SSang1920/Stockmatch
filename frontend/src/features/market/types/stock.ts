@@ -20,3 +20,12 @@ export interface StockDetailResponse {
     volume: number;
     previousClose: number;
 }
+
+// 차트 데이터 타입
+export interface StockChartItem {
+    date: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+}
