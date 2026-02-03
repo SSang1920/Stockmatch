@@ -15,12 +15,14 @@ export const Route = createFileRoute('/_public/stocks/$market/$ticker')({
 })
 
 // 가격 포맷팅
-const formatPrice = (price: number | undefined | null, market: string) => {
+const formatPrice = (price: number | undefined | null, currency: 'KRW' | 'USD') => {
   if (price === undefined || price === null) return '-';
 
-  const isKr = ['KOSPI', 'KOSDAQ', 'KR'].includes(market.toUpperCase());
-  if (isKr) return price.toLocaleString() + '원';
-  return `$${price.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+  if (currency === 'KRW') {
+    return new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(price);
+  } else {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
+  }
 };
 
 // 색상 결정
@@ -33,8 +35,6 @@ const getPriceColor = (rate: number | undefined | null) => {
 
 function StockDetailPage() {
   const { market, ticker } = Route.useParams()
-  const navigate = Route.useNavigate();
-
   const [data, setData] = useState<StockDetailResponse | null>(null);
 
   const [oringinalData, setOriginalData] = useState<StockChartItem[]>([]);
@@ -43,6 +43,19 @@ function StockDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [currencyMode, setCurrencyMode] = useState<'KRW' | 'USD'>(() => {
+    const saved = localStorage.getItem('stock-currency-mode');
+    return (saved === 'KRW' || saved === 'USD') ? saved : 'USD';
+  });
+
+  const exchangeRate = 1450;
+  const isKrMarket = ['KOSPI', 'KOSDAQ', 'KR'].includes(market.toUpperCase());
+
+  // 설정 저장
+  useEffect(() => {
+    localStorage.setItem('stock-currency-mode', currencyMode);
+  }, [currencyMode]);
 
   const loadData = async () => {
     setLoading(true);
@@ -86,7 +99,7 @@ function StockDetailPage() {
       cutoffDate.setDate(today.getDate() - 7);
     } else if (period === '1M') {
       cutoffDate.setMonth(today.getMonth() - 1);
-    } else if ( period === '1Y') {
+    } else if (period === '1Y') {
       cutoffDate.setFullYear(today.getFullYear() - 1);
     }
 
@@ -96,19 +109,29 @@ function StockDetailPage() {
 
   const apexSeries = useMemo(() => {
     if (chartData.length === 0) return [];
+
     return [{
-      data: chartData.map(item => ({
-        x: item.date,
-        y: [item.open, item.high, item.low, item.close]
-      }))
+      data: chartData.map(item => {
+        const rate = (currencyMode === 'KRW' && !isKrMarket) ? exchangeRate : 1;
+
+        return {
+          x: item.date,
+          y: [
+            item.open * rate,
+            item.high * rate,
+            item.low * rate,
+            item.close * rate
+          ]
+        };
+      })
     }];
-  }, [chartData]);
+  }, [chartData, currencyMode, isKrMarket, exchangeRate]);
 
   const apexOptions: ApexOptions = useMemo(() => ({
     chart: {
       type: 'candlestick',
       height: 350,
-      toolbar: { 
+      toolbar: {
         show: false,
         tools: {
           download: false,
@@ -119,6 +142,9 @@ function StockDetailPage() {
         type: 'x',
         autoScaleYaxis: true
       },
+      animations: {
+        enabled: false
+      }
     },
     title: {
       text: '',
@@ -129,7 +155,7 @@ function StockDetailPage() {
       type: 'category',
       tickAmount: period === '1W' ? undefined : 6,
       labels: {
-        formatter: function(val) {
+        formatter: function (val) {
           if (!val) return '';
           const parts = String(val).split('-');
           if (parts.length === 3) {
@@ -143,7 +169,19 @@ function StockDetailPage() {
         }
       },
       tooltip: {
-        enabled: false
+        enabled: true,
+        formatter: function(val) {
+          if (!val) return '';
+          return String(val);
+        }
+      },
+      axisBorder: {
+        show: true,
+        color: '#e5e7eb'
+      },
+      axisTicks: {
+        show: true,
+        color: '#e5e7eb'
       }
     },
     yaxis: {
@@ -168,11 +206,15 @@ function StockDetailPage() {
       enabled: true,
       theme: 'light',
       x: {
-        formatter: function(val) {
+        formatter: function (val) {
           if (!val) return '';
           const date = new Date(val);
+          if (isNaN(date.getTime())) return String(val);
           return date.toISOString().split('T')[0];
         }
+      },
+      y: {
+        formatter: (val) => formatPrice(val, isKrMarket ? 'KRW' : currencyMode)
       }
     },
     grid: {
@@ -184,7 +226,7 @@ function StockDetailPage() {
         lines: { show: true }
       }
     }
-  }), [period]);
+  }), [period, isKrMarket, currencyMode]);
 
   if (loading) {
     return (
@@ -203,16 +245,17 @@ function StockDetailPage() {
     );
   }
 
-  const currentPrice = data.currentPrice;
-  const changeAmount = data.changeAmount ?? 0;
-  const changeRate = data.changeRate ?? 0;
-  const volume = data.volume ?? 0;
+  const displayCurrency = isKrMarket ? 'KRW' : currencyMode;
+  const rate = (displayCurrency === 'KRW' && !isKrMarket) ? exchangeRate : 1;
 
-  const isKr = ['KOSPI', 'KOSDAQ', 'KR'].includes(market.toUpperCase());
+  const currentPrice = (data.currentPrice || 0) * rate;
+  const changeAmount = (data.changeAmount || 0) * rate;
+  const changeRate = data.changeRate || 0;
+  const volume = data.volume || 0;
 
   return (
     <div className="container mx-auto p-4 space-y-6 max-w-5xl animate-in fade-in duration-500">
-      
+
       {/* 1. 상단 네비게이션 & 헤더 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -230,38 +273,53 @@ function StockDetailPage() {
             {data.name && <p className="text-muted-foreground">{ticker}</p>}
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={loadData}>
-          <RefreshCcw className="mr-2 h-4 w-4" /> 새로고침
-        </Button>
+        <div className="flex items-center gap-2">
+          {!isKrMarket && (
+            <Tabs value={currencyMode} onValueChange={(v) => setCurrencyMode(v as 'KRW' | 'USD')} className="w-[60px]">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="USD">$</TabsTrigger>
+                <TabsTrigger value="KRW">원</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
+          <Button variant="outline" size="icon" onClick={loadData} className="h-9 w-9 shrink-0" title="새로고침">
+            <RefreshCcw className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* 2. 메인 가격 정보 섹션 */}
       <div className="flex items-end gap-4 pb-4 border-b">
         <span className={`text-4xl font-bold ${getPriceColor(changeRate)}`}>
-          {formatPrice(currentPrice, market)}
+          {formatPrice(currentPrice, displayCurrency)}
         </span>
         <div className={`flex items-center gap-2 text-lg font-medium mb-1 ${getPriceColor(changeRate)}`}>
           <span>
-            {changeAmount > 0 ? '+' : ''} 
-            {changeAmount.toLocaleString(undefined, {
-              minimumFractionDigits: isKr ? 0 : 2,
+            {changeAmount > 0 ? '+' : ''}
+            {new Intl.NumberFormat(displayCurrency === 'KRW' ? 'ko-KR' : 'en-US', {
+              minimumFractionDigits: displayCurrency === 'KRW' ? 0 : 2,
               maximumFractionDigits: 2
-            })}
+            }).format(changeAmount)}
           </span>
           <span>
             ({changeRate > 0 ? '+' : ''}{changeRate.toFixed(2)}%)
           </span>
         </div>
+        {!isKrMarket && currencyMode === 'KRW' && (
+          <span className="text-xs text-muted-foreground mb-2">
+            (환율 {exchangeRate.toLocaleString()}원 적용)
+          </span>
+        )}
       </div>
 
       {/* 3. 상세 정보 카드 (시가, 고가, 저가, 거래량 등) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <InfoCard label="시가 (Open)" value={formatPrice(data.openPrice, market)} />
-        <InfoCard label="고가 (High)" value={formatPrice(data.highPrice, market)} color="text-red-500" />
-        <InfoCard label="저가 (Low)" value={formatPrice(data.lowPrice, market)} color="text-blue-500" />
+        <InfoCard label="시가 (Open)" value={formatPrice((data.openPrice || 0) * rate, displayCurrency)} />
+        <InfoCard label="고가 (High)" value={formatPrice((data.highPrice || 0) * rate, displayCurrency)} color="text-red-500" />
+        <InfoCard label="저가 (Low)" value={formatPrice((data.lowPrice || 0) * rate, displayCurrency)} color="text-blue-500" />
         <InfoCard label="거래량 (Vol)" value={volume.toLocaleString()} />
         {data.previousClose > 0 && (
-           <InfoCard label="전일 종가" value={formatPrice(data.previousClose, market)} />
+          <InfoCard label="전일 종가" value={formatPrice(data.previousClose * rate, displayCurrency)} />
         )}
       </div>
 
@@ -295,12 +353,12 @@ function StockDetailPage() {
           )}
         </CardContent>
       </Card>
-      
+
     </div>
   )
 }
 
-function InfoCard({ label, value, color }: { label: string, value: string, color?: string}) {
+function InfoCard({ label, value, color }: { label: string, value: string, color?: string }) {
   return (
     <Card>
       <CardHeader className="pb-2">

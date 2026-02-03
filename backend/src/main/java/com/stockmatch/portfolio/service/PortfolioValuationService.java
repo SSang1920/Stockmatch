@@ -2,6 +2,9 @@
 
     import com.stockmatch.common.exception.BusinessException;
     import com.stockmatch.common.exception.ErrorCode;
+    import com.stockmatch.exchangeRate.cache.ExchangeRateCacheService;
+    import com.stockmatch.exchangeRate.domain.FromCurrency;
+    import com.stockmatch.exchangeRate.domain.ToCurrency;
     import com.stockmatch.exchangeRate.service.FxRateService;
     import com.stockmatch.portfolio.domain.Holding;
     import com.stockmatch.portfolio.domain.TradeType;
@@ -18,6 +21,7 @@
     import com.stockmatch.stock.service.DailyPriceService;
     import com.stockmatch.stock.service.StockPriceService;
     import lombok.RequiredArgsConstructor;
+    import lombok.extern.slf4j.Slf4j;
     import org.springframework.stereotype.Service;
     import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +34,7 @@
     import java.util.Map;
     import java.util.stream.Collectors;
 
+    @Slf4j
     @Service
     @RequiredArgsConstructor
     @Transactional(readOnly = true)
@@ -47,6 +52,7 @@
         private final StockPriceService stockPriceService;
         private final FxRateService fxRateService;
         private final DailyPriceService dailyPriceService;
+        private final ExchangeRateCacheService exchangeRateCacheService;
 
         /**
          * 거래내역을 리플레이하여 from ~ to 구간의 일자별 평가 요약을 계산
@@ -261,12 +267,11 @@
         /**
          * 포트폴리오의 보유 종목을 조회하여 실시간 시세 기반으로 평가 지표 계산
          */
-        @Transactional(readOnly = false)
         public PortfolioValuationResponse calculate(long portfolioId) {
             // 보유 종목 조회
             var holdings = holdingRepository.findAllWithSecurityByPortfolioId(portfolioId);
             if (holdings.isEmpty()) {
-                throw new BusinessException(ErrorCode.HOLDING_NOT_FOUND);
+                return PortfolioValuationResponse.empty(portfolioId);
             }
 
             LocalDate today = LocalDate.now();
@@ -276,6 +281,22 @@
             BigDecimal totalValue = BigDecimal.ZERO;        // 총 평가금액
 
             List<HoldingValuationResponse> details = new ArrayList<>();
+
+            try {
+                usdToKrw = exchangeRateCacheService.getCurrentRate(FromCurrency.USD, ToCurrency.KRW);
+            } catch (Exception e) {
+                log.warn("Redis exchange rate fetch failed", e);
+            }
+
+            if (usdToKrw == null) {
+                try {
+                    usdToKrw = fxRateService.getLatestUsdToKrwRate(today);
+                    exchangeRateCacheService.saveCurrentRate(FromCurrency.USD, ToCurrency.KRW, usdToKrw);
+                } catch (Exception e) {
+                    log.error("Failed to fetch exchange rate", e);
+                    throw new BusinessException(ErrorCode.EXCHANGE_RATE_NOT_FOUND);
+                }
+            }
 
             for (Holding h : holdings) {
                 // 종목 기본 정보
@@ -294,9 +315,6 @@
                 BigDecimal fx = BigDecimal.ONE;
 
                 if (!s.isKorean()) {
-                    if (usdToKrw == null) {
-                        usdToKrw = fxRateService.getLatestUsdToKrwRate(today);
-                    }
                     fx = usdToKrw;
                 }
 

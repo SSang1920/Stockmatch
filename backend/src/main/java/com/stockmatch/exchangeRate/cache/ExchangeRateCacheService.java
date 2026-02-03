@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Optional;
@@ -24,6 +26,7 @@ public class ExchangeRateCacheService {
     private static final long LOCK_SLEEP_MS = 50L;
     private static final Duration LOCK_TTL = Duration.ofSeconds(5);
     private static final Duration CACHE_TTL = Duration.ofDays(1);
+    private static final Duration CURRENT_RATE_TTL = Duration.ofMinutes(10);
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
@@ -35,6 +38,10 @@ public class ExchangeRateCacheService {
 
     private String lockKey(LocalDate date, FromCurrency from, ToCurrency to) {
         return "lock:exchangeRate:" + date + ":" + from.name() + ":" + to.name();
+    }
+
+    private String currentRateKey(FromCurrency from, ToCurrency to) {
+        return "exchangeRate:current:" + from.name() + ":" + to.name();
     }
 
     // --- JSON 변환 헬퍼 ---
@@ -57,6 +64,31 @@ public class ExchangeRateCacheService {
             log.warn("ExchangeRateCache write fail. err={}", e.toString());
             return null;
         }
+    }
+
+    /**
+     * 실시간 환율 관리
+     */
+    // 현재 환율 저장
+    public void saveCurrentRate(FromCurrency from, ToCurrency to, BigDecimal rate) {
+        if (rate == null) return;
+        String key = currentRateKey(from, to);
+        redisTemplate.opsForValue().set(key, rate.toString(), CURRENT_RATE_TTL);
+    }
+
+    // 현재 환율 조회
+    public BigDecimal getCurrentRate(FromCurrency from, ToCurrency to) {
+        String key = currentRateKey(from, to);
+        String val = redisTemplate.opsForValue().get(key);
+
+        if (val != null) {
+            try {
+                return new BigDecimal(val);
+            } catch (NumberFormatException e) {
+                log.error("Invalid exchange rate in cache: {}", val);
+            }
+        }
+        return null;
     }
 
     // --- 캐시 조회/저장 로직 ---
