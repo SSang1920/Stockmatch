@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ReactApexChart from 'react-apexcharts';
 import { ApexOptions } from 'apexcharts';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // 라우트 정의
 export const Route = createFileRoute('/_public/stocks/$market/$ticker')({
@@ -35,9 +36,13 @@ function StockDetailPage() {
   const navigate = Route.useNavigate();
 
   const [data, setData] = useState<StockDetailResponse | null>(null);
+
+  const [oringinalData, setOriginalData] = useState<StockChartItem[]>([]);
+  const [chartData, setChartData] = useState<StockChartItem[]>([]);
+  const [period, setPeriod] = useState<'1W' | '1M' | '1Y'>('1W');
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [ chartData, setChartData] = useState<StockChartItem[]>([]);
 
   const loadData = async () => {
     setLoading(true);
@@ -51,6 +56,14 @@ function StockDetailPage() {
       setData(detailResult);
       setChartData(chartResult);
 
+      const filteredWeekends = chartResult.filter(item => {
+        const date = new Date(item.date);
+        const day = date.getDay();
+        return day !== 0 && day !== 6;
+      });
+
+      setOriginalData(filteredWeekends);
+
     } catch (err: any) {
       setError(err.message || '정보를 불러오는데 실패했습니다.');
     } finally {
@@ -61,6 +74,25 @@ function StockDetailPage() {
   useEffect(() => {
     loadData();
   }, [market, ticker]);
+
+  useEffect(() => {
+    if (oringinalData.length === 0) return;
+
+    const today = new Date();
+    const cutoffDate = new Date();
+
+    // 기간에 따른 시작 날짜 계산
+    if (period === '1W') {
+      cutoffDate.setDate(today.getDate() - 7);
+    } else if (period === '1M') {
+      cutoffDate.setMonth(today.getMonth() - 1);
+    } else if ( period === '1Y') {
+      cutoffDate.setFullYear(today.getFullYear() - 1);
+    }
+
+    const filtered = oringinalData.filter(item => new Date(item.date) >= cutoffDate);
+    setChartData(filtered);
+  }, [period, oringinalData]);
 
   const apexSeries = useMemo(() => {
     if (chartData.length === 0) return [];
@@ -77,7 +109,7 @@ function StockDetailPage() {
       type: 'candlestick',
       height: 350,
       toolbar: { 
-        show: true,
+        show: false,
         tools: {
           download: false,
         }
@@ -89,12 +121,13 @@ function StockDetailPage() {
       },
     },
     title: {
-      text: '주가 핸들 차트 (일봉)',
+      text: '',
       align: 'left',
       style: { fontSize: '16px', fontWeight: 'bold', color: '#374151' }
     },
     xaxis: {
       type: 'category',
+      tickAmount: period === '1W' ? undefined : 6,
       labels: {
         formatter: function(val) {
           if (!val) return '';
@@ -109,7 +142,6 @@ function StockDetailPage() {
           fontSize: '11px',
         }
       },
-      tickAmount: 10,
       tooltip: {
         enabled: false
       }
@@ -152,7 +184,7 @@ function StockDetailPage() {
         lines: { show: true }
       }
     }
-  }), []);
+  }), [period]);
 
   if (loading) {
     return (
@@ -235,6 +267,18 @@ function StockDetailPage() {
 
       {/* 4. 차트 영역 */}
       <Card className="p-4">
+        <CardHeader className="px-0 pt-0 pb-4 flex flex-row items-center justify-between">
+          <CardTitle>주가 차트</CardTitle>
+
+          <Tabs value={period} onValueChange={(val) => setPeriod(val as any)} className="w-[200px]">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="1W">1주</TabsTrigger>
+              <TabsTrigger value="1M">1달</TabsTrigger>
+              <TabsTrigger value="1Y">1년</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+        </CardHeader>
         <CardContent className="h-[400px] w-full pl-0">
           {chartData.length > 0 ? (
             <ReactApexChart
