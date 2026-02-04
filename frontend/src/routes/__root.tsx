@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import axios from '@/lib/axios';
 import { ensurePortfolio } from '@/api/user';
 import { type QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
@@ -15,13 +15,13 @@ export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
   component: () => {
-    // 1. 유저 상태 관리 추가
+    // 유저 상태 관리 추가
     const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
       const checkLogin = async () => {
         try {
-          const response = await axios.get('http://localhost:8080/api/user/me');
+          const response = await axios.get('/user/me');
 
           if (response.data && response.data.data) {
             const userData = response.data.data;
@@ -46,7 +46,20 @@ export const Route = createRootRouteWithContext<{
         <NavigationProgress />
 
         <Outlet context={{ user }} />
-        <Toaster duration={5000} />
+        <Toaster 
+          position="top-center"
+          duration={3000}
+          toastOptions={{
+            style: {
+              background: '#333333',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '16px',
+              fontSize: '15px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            },
+          }} 
+        />
         {import.meta.env.MODE === 'development' && (
           <>
             <ReactQueryDevtools buttonPosition='bottom-left' />

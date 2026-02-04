@@ -3,9 +3,8 @@ import { WatchlistAddItemRequest, WatchlistItemSortRequest, WatchlistItemUpdateR
 import { ApiResponse } from "@/types/common";
 
 // 관심종목 추가
-export const addWatchlistItem = async (watchlistId: number, ticker: string, memo?: string): Promise<number> => {
-    const body: WatchlistAddItemRequest = { ticker, memo };
-    const response = await axios.post<ApiResponse<number>>(`/watchlists/${watchlistId}/items`, body);
+export const addWatchlistItem = async (watchlistId: number, data: WatchlistAddItemRequest): Promise<number> => {
+    const response = await axios.post<ApiResponse<number>>(`/watchlists/${watchlistId}/items`, data);
 
     if (!response.data.success) {
         throw new Error(response.data.error?.message || '종목 추가 실패');
@@ -15,9 +14,8 @@ export const addWatchlistItem = async (watchlistId: number, ticker: string, memo
 };
 
 // 관심종목 메모 수정
-export const updateWatchlistItem = async (watchlistId: number, itemId: number, memo: string): Promise<void> => {
-    const body: WatchlistItemUpdateRequest = { memo };
-    const response = await axios.patch<ApiResponse<void>>(`/watchlists/${watchlistId}/items/${itemId}`, body);
+export const updateWatchlistItem = async (watchlistId: number, itemId: number, data: WatchlistItemUpdateRequest) => {
+    const response = await axios.patch<ApiResponse<void>>(`/watchlists/${watchlistId}/items/${itemId}`, data);
 
     if (!response.data.success) {
         throw new Error(response.data.error?.message || '메모 수정 실패');
