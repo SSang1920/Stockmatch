@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import axios from '@/lib/axios';
 import { ensurePortfolio } from '@/api/user';
 import { type QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
@@ -9,44 +8,28 @@ import { Toaster } from '@/components/ui/sonner'
 import { NavigationProgress } from '@/_archive/components/navigation-progress'
 import { GeneralError } from '@/features/errors/general-error'
 import { NotFoundError } from '@/features/errors/not-found-error'
+import { useUser } from '@/context/UserContext';
 
-axios.defaults.withCredentials = true;
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
   component: () => {
-    // 유저 상태 관리 추가
-    const [user, setUser] = useState<any>(null);
+    const { user } = useUser();
 
     useEffect(() => {
-      const checkLogin = async () => {
-        try {
-          const response = await axios.get('/user/me');
-
-          if (response.data && response.data.data) {
-            const userData = response.data.data;
-            setUser(userData); // 유저 정보 저장
-
-            try {
-              await ensurePortfolio();
-              console.log("Portfolio ensured successfully for:", userData.name);
-            } catch (portfolioError) {
-              console.error("Portfolio initialization failed:", portfolioError);
-            }
+          if (user) {
+            ensurePortfolio()
+              .then(() => console.log("Portfolio checked for:", user.name))
+              .catch((err) => console.error("Portfolio check failed:", err));
           }
-        } catch (error) {
-          setUser(null);
-        }
-      };
-      checkLogin();
-    }, []);
+        }, [user]);
 
     return (
       <>
         <NavigationProgress />
 
         <Outlet context={{ user }} />
-        <Toaster 
+        <Toaster
           position="top-center"
           duration={3000}
           toastOptions={{
@@ -58,7 +41,7 @@ export const Route = createRootRouteWithContext<{
               fontSize: '15px',
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
             },
-          }} 
+          }}
         />
         {import.meta.env.MODE === 'development' && (
           <>

@@ -16,6 +16,7 @@ import { ThemeProvider } from './context/theme-provider'
 import { routeTree } from './routeTree.gen'
 import './styles/index.css'
 import { SidebarProvider } from '@/components/ui/sidebar'
+import { UserProvider } from './context/UserContext'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -96,7 +97,9 @@ if (!rootElement.innerHTML) {
         <ThemeProvider>
           <FontProvider>
             <DirectionProvider>
-                <RouterProvider router={router} />
+                <UserProvider>
+                  <RouterProvider router={router} />
+                </UserProvider>
             </DirectionProvider>
           </FontProvider>
         </ThemeProvider>

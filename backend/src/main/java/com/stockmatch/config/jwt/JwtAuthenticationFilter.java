@@ -39,20 +39,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain
     ) throws ServletException, IOException {
 
-        // 헤더에서 토큰 추출
-        String accessToken = resolveToken(request);
-        log.info("검증 시작 - 토큰: {}", accessToken); // 조작된 토큰이 맞는지 확인
-
         String requestURI = request.getRequestURI();
 
         if (requestURI.startsWith("/api/auth/callback") ||
-            requestURI.equals("/api/auth/refresh") ||
-            requestURI.equals("/favicon.ico")) {
+                requestURI.equals("/api/auth/refresh") ||
+                requestURI.equals("/favicon.ico")||
+                requestURI.startsWith("/api/market") ||
+                requestURI.startsWith("/api/corporate") ||
+                requestURI.startsWith("/api/stocks")) {
 
             filterChain.doFilter(request, response);
 
             return;
         }
+
+        // 헤더에서 토큰 추출
+        String accessToken = resolveToken(request);
+        log.info("검증 시작 - 토큰: {}", accessToken); // 조작된 토큰이 맞는지 확인
+
         // 토큰이 없으면 다음 필터로 진행 (인증이 필요없는 페이지 접근)
         if (accessToken == null) {
             filterChain.doFilter(request, response);
