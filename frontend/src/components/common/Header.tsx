@@ -3,29 +3,11 @@ import { Link } from "@tanstack/react-router";
 import { LogOut, TrendingUp, User } from "lucide-react";
 import { Button } from "../ui/button";
 import { getUserInfo, logoutApi } from "@/api/user";
-
+import { useUser } from "../../context/UserContext";
 
 export function Header() {
-    // 유저 상태 관리
-    const [user, setUser] = useState<any>(null);
 
-    // 컴포넌트 마운트 시 유저 정보 확인
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const data = await getUserInfo();
-
-                if (data && data.data) {
-                    console.log("Header: 유저 정보 로딩 성공", data.data.name);
-                    setUser(data.data);
-                }
-            } catch (error) {
-                console.log("Header: 비로그인 상태");
-                setUser(null);
-            }
-        };
-        fetchUser();
-    }, []);
+    const { user } = useUser();
 
     // 로그아웃 핸들러
     const handleLogout = async () => {
@@ -36,10 +18,8 @@ export function Header() {
             console.error("로그아웃 요청 중 에러 발생 ", error);
         } finally {
             // 클라이언트 측 쿠키 삭제 및 상태 초기화
-            document.cookie = 'accessToken=; Max-Age=0; path=/';
-            document.cookie = 'refreshToken=; Max-Age=0; path=/';
+            localStorage.removeItem('accessToken');
 
-            setUser(null);
             // 메인 페이지로 이동하면서 새로고침 (상태 완전 초기화)
             window.location.href = '/';
         }

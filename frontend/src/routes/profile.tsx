@@ -3,9 +3,10 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Header } from '@/components/common/Header';
-import { getUserInfo, updateApiKey, fetchDecryptedApiKey, deleteUser } from '@/api/user';
+import { updateApiKey, fetchDecryptedApiKey, deleteUser } from '@/api/user';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useUser } from '@/context/UserContext';
 
 export const Route = createFileRoute('/profile')({
   component: RouteComponent,
@@ -13,35 +14,21 @@ export const Route = createFileRoute('/profile')({
 
 function RouteComponent() {
     const navigate = useNavigate();
-    const [user, setUser] = useState<any>(null);
+
+    const {user, isLoading } = useUser();
     const [apiKey, setApiKey] = useState('');
     const [hasSavedKey, setHasSavedKey] = useState(false);
-
     const [isEditing, setIsEditing] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const response = await getUserInfo();
-                const userData = response.data;
-
-                setUser(userData);
-
-                if(userData.apiKey) {
+        if (user && user.alphaVantageKey) {
                     setHasSavedKey(true);
                     setApiKey('');
-                }
-                else{
+                } else if (user) {
                     setHasSavedKey(false);
                 }
-            } catch (error) {
-                console.error("프로필 로딩 실패: ", error);
-                toast.error("로그인 정보가 없습니다.");
-                }
-            };
-        fetchUser();
-        }, []);
+            }, [user]);
 
     const mutation = useMutation({
         mutationFn : updateApiKey,

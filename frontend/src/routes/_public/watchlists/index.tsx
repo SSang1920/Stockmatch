@@ -1,42 +1,23 @@
 import { Watchlist } from '@/features/watchlist/types';
 import * as watchlistApi from '@/features/watchlist/api/watchlistApi';
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, useNavigate ,redirect } from '@tanstack/react-router'
 import { useEffect, useState } from 'react';
 import { ChevronRight, Folder, Plus } from 'lucide-react';
 import { WatchlistDialog, SortableWatchlistCard, WatchlistDetail } from '@/features/watchlist/components';
-import axios from 'axios';
 import { DndContext, DragEndEvent, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Button } from '@/components/ui/button';
+import { useUser } from '@/context/UserContext';
 
-// 인증 체크 함수
-const checkAuth = async () => {
-    try {
-        await axios.get('/api/auth/check');
-        return true;
-    } catch (error) {
-        return false;
-    }
-}
 
 export const Route = createFileRoute('/_public/watchlists/')({
-    // 페이지 로드 전 검사
-    beforeLoad: async ({ location }) => {
-        const isLoggedIn = await checkAuth();
-
-        if (!isLoggedIn) {
-            throw redirect({
-                to: '/sign-in',
-                search: {
-                    redirect: location.href,
-                },
-            });
-        }
-    },
     component: WatchlistPage,
 });
 
 function WatchlistPage() {
+    const navigate = useNavigate();
+    const { user, isLoading: isUserLoading } = useUser();
+
     const [selectedWatchlistId, setSelectedWatchlistId] = useState<number | null>(null);
     const [watchlists, setWatchlists] = useState<Watchlist[]>([]);
     const [loading, setLoading] = useState(true);
@@ -49,22 +30,36 @@ function WatchlistPage() {
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }), // 8px 움직여야 드래그
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-    )
+    );
+
+    useEffect(() => {
+            if (!isUserLoading && !user) {
+                navigate({
+                    to: '/sign-in',
+                    search: { redirect: window.location.href }
+                });
+            }
+        }, [user, isUserLoading, navigate]);
 
     // 데이터 로딩
-    const loadWatchlists = async () => {
-        try {
-            setLoading(true);
-            const data = await watchlistApi.getWatchlists();
-            setWatchlists(data);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    };
+        const loadWatchlists = async () => {
+            if (!user) return;
+            try {
+                setLoading(true);
+                const data = await watchlistApi.getWatchlists();
+                setWatchlists(data);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    useEffect(() => { loadWatchlists() }, [selectedWatchlistId]);
+    useEffect(() => {
+            if (user) {
+                loadWatchlists();
+            }
+        }, [user, selectedWatchlistId]);
 
     // [Handler] 폴더 생성
     const handleCreate = async (name: string) => {
@@ -110,6 +105,10 @@ function WatchlistPage() {
                 loadWatchlists()
             }
         }
+    }
+
+    if (isUserLoading || !user) {
+        return <div className="flex h-[50vh] items-center justify-center">로그인 확인 중...</div>;
     }
 
     // 상세 화면 렌더링
