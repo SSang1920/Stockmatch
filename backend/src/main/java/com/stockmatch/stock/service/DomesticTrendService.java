@@ -1,5 +1,6 @@
 package com.stockmatch.stock.service;
 
+import com.stockmatch.admin.service.AdminDashboardService;
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.stock.client.kis.KisTrendClient;
@@ -37,6 +38,8 @@ public class DomesticTrendService {
         try {
             rawData = kisVolumeClient.getDomesticVolumeRank();
         } catch (Exception e) {
+            AdminDashboardService.kisApiErrorCounter.incrementAndGet();
+
             // API 호출 자체 실패 시
             log.error("Failed to fetch domestic volume rank", e);
             throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
@@ -60,6 +63,7 @@ public class DomesticTrendService {
         try {
             rawData = kisTrendClient.getDomesticGainers();
         } catch (Exception e) {
+            AdminDashboardService.kisApiErrorCounter.incrementAndGet();
             // API 호출 자체 실패 시
             log.error("Failed to fetch domestic gainers rank", e);
             throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
@@ -83,6 +87,7 @@ public class DomesticTrendService {
         try {
             rawData = kisTrendClient.getDomesticLosers();
         } catch (Exception e) {
+            AdminDashboardService.kisApiErrorCounter.incrementAndGet();
             // API 호출 자체 실패 시
             log.error("Failed to fetch domestic losers rank", e);
             throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);

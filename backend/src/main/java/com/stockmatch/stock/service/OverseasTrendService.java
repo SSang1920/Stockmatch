@@ -1,5 +1,6 @@
 package com.stockmatch.stock.service;
 
+import com.stockmatch.admin.service.AdminDashboardService;
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.stock.client.kis.KisTrendClient;
@@ -37,6 +38,8 @@ public class OverseasTrendService {
             allItems.addAll(kisVolumeClient.getOverseasVolumeRank("NAS"));
             allItems.addAll(kisVolumeClient.getOverseasVolumeRank("NYS"));
         } catch (Exception e) {
+            AdminDashboardService.kisApiErrorCounter.incrementAndGet();
+
             log.error("Failed to fetch overseas volume rank", e);
             throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
         }
@@ -66,6 +69,8 @@ public class OverseasTrendService {
             allItems.addAll(kisTrendClient.getOverseasGainers("NAS"));
             allItems.addAll(kisTrendClient.getOverseasGainers("NYS"));
         } catch (Exception e) {
+            AdminDashboardService.kisApiErrorCounter.incrementAndGet();
+
             log.error("Failed to fetch overseas gainers", e);
             throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
         }
@@ -94,6 +99,8 @@ public class OverseasTrendService {
             allItems.addAll(kisTrendClient.getOverseasLosers("NAS"));
             allItems.addAll(kisTrendClient.getOverseasLosers("NYS"));
         } catch (Exception e) {
+            AdminDashboardService.kisApiErrorCounter.incrementAndGet();
+
             log.error("Failed to fetch overseas losers", e);
             throw new BusinessException(ErrorCode.EXTERNAL_API_ERROR);
         }
