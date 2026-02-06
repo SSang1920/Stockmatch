@@ -26,4 +26,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("DELETE FROM User u WHERE u.id IN : userIds")
     void deleteAllByIds(@Param("userIds") List<Long> userIds);
 
+    long countByLastLoginAtBetween(LocalDateTime start, LocalDateTime end);
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+    long countByDeletedAtBetween(LocalDateTime start, LocalDateTime end);
 }

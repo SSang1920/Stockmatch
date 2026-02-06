@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import { LogOut, TrendingUp, User } from "lucide-react";
+import { LogOut, TrendingUp, User, ShieldCheck } from "lucide-react";
 import { Button } from "../ui/button";
 import { getUserInfo, logoutApi } from "@/api/user";
 import { useUser } from "../../context/UserContext";
@@ -8,7 +8,6 @@ import { useUser } from "../../context/UserContext";
 export function Header() {
 
     const { user } = useUser();
-
     // 로그아웃 핸들러
     const handleLogout = async () => {
         try {
@@ -50,7 +49,14 @@ export function Header() {
                             <span className="mr-2 hidden text-sm font-medium text-slate-700 sm:block">
                                 {user.name}님
                             </span>
-
+                            {user.role === 'ADMIN' && (
+                                <Button variant="ghost" asChild className="text-black">
+                                    <Link to="/admin" className="flex items-center gap-2">
+                                        <ShieldCheck className="h-4 w-4" />
+                                        <span className="hidden sm:inline">관리자 페이지</span>
+                                    </Link>
+                                </Button>
+                            )}
                             <Button variant="ghost" asChild>
                                 <Link to="/profile" className="flex items-center gap-2">
                                     <User className="h-4 w-4" />

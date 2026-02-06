@@ -1,5 +1,6 @@
 package com.stockmatch.stock.service;
 
+import com.stockmatch.admin.service.AdminDashboardService;
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.stock.client.kis.KisKorStockClient;
@@ -127,6 +128,8 @@ public class MarketService {
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
+            AdminDashboardService.kisApiErrorCounter.incrementAndGet();
+
             log.error("Unexpected error during market data fetch", e);
             throw new BusinessException(ErrorCode.MARKET_DATA_FETCH_ERROR);
         }

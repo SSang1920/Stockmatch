@@ -19,8 +19,10 @@ import { Route as errors404RouteImport } from './routes/(errors)/404'
 import { Route as errors403RouteImport } from './routes/(errors)/403'
 import { Route as errors401RouteImport } from './routes/(errors)/401'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
+import { Route as adminAdminRouteImport } from './routes/(admin)/admin'
 import { Route as PublicWatchlistsIndexRouteImport } from './routes/_public/watchlists/index'
 import { Route as PublicAnalysisIndexRouteImport } from './routes/_public/analysis/index'
+import { Route as adminAdminIndexRouteImport } from './routes/(admin)/admin/index'
 import { Route as PublicStocksMarketTickerRouteImport } from './routes/_public/stocks.$market.$ticker'
 
 const SurveyRoute = SurveyRouteImport.update({
@@ -72,6 +74,11 @@ const authSignInRoute = authSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const adminAdminRoute = adminAdminRouteImport.update({
+  id: '/(admin)/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PublicWatchlistsIndexRoute = PublicWatchlistsIndexRouteImport.update({
   id: '/watchlists/',
   path: '/watchlists/',
@@ -81,6 +88,11 @@ const PublicAnalysisIndexRoute = PublicAnalysisIndexRouteImport.update({
   id: '/analysis/',
   path: '/analysis/',
   getParentRoute: () => PublicRouteRoute,
+} as any)
+const adminAdminIndexRoute = adminAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => adminAdminRoute,
 } as any)
 const PublicStocksMarketTickerRoute =
   PublicStocksMarketTickerRouteImport.update({
@@ -92,6 +104,7 @@ const PublicStocksMarketTickerRoute =
 export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/survey': typeof SurveyRoute
+  '/admin': typeof adminAdminRouteWithChildren
   '/sign-in': typeof authSignInRoute
   '/401': typeof errors401Route
   '/403': typeof errors403Route
@@ -99,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/': typeof PublicIndexRoute
+  '/admin/': typeof adminAdminIndexRoute
   '/analysis': typeof PublicAnalysisIndexRoute
   '/watchlists': typeof PublicWatchlistsIndexRoute
   '/stocks/$market/$ticker': typeof PublicStocksMarketTickerRoute
@@ -113,6 +127,7 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/': typeof PublicIndexRoute
+  '/admin': typeof adminAdminIndexRoute
   '/analysis': typeof PublicAnalysisIndexRoute
   '/watchlists': typeof PublicWatchlistsIndexRoute
   '/stocks/$market/$ticker': typeof PublicStocksMarketTickerRoute
@@ -122,6 +137,7 @@ export interface FileRoutesById {
   '/_public': typeof PublicRouteRouteWithChildren
   '/profile': typeof ProfileRoute
   '/survey': typeof SurveyRoute
+  '/(admin)/admin': typeof adminAdminRouteWithChildren
   '/(auth)/sign-in': typeof authSignInRoute
   '/(errors)/401': typeof errors401Route
   '/(errors)/403': typeof errors403Route
@@ -129,6 +145,7 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/_public/': typeof PublicIndexRoute
+  '/(admin)/admin/': typeof adminAdminIndexRoute
   '/_public/analysis/': typeof PublicAnalysisIndexRoute
   '/_public/watchlists/': typeof PublicWatchlistsIndexRoute
   '/_public/stocks/$market/$ticker': typeof PublicStocksMarketTickerRoute
@@ -138,6 +155,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/profile'
     | '/survey'
+    | '/admin'
     | '/sign-in'
     | '/401'
     | '/403'
@@ -145,6 +163,7 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/'
+    | '/admin/'
     | '/analysis'
     | '/watchlists'
     | '/stocks/$market/$ticker'
@@ -159,6 +178,7 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/'
+    | '/admin'
     | '/analysis'
     | '/watchlists'
     | '/stocks/$market/$ticker'
@@ -167,6 +187,7 @@ export interface FileRouteTypes {
     | '/_public'
     | '/profile'
     | '/survey'
+    | '/(admin)/admin'
     | '/(auth)/sign-in'
     | '/(errors)/401'
     | '/(errors)/403'
@@ -174,6 +195,7 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_public/'
+    | '/(admin)/admin/'
     | '/_public/analysis/'
     | '/_public/watchlists/'
     | '/_public/stocks/$market/$ticker'
@@ -183,6 +205,7 @@ export interface RootRouteChildren {
   PublicRouteRoute: typeof PublicRouteRouteWithChildren
   ProfileRoute: typeof ProfileRoute
   SurveyRoute: typeof SurveyRoute
+  adminAdminRoute: typeof adminAdminRouteWithChildren
   authSignInRoute: typeof authSignInRoute
   errors401Route: typeof errors401Route
   errors403Route: typeof errors403Route
@@ -263,6 +286,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(admin)/admin': {
+      id: '/(admin)/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof adminAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_public/watchlists/': {
       id: '/_public/watchlists/'
       path: '/watchlists'
@@ -276,6 +306,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/analysis'
       preLoaderRoute: typeof PublicAnalysisIndexRouteImport
       parentRoute: typeof PublicRouteRoute
+    }
+    '/(admin)/admin/': {
+      id: '/(admin)/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof adminAdminIndexRouteImport
+      parentRoute: typeof adminAdminRoute
     }
     '/_public/stocks/$market/$ticker': {
       id: '/_public/stocks/$market/$ticker'
@@ -305,10 +342,23 @@ const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(
   PublicRouteRouteChildren,
 )
 
+interface adminAdminRouteChildren {
+  adminAdminIndexRoute: typeof adminAdminIndexRoute
+}
+
+const adminAdminRouteChildren: adminAdminRouteChildren = {
+  adminAdminIndexRoute: adminAdminIndexRoute,
+}
+
+const adminAdminRouteWithChildren = adminAdminRoute._addFileChildren(
+  adminAdminRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   PublicRouteRoute: PublicRouteRouteWithChildren,
   ProfileRoute: ProfileRoute,
   SurveyRoute: SurveyRoute,
+  adminAdminRoute: adminAdminRouteWithChildren,
   authSignInRoute: authSignInRoute,
   errors401Route: errors401Route,
   errors403Route: errors403Route,

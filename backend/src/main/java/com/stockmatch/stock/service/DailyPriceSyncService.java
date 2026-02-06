@@ -1,5 +1,6 @@
 package com.stockmatch.stock.service;
 
+import com.stockmatch.admin.service.AdminDashboardService;
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.stock.client.ExternalDailyPriceClient;
@@ -77,6 +78,8 @@ public class DailyPriceSyncService {
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
+            AdminDashboardService.kisApiErrorCounter.incrementAndGet();
+
             log.error("Failed to sync daily price. ticker={}, error={}", security.getTicker(), e.getMessage());
             throw new BusinessException(ErrorCode.INTERNAL_ERROR);
         }
