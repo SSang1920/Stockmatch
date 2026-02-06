@@ -28,10 +28,16 @@ public class AuthController {
     @GetMapping("/callback/{provider}")
     public void callback(
             @PathVariable String provider,
-            @RequestParam("code") String code,
+            @RequestParam(value = "code", required = false) String code,
             @RequestParam(value = "state", required = false) String state,
+            @RequestParam(value = "error", required = false) String error,
             HttpServletResponse response
     ) throws IOException {
+
+        if (error != null){
+            response.sendRedirect("http://localhost:5173");
+            return;
+        }
 
         Map<String, String> tokens = authService.login(provider, code, state);
 
