@@ -2,8 +2,11 @@ package com.stockmatch.stock.service;
 
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
+import com.stockmatch.stock.cache.ChartCacheService;
 import com.stockmatch.stock.cache.PriceCacheService;
+import com.stockmatch.stock.client.ExternalMinutePriceClient;
 import com.stockmatch.stock.client.PriceClientRouter;
+import com.stockmatch.stock.client.kis.dto.MinutePriceItem;
 import com.stockmatch.stock.dto.StockPriceResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,7 +20,9 @@ import java.util.Map;
 public class StockPriceService {
 
     private final PriceCacheService priceCache;
+    private final ChartCacheService chartCache;
     private final PriceClientRouter router;
+    private final ExternalMinutePriceClient minutePriceClient;
 
     /**
      * 미국 주식 단일 시세 조회: 캐시 우선 조회 + 미스 시 외부 호출
@@ -58,5 +63,12 @@ public class StockPriceService {
                     return fetched;
                 }
         );
+    }
+
+    /**
+     * 분봉 차트 조회
+     */
+    public List<MinutePriceItem> getMinuteChart(String ticker) {
+        return chartCache.getOrLoad(ticker, () -> minutePriceClient.getMinutePrices(ticker));
     }
 }

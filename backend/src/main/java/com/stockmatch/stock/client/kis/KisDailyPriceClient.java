@@ -307,6 +307,7 @@ public class KisDailyPriceClient extends AbstractKisClient implements ExternalDa
         return switch (exchange) {
             case NASDAQ -> "NAS";
             case NYSE -> "NYS";
+            case AMEX -> "AMS";
             default -> "NAS";
         };
     }
