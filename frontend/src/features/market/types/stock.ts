@@ -28,4 +28,17 @@ export interface StockChartItem {
     high: number;
     low: number;
     close: number;
+    volume: number;
+    change: number;
+    changeRate: number;
+}
+
+// 분봉 차트 데이터
+export interface MinuteChartItem {
+    dateTime: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
 }

@@ -10,9 +10,10 @@ export function StockInfoGrid({ data, rate, currency }: StockInfoGridProps) {
     const format = (val: number) => {
         if (!val) return '-';
         return new Intl.NumberFormat(currency === 'KRW' ? 'ko-KR' : 'en-US', {
-            style: currency === 'USD' ? 'currency' : undefined,
+            style: currency === 'USD' ? 'currency' : 'decimal',
             currency: 'USD',
-            minimumFractionDigits: currency === 'KRW' ? 0 : 2
+            minimumFractionDigits: currency === 'KRW' ? 0 : 2,
+            maximumFractionDigits: currency === 'KRW' ? 0 : 2
         }).format(val) + (currency === 'KRW' ? '원' : '');
     };
 

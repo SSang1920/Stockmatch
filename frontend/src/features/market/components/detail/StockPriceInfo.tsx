@@ -20,17 +20,17 @@ export function StockPriceInfo({
     // 가격 포맷
     const formatVal = (val: number) => {
         return new Intl.NumberFormat(currency === 'KRW' ? 'ko-KR' : 'en-US', {
-            style: currency === 'KRW' ? undefined : 'currency',
-            currency: currency,
-            minimumFractionDigits: currency === 'KRW' ? 0 : 2
-        }).format(val);
+            style: currency === 'KRW' ? 'decimal' : 'currency',
+            currency: 'USD',
+            minimumFractionDigits: currency === 'KRW' ? 0 : 2,
+            maximumFractionDigits: currency === 'KRW' ? 0 : 2
+        }).format(val) + (currency === 'KRW' ? '원' : '');
     }
 
     return (
         <div className="flex items-end gap-4 pb-4 border-b">
             <span className={`text-4xl font-bold ${getPriceColor(changeRate)}`}>
                 {formatVal(currentPrice)}
-                {currency === 'KRW' && '원'}
             </span>
             <div className={`flex items-center gap-2 text-lg font-medium mb-1 ${getPriceColor(changeRate)}`}>
                 <span>

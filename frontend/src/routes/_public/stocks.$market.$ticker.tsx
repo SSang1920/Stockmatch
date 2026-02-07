@@ -130,6 +130,7 @@ function StockDetailPage() {
         originalData={originalData}
         currency={displayCurrency}
         rate={rate}
+        ticker={ticker}
       />
 
     </div>

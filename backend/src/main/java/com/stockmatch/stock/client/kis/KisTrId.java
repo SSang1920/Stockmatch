@@ -7,6 +7,8 @@ public abstract class KisTrId {
     public static final String KR_REAL_TIME = "FHKST01010100";
     // 국내주식 기간별 시세 (일봉)
     public static final String KR_DAILY_PRICE = "FHKST03010100";
+    // 국내주식 일별 분봉 시세
+    public static final String KR_MINUTE_PRICE = "FHKST03010230";
     // 국내주식 현재지수
     public static final String KR_INDEX = "FHPUP02100000";
     // 국내주식 거래량 순위
@@ -19,6 +21,8 @@ public abstract class KisTrId {
     public static final String US_REAL_TIME = "HHDFS76200200";
     // 해외주식 기간별 시세 (일봉)
     public static final String US_DAILY_PRICE = "HHDFS76240000";
+    // 해외주식 일별 분봉 시세
+    public static final String US_MINUTE_PRICE = "HHDFS76950200";
     // 해외주식 현재지수
     public static final String US_INDEX = "FHKST03030100";
     // 해외주식 거래량 순위
