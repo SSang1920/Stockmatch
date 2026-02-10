@@ -15,24 +15,5 @@ public interface FxRateService {
      */
     BigDecimal getLatestUsdToKrwRate(LocalDate date);
 
-    /**
-     * 오늘 기준 환율 간편 조회
-     */
-    default BigDecimal getTodayUsdToKrwRate() {
-        return getUsdToKrwRate(LocalDate.now());
-    }
-
-    /**
-     * 금액 변환: USD -> KRW
-     * @param usdAmount
-     * @param date
-     * @return
-     */
-    default BigDecimal convertUsdToKrw(BigDecimal usdAmount, LocalDate date) {
-        if (usdAmount == null) {
-            return null;
-        }
-        BigDecimal rate = getUsdToKrwRate(date);
-        return  usdAmount.multiply(rate);
-    }
+    void fetchAndSaveExchangeRateTrend();
 }

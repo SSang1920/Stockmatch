@@ -29,7 +29,20 @@ export const Route = createRootRouteWithContext<{
         <NavigationProgress />
 
         <Outlet context={{ user }} />
-        <Toaster duration={5000} />
+        <Toaster
+          position="top-center"
+          duration={3000}
+          toastOptions={{
+            style: {
+              background: '#333333',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '16px',
+              fontSize: '15px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            },
+          }}
+        />
         {import.meta.env.MODE === 'development' && (
           <>
             <ReactQueryDevtools buttonPosition='bottom-left' />

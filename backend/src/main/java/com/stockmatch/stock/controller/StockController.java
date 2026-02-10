@@ -1,6 +1,7 @@
 package com.stockmatch.stock.controller;
 
 import com.stockmatch.common.api.ApiResponse;
+import com.stockmatch.stock.client.kis.dto.MinutePriceItem;
 import com.stockmatch.stock.dto.StockPriceResponse;
 import com.stockmatch.stock.dto.StockSearchResponse;
 import com.stockmatch.stock.service.StockPriceService;
@@ -41,6 +42,12 @@ public class StockController {
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<StockSearchResponse>>> search(@RequestParam("q") String query) {
         List<StockSearchResponse> result = stockService.searchStocks(query);
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
+    @GetMapping("/{ticker}/chart/minute")
+    public ResponseEntity<ApiResponse<List<MinutePriceItem>>> getMinuteChart(@PathVariable String ticker) {
+        List<MinutePriceItem> result = stockPriceService.getMinuteChart(ticker);
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 }

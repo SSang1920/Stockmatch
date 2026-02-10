@@ -1,6 +1,7 @@
 package com.stockmatch.portfolio.dto;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 public record PortfolioValuationResponse(
@@ -12,4 +13,16 @@ public record PortfolioValuationResponse(
         BigDecimal totalPnlRate,        // 총수익률
         BigDecimal usdToKrwRate,        // USD/KRW 환율
         List<HoldingValuationResponse> holdings
-) { }
+) {
+    public static PortfolioValuationResponse empty(long portfolioId) {
+        return new PortfolioValuationResponse(
+                portfolioId,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                new ArrayList<>()
+        );
+    }
+}
