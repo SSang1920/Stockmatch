@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.Semaphore;
 
 @Slf4j
 @Component
@@ -12,11 +11,9 @@ public class KisApiHelper {
 
     private static final int MAX_RETRY = 3;             // 최대 3번 재시도
     private static final long BASE_BACKOFF_MS = 250L;   // 재시도 대기 시간
-    private static final long MIN_CALL_GAP_MS = 60L;    // API 호출 최소 간격 (초당 약 16회 제한)
+    private static final long MIN_CALL_GAP_MS = 100L;   // API 호출 최소 간격
 
-    // 세마포어: 동시에 API를 호출할 수 있는 스레드 수 제한 (과부하 방지)
-    private final Semaphore apiPermit = new Semaphore(6);
-    private volatile long lastCallAtMs = 0L; // 마지막 호출 시간
+    private volatile long lastCallAtMs = 0L;            // 마지막 호출 시간
 
     /**
      * API 호출을 안전하게 수행 (재시도 + 속도제한 적용)
@@ -54,18 +51,17 @@ public class KisApiHelper {
      */
     private void throttle() {
         try {
-            apiPermit.acquire(); // 허가권 획득
             long now = System.currentTimeMillis();
             long gap = now - lastCallAtMs;
 
+            // 마지막 호출로부터 100ms가 안 지났으면 대기
             if (gap < MIN_CALL_GAP_MS) {
-                Thread.sleep(MIN_CALL_GAP_MS - gap); // 최소 간격만큼 대기
+                Thread.sleep(MIN_CALL_GAP_MS - gap);
             }
+            // 호출 시간 갱신
             lastCallAtMs = System.currentTimeMillis();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } finally {
-            apiPermit.release(); // 허가권 반납
         }
     }
 }

@@ -2,7 +2,6 @@ package com.stockmatch.stock.client.kis;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.stockmatch.stock.client.kis.dto.MinutePriceItem;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -52,7 +51,7 @@ public class KisKorMinuteClient extends AbstractKisClient {
     /**
      * 국내 주식 분봉 조회 메인 로직
      */
-    public List<MinutePriceItem> getMinutesPrices(String ticker) {
+    public List<MinutePriceItem> getMinutePrices(String ticker) {
         // 조회할 날짜 계산
         List<LocalDate> targetDates = getTargetDates();
 
@@ -103,7 +102,7 @@ public class KisKorMinuteClient extends AbstractKisClient {
 
         // 반복 조회 (최신 -> 09:00까지)
         for (int i = 0; i < 40; i++) {
-            List<MinutePriceItem> chunk = fetchChunk(ticker, dateStr, cursorTime, baseUrl);
+            List<MinutePriceItem> chunk = fetchChunk(ticker, dateStr, cursorTime);
             if (chunk.isEmpty()) break;
 
             for (MinutePriceItem item : chunk) map.put(item.dateTime(), item);

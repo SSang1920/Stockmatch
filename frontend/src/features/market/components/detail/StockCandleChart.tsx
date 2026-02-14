@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { StockChartItem } from "../../types";
 import { ApexOptions } from "apexcharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReactApexChart from "react-apexcharts";
 import * as stockApi from '@/features/market/api'
 import { Loader2 } from "lucide-react";
+import dayjs from "@/lib/dayjs";
 
 interface StockCandleChartProps {
     originalData: StockChartItem[];
@@ -23,97 +24,159 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
     const [minuteInterval, setMinuteInterval] = useState<MinuteInterval>(1);
     const [chartData, setChartData] = useState<StockChartItem[]>([]);
     const [rawMinuteData, setRawMinuteData] = useState<StockChartItem[]>([]);
+    const [aggCache, setAggCache] = useState<Record<number, StockChartItem[]>>({});
     const [isLoading, setIsLoading] = useState(false);
+    const [isPending, startTransition] = useTransition();
 
-    // 캔들 합치기 함수
-    const aggregateCandles = (data: StockChartItem[], interval: number): StockChartItem[] => {
+    // 티커 변경 시 캐시 및 상태 초기화
+    useEffect(() => {
+        setAggCache({});
+        setRawMinuteData([]);
+        setChartData([]);
+        setPeriod('1D');
+        setMinuteInterval(1);
+    }, [ticker]);
+
+    // 날짜 파싱 헬퍼
+    const parseDateToTs = useCallback((dateInput: string | Date | number) => {
+        if (!dateInput) return 0;
+
+        let dateStr = String(dateInput);
+        if (dateStr.length === 14 && !isNaN(Number(dateStr))) {
+            // 20260214120000 -> 2026-02-14T12:00:00
+            dateStr = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}T${dateStr.slice(8, 10)}:${dateStr.slice(10, 12)}:${dateStr.slice(12, 14)}`;
+        }
+
+        // 한국 주식이면 서울 시간대, 미국이면 뉴욕 시간대로 해석
+        const tz = currency === 'KRW' ? "Asia/Seoul" : "America/New_York";
+
+        // 해당 타임존의 시간으로 해석해서 timestamp(숫자)로 변환
+        const dayjsDate = dayjs.tz(dateStr, tz);
+
+        return dayjsDate.isValid() ? dayjsDate.valueOf() : 0;
+    }, [currency]);
+
+    // 고속 캔들 생성 함수
+    const makeCandleFast = useCallback((chunk: StockChartItem[]): StockChartItem | null => {
+        if (!chunk || chunk.length === 0) return null;
+
+        // 첫 번째 유효한 데이터를 찾아 초기값으로 설정
+        let firstValidIndex = -1;
+        for (let i = 0; i < chunk.length; i++) {
+            const c = chunk[i];
+            if (c.high != null && !isNaN(c.high) && c.low != null && !isNaN(c.low)) {
+                firstValidIndex = i;
+                break;
+            }
+        }
+
+        // 유효한 데이터가 하나도 없으면 null 반환
+        if (firstValidIndex === -1) return null;
+
+        const first = chunk[0];
+        const last = chunk[chunk.length - 1];
+
+        let high = chunk[firstValidIndex].high;
+        let low = chunk[firstValidIndex].low;
+        let volume = 0;
+        const len = chunk.length;
+
+        for (let i = 0; i < len; i++) {
+            const c = chunk[i];
+            if (c.high == null || isNaN(c.high) || c.low == null || isNaN(c.low)) continue;
+
+            if (c.high > high) high = c.high;
+            if (c.low < low) low = c.low;
+            volume += (Number(c.volume) || 0);
+        }
+
+        return {
+            date: first.date,
+            open: Number(first.open),
+            high: high,
+            low: low,
+            close: Number(last.close),
+            volume: volume,
+            change: 0,
+            changeRate: 0
+        };
+    }, []);
+
+    // 캔들 합치기 로직
+    const aggregateCandles = useCallback((data: StockChartItem[], interval: number): StockChartItem[] => {
         if (interval === 1) return data;
-        if (data.length === 0) return [];
+        if (!data || data.length === 0) return [];
 
         const aggregated: StockChartItem[] = [];
         let currentChunk: StockChartItem[] = [];
         let currentBucketTime: number | null = null;
 
-        data.forEach((item) => {
-            const itemDate = new Date(item.date);
-            const timestamp = itemDate.getTime();
+        for (const item of data) {
+            const timestamp = parseDateToTs(item.date);
+            if (timestamp === 0) continue;
 
+            const itemDate = new Date(timestamp);
             const minutes = itemDate.getMinutes();
-            const roundedMinutes = Math.floor(minutes / interval) * interval;
 
-            const bucketDate = new Date(itemDate);
+            const bucketDate = new Date(timestamp);
+            const roundedMinutes = Math.floor(minutes / interval) * interval;
             bucketDate.setMinutes(roundedMinutes);
             bucketDate.getSeconds(0);
             bucketDate.setMilliseconds(0);
 
             const bucketTime = bucketDate.getTime();
 
-            // 새로운 버킷이 시작되면 기존 캔들 저장
             if (currentBucketTime !== null && bucketTime !== currentBucketTime) {
                 if (currentChunk.length > 0) {
-                    aggregated.push(makeCandle(currentChunk));
+                    const candle = makeCandleFast(currentChunk);
+                    if (candle) aggregated.push(candle);
                 }
                 currentChunk = [];
             }
 
-            // 현재 데이터 추가
             currentBucketTime = bucketTime;
             currentChunk.push(item);
-        });
+        }
 
         // 마지막 남은 캔들 처리
         if (currentChunk.length > 0) {
-            aggregated.push(makeCandle(currentChunk));
+            const candle = makeCandleFast(currentChunk);
+            if (candle) aggregated.push(candle);
         }
 
         return aggregated;
-    }
-
-    // 캔들 생성 헬퍼 함수
-    const makeCandle = (chunk: StockChartItem[]): StockChartItem => {
-        const first = chunk[0];
-        const last = chunk[chunk.length - 1];
-        const high = Math.max(...chunk.map(c => c.high));
-        const low = Math.min(...chunk.map(c => c.low));
-        const volume = chunk.reduce((sum, c) => sum + c.volume, 0);
-
-        return {
-            date: first.date,
-            open: first.open,
-            high: high,
-            low: low,
-            close: last.close,
-            volume: volume,
-            change: 0,
-            changeRate: 0
-        };
-    };
+    }, [makeCandleFast]);
 
     // 기간 필터링 로직
     useEffect(() => {
         const loadData = async () => {
             if (period === '1D') {
-                if (rawMinuteData.length > 0) {
-                    setChartData(aggregateCandles(rawMinuteData, minuteInterval));
-                    return;
-                }
+                // 이미 원본 데이터가 있으면 로딩 안함
+                if (rawMinuteData.length > 0) return;
 
                 setIsLoading(true);
                 try {
                     const response = await stockApi.getStockMinuteChart(ticker);
-                    const mappedData: StockChartItem[] = response.map(item => ({
-                        date: item.dateTime,
-                        open: item.open,
-                        high: item.high,
-                        low: item.low,
-                        close: item.close,
-                        volume: item.volume,
-                        change: 0,
-                        changeRate: 0
-                    }));
+                    const mappedData: StockChartItem[] = response
+                        .filter(item => 
+                            item.dateTime != null && 
+                            item.open != null && !isNaN(Number(item.open)) &&
+                            item.close != null && !isNaN(Number(item.close))
+                        )
+                        .map(item => ({
+                            date: item.dateTime, 
+                            open: Number(item.open),
+                            high: Number(item.high),
+                            low: Number(item.low),
+                            close: Number(item.close),
+                            volume: Number(item.volume),
+                            change: 0,
+                            changeRate: 0
+                        }));
 
                     setRawMinuteData(mappedData);
-                    setChartData(aggregateCandles(mappedData, minuteInterval));
+                    setChartData(mappedData);
+                    setAggCache(prev => ({ ...prev, 1: mappedData }));
                 } catch (e) {
                     console.error("분봉 로드 실패", e);
                     setChartData([]);
@@ -129,33 +192,60 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
                 else if (period === '1M') cutoffDate.setMonth(today.getMonth() - 1);
                 else if (period === '1Y') cutoffDate.setFullYear(today.getFullYear() - 1);
 
-                setChartData(originalData.filter(item => new Date(item.date) >= cutoffDate));
+                const filtered = originalData.filter(item => {
+                    const d = new Date(item.date);
+                    return d >= cutoffDate && !isNaN(d.getTime());
+                });
+
+                setChartData(filtered);
             }
         };
 
         loadData();
-    }, [period, originalData, ticker]);
+    }, [period, originalData, ticker, rawMinuteData.length]);
 
+    // 분봉 변경 시 캐시 활용
     useEffect(() => {
         if (period === '1D' && rawMinuteData.length > 0) {
-            setChartData(aggregateCandles(rawMinuteData, minuteInterval));
+            // 캐시에 있으면 캐시 사용
+            if (aggCache[minuteInterval]) {
+                startTransition(() => {
+                    setChartData(aggCache[minuteInterval]);
+                });
+                return;
+            }
+
+            // 캐시에 없으면 계산 후 저장
+            const aggregated = aggregateCandles(rawMinuteData, minuteInterval);
+            setAggCache(prev => ({ ...prev, [minuteInterval]: aggregated }));
+
+            startTransition(() => {
+                setChartData(aggregated);
+            });
         }
-    }, [minuteInterval, rawMinuteData, period]);
+    }, [minuteInterval, rawMinuteData, period, aggCache, aggregateCandles]);
 
     // 시리즈 데이터 생성
     const apexSeries = useMemo(() => {
+        const validData = chartData.filter(item => 
+            item.open != null && !isNaN(item.open) && isFinite(item.open) &&
+            item.high != null && !isNaN(item.high) && isFinite(item.high) &&
+            item.low != null && !isNaN(item.low) && isFinite(item.low) &&
+            item.close != null && !isNaN(item.close) && isFinite(item.close)
+        );
+
         return [{
-            data: chartData.map(item => ({
-                x: item.date,
+            data: validData.map(item => ({
+                x: parseDateToTs(item.date),
                 y: [item.open * rate, item.high * rate, item.low * rate, item.close * rate]
             }))
         }];
-    }, [chartData, rate]);
+    }, [chartData, rate, parseDateToTs]);
 
     const apexOptions: ApexOptions = useMemo(() => {
 
         // 날짜 포맷 함수
-        const formatDateTime = (val: string | number) => {
+        const formatDateTime = (val: number | string) => {
             if (!val) return '';
             const date = new Date(val);
             if (isNaN(date.getTime())) return '';
@@ -175,12 +265,40 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
 
         // 가격 포맷 함수
         const formatPrice = (val: number) => {
+            if (val === null || isNaN(val)) return '-';
             return new Intl.NumberFormat(currency === 'KRW' ? 'ko-KR' : 'en-US', {
                 style: currency === 'USD' ? 'currency' : 'decimal',
                 currency: 'USD',
                 minimumFractionDigits: currency === 'KRW' ? 0 : 2,
                 maximumFractionDigits: currency === 'KRW' ? 0 : 2
             }).format(val) + (currency === 'KRW' ? '원' : '');
+        }
+
+        // 초기 화면 범위를 "마지막 데이터가 있는 날의 개장 시간"부터로 설정
+        let xaxisMin: number | undefined = undefined;
+        let xaxisMax: number | undefined = undefined;
+
+        if (chartData.length > 0 && period === '1D') {
+            // 가장 최신 데이터의 시간을 가져옴 (오늘 장중이면 오늘, 새벽이면 어제)
+            const lastDataTs = parseDateToTs(chartData[chartData.length - 1].date);
+
+            // 그 날짜의 "장 시작 시간"을 계산
+            const marketOpen = new Date(lastDataTs);
+
+            if (currency === 'KRW') {
+                marketOpen.setHours(9, 0, 0, 0); // 한국: 09:00 개장
+            } else {
+                marketOpen.setHours(4, 0, 0, 0); // 미국: 04:00 프리마켓 시작
+            }
+            
+            xaxisMin = marketOpen.getTime();
+            xaxisMax = lastDataTs; // 현재(마지막 데이터) 시점
+
+            const firstDataTs = parseDateToTs(chartData[0].date);
+
+            if (xaxisMin > xaxisMax) {
+                xaxisMin = firstDataTs; 
+            }
         }
 
         return {
@@ -190,7 +308,8 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
                 toolbar: { show: false },
                 zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
                 animations: { enabled: false },
-                fontFamily: 'inherit'
+                fontFamily: 'inherit',
+                selection: { enabled: true, xaxis: { min: xaxisMin, max: xaxisMax } }
             },
             title: {
                 text: '',
@@ -198,10 +317,17 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
                 style: { fontSize: '16px', fontWeight: 'bold', color: '#374151' }
             },
             xaxis: {
-                type: 'category',
-                tickAmount: period === '1D' ? 6 : 8,
+                type: 'datetime',
+                min: xaxisMin,
+                max: xaxisMax,
                 labels: {
-                    formatter: (val) => formatDateTime(val),
+                    datetimeUTC: false,
+                    datetimeFormatter: {
+                        year: 'yyyy',
+                        month: 'MMM \'yy',
+                        day: 'dd MMM',
+                        hour: 'HH:mm',
+                    },
                     style: { fontSize: '11px', colors: '#6b7280' }
                 },
                 tooltip: { enabled: false },
@@ -224,7 +350,7 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
             tooltip: {
                 enabled: true,
                 shared: true,
-                custom: function ({ seriesIndex, dataPointIndex, w }) {
+                custom: function({ seriesIndex, dataPointIndex, w }) {
                     // 데이터 가져오기
                     const o = w.globals.seriesCandleO[seriesIndex][dataPointIndex];
                     const h = w.globals.seriesCandleH[seriesIndex][dataPointIndex];
@@ -232,8 +358,8 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
                     const c = w.globals.seriesCandleC[seriesIndex][dataPointIndex];
 
                     // 날짜 가져오기
-                    const categoryLabel = w.globals.categoryLabels[dataPointIndex];
-                    const dateStr = formatDateTime(categoryLabel);
+                    const timestamp = w.globals.seriesX[seriesIndex][dataPointIndex];
+                    const dateStr = formatDateTime(timestamp);
 
                     // 툴팁 HTML 생성
                     return `
@@ -247,6 +373,9 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
                             </div>
                         </div>
                     `;
+                },
+                x: {
+                    formatter: (val) => formatDateTime(val)
                 }
             },
             grid: {
@@ -259,7 +388,7 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
                 }
             }
         };
-    }, [period, rate, currency, chartData]);
+    }, [period, rate, currency, chartData, parseDateToTs]);
 
     return (
         <Card className="p-4 shadow-sm border-none bg-white">
