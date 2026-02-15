@@ -19,7 +19,7 @@ export function Sidebar() {
             <NavItem to="/watchlists" icon={<Star className="h-4 w-4" />}>
                 관심 종목
             </NavItem>
-            <NavItem to="/dashboard" icon={<LayoutDashboard className="h-4 w-4" />}>
+            <NavItem to="/portfolio" icon={<LayoutDashboard className="h-4 w-4" />}>
                 내 포트폴리오
             </NavItem>
 

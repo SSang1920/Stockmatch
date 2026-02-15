@@ -21,6 +21,7 @@ import { Route as errors401RouteImport } from './routes/(errors)/401'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
 import { Route as adminAdminRouteImport } from './routes/(admin)/admin'
 import { Route as PublicWatchlistsIndexRouteImport } from './routes/_public/watchlists/index'
+import { Route as PublicPortfolioIndexRouteImport } from './routes/_public/portfolio/index'
 import { Route as PublicAnalysisIndexRouteImport } from './routes/_public/analysis/index'
 import { Route as adminAdminIndexRouteImport } from './routes/(admin)/admin/index'
 import { Route as PublicStocksMarketTickerRouteImport } from './routes/_public/stocks.$market.$ticker'
@@ -84,6 +85,11 @@ const PublicWatchlistsIndexRoute = PublicWatchlistsIndexRouteImport.update({
   path: '/watchlists/',
   getParentRoute: () => PublicRouteRoute,
 } as any)
+const PublicPortfolioIndexRoute = PublicPortfolioIndexRouteImport.update({
+  id: '/portfolio/',
+  path: '/portfolio/',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
 const PublicAnalysisIndexRoute = PublicAnalysisIndexRouteImport.update({
   id: '/analysis/',
   path: '/analysis/',
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
   '/admin/': typeof adminAdminIndexRoute
   '/analysis': typeof PublicAnalysisIndexRoute
+  '/portfolio': typeof PublicPortfolioIndexRoute
   '/watchlists': typeof PublicWatchlistsIndexRoute
   '/stocks/$market/$ticker': typeof PublicStocksMarketTickerRoute
 }
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/admin': typeof adminAdminIndexRoute
   '/analysis': typeof PublicAnalysisIndexRoute
+  '/portfolio': typeof PublicPortfolioIndexRoute
   '/watchlists': typeof PublicWatchlistsIndexRoute
   '/stocks/$market/$ticker': typeof PublicStocksMarketTickerRoute
 }
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/_public/': typeof PublicIndexRoute
   '/(admin)/admin/': typeof adminAdminIndexRoute
   '/_public/analysis/': typeof PublicAnalysisIndexRoute
+  '/_public/portfolio/': typeof PublicPortfolioIndexRoute
   '/_public/watchlists/': typeof PublicWatchlistsIndexRoute
   '/_public/stocks/$market/$ticker': typeof PublicStocksMarketTickerRoute
 }
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin/'
     | '/analysis'
+    | '/portfolio'
     | '/watchlists'
     | '/stocks/$market/$ticker'
   fileRoutesByTo: FileRoutesByTo
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/analysis'
+    | '/portfolio'
     | '/watchlists'
     | '/stocks/$market/$ticker'
   id:
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/_public/'
     | '/(admin)/admin/'
     | '/_public/analysis/'
+    | '/_public/portfolio/'
     | '/_public/watchlists/'
     | '/_public/stocks/$market/$ticker'
   fileRoutesById: FileRoutesById
@@ -300,6 +312,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicWatchlistsIndexRouteImport
       parentRoute: typeof PublicRouteRoute
     }
+    '/_public/portfolio/': {
+      id: '/_public/portfolio/'
+      path: '/portfolio'
+      fullPath: '/portfolio'
+      preLoaderRoute: typeof PublicPortfolioIndexRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
     '/_public/analysis/': {
       id: '/_public/analysis/'
       path: '/analysis'
@@ -327,6 +346,7 @@ declare module '@tanstack/react-router' {
 interface PublicRouteRouteChildren {
   PublicIndexRoute: typeof PublicIndexRoute
   PublicAnalysisIndexRoute: typeof PublicAnalysisIndexRoute
+  PublicPortfolioIndexRoute: typeof PublicPortfolioIndexRoute
   PublicWatchlistsIndexRoute: typeof PublicWatchlistsIndexRoute
   PublicStocksMarketTickerRoute: typeof PublicStocksMarketTickerRoute
 }
@@ -334,6 +354,7 @@ interface PublicRouteRouteChildren {
 const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicIndexRoute: PublicIndexRoute,
   PublicAnalysisIndexRoute: PublicAnalysisIndexRoute,
+  PublicPortfolioIndexRoute: PublicPortfolioIndexRoute,
   PublicWatchlistsIndexRoute: PublicWatchlistsIndexRoute,
   PublicStocksMarketTickerRoute: PublicStocksMarketTickerRoute,
 }
