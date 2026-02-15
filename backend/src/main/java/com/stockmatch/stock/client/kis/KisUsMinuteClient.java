@@ -11,9 +11,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.time.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 
 @Slf4j
@@ -24,8 +25,6 @@ public class KisUsMinuteClient extends AbstractKisClient {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HHmmss");
-
-    private static final ZoneId US_ZONE = ZoneId.of("America/New_York");
 
     public KisUsMinuteClient(RestTemplate restTemplate,
                             KisTokenProvider kisTokenProvider,
@@ -40,20 +39,16 @@ public class KisUsMinuteClient extends AbstractKisClient {
     public List<MinutePriceItem> getMinutePrices(String ticker, String excd) {
         Map<LocalDateTime, MinutePriceItem> dataMap = new HashMap<>();
 
-        // 조회 기준점 설정
-        ZonedDateTime endEt = resolveEndTimeEt();
         String keyB = "";
-
-        // 기준점이 현재와 2시간 이상 차이나면 keyB 설정
-        if (Duration.between(endEt, ZonedDateTime.now(US_ZONE)).toHours() >= 2) {
-            keyB = endEt.format(DATE_FMT) + endEt.toLocalTime().format(TIME_FMT);
-        }
-
-        // 20시간 전 데이터까지 확보
-        ZonedDateTime targetStartEt = endEt.minusHours(20);
         String nextKey = "";
+        int maxLoop = 12;
 
-        for (int i = 0; i < 8; i++) {
+        // 지금까지 찾은 가장 오래된 시간을 기록하는 변수
+        long globalMinTimestamp = Long.MAX_VALUE;
+
+        log.info("[KIS-US] Start fetching for {} (MaxLoop: {})", ticker, maxLoop);
+
+        for (int i = 0; i < maxLoop; i++) {
             JsonNode body = fetchChunk(ticker, excd, nextKey, keyB);
             if (body == null) break;
 
@@ -61,35 +56,71 @@ public class KisUsMinuteClient extends AbstractKisClient {
             if (output2 == null || output2.isEmpty()) break;
 
             List<MinutePriceItem> chunk = parseOutput(output2);
+            if (!chunk.isEmpty()) {
+                MinutePriceItem first = chunk.get(0);
+                MinutePriceItem last = chunk.get(chunk.size() - 1);
+                log.info("[KIS-US] Loop {}: Fetched {} items. Range: {} ~ {}",
+                        i, chunk.size(), last.dateTime(), first.dateTime());
+            }
+
             for (MinutePriceItem item : chunk) dataMap.put(item.dateTime(), item);
 
-            LocalDateTime oldest = dataMap.keySet().stream().min(LocalDateTime::compareTo).orElse(null);
-            if (oldest != null && oldest.atZone(US_ZONE).isBefore(targetStartEt)) break;
+            String minDateTimeStr = null;
+            long currentChunkMin = Long.MAX_VALUE;
 
-            String hasNext = body.path("output1").path("next").asText();
-            if (!"1".equals(hasNext)) break;
+            for (JsonNode node : output2) {
+                String d = node.path("kymd").asText();
+                String t = node.path("khms").asText();
+                if (d.isBlank() || t.isBlank()) continue;
 
-            JsonNode last = output2.get(output2.size() - 1);
-            keyB = last.path("kymd").asText() + String.format("%06d", last.path("khms").asInt());
+                // 시간 포맷 보정 (93000 -> 093000)
+                if (t.length() == 5) t = "0" + t;
+
+                long val = Long.parseLong(d + t);
+
+                // 가장 작은 값 갱신
+                if (val < currentChunkMin) {
+                    currentChunkMin = val;
+                    minDateTimeStr = d + t;
+                }
+            }
+
+            // 유효한 날짜가 없으면 중단
+            if (minDateTimeStr == null) {
+                break;
+            }
+
+            // 만약 이번에 찾은 최저 시간이, 이전보다 미래거나 같으면 API 오류
+            if (currentChunkMin >= globalMinTimestamp) {
+                log.warn("[KIS-US] Loop {}: Time stuck or jumped forward! (Last: {}, Curr: {}). Stopping to prevent infinite loop.",
+                        i, globalMinTimestamp, currentChunkMin);
+                break; // 무한루프 방지
+            }
+
+            // 정상적으로 과거로 내려갔으면 KEYB 갱신
+            globalMinTimestamp = currentChunkMin;
+            keyB = minDateTimeStr;
             nextKey = "1";
+
+            // 다음 페이지 존재 여부 확인
+            String hasNext = body.path("output1").path("next").asText();
+            if (!"1".equals(hasNext)) {
+                log.info("[KIS-US] Loop {}: NEXT is not 1 ({}). Stop.", i, hasNext);
+                break;
+            }
+
+            log.info("[KIS-US] Loop {}: Fetched {} items. Next KEYB: {}", i, chunk.size(), keyB);
         }
 
         List<MinutePriceItem> result = new ArrayList<>(dataMap.values());
         result.sort(Comparator.comparing(MinutePriceItem::dateTime));
 
-        return result;
-    }
+        if (!result.isEmpty()) {
+            log.info("[KIS-US] Done. Total: {} items. Range: {} ~ {}",
+                    result.size(), result.get(0).dateTime(), result.get(result.size()-1).dateTime());
+        }
 
-    // 미국 시간 기준 종료 시점 계산
-    private ZonedDateTime resolveEndTimeEt() {
-        ZonedDateTime now = ZonedDateTime.now(US_ZONE);
-        if (now.getDayOfWeek() == DayOfWeek.SATURDAY || now.getDayOfWeek() == DayOfWeek.SUNDAY) {
-            return now.with(TemporalAdjusters.previous(DayOfWeek.FRIDAY)).with(LocalTime.of(20, 0));
-        }
-        if (now.toLocalTime().isBefore(LocalTime.of(4, 0))) {
-            return now.minusDays(1).with(LocalTime.of(20, 0));
-        }
-        return now;
+        return result;
     }
 
     private JsonNode fetchChunk(String ticker, String excd, String next, String keyB) {
