@@ -10,6 +10,7 @@ import { StockCandleChart } from '@/features/market/components/detail/StockCandl
 import { Watchlist } from '@/features/watchlist/types';
 import * as stockApi from '@/features/market/api';
 import * as watchlistApi from '@/features/watchlist/api';
+import dayjs from 'dayjs';
 
 // 라우트 정의
 export const Route = createFileRoute('/_public/stocks/$market/$ticker')({
@@ -43,22 +44,31 @@ function StockDetailPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
+
     try {
+      const hasToken = document.cookie.includes('accessToken');
+
+      const watchlistPromise = hasToken
+        ? watchlistApi.getWatchlists().catch(() => [])
+        : Promise.resolve([]);
+
       const [detailResult, chartResult, watchlistResult] = await Promise.all([
         stockApi.getStockDetail(market, ticker),
         stockApi.getStockChart(ticker),
-        watchlistApi.getWatchlists()
+        watchlistPromise
       ]);
 
       setData(detailResult);
 
-      // 주말 제거 로직
-      const filteredWeekends = chartResult.filter(item => {
-        const date = new Date(item.date);
-        const day = date.getDay();
-        return day !== 0 && day !== 6;
-      });
-      setOriginalData(filteredWeekends);
+      // 휴장일 제거
+      const cleanData = chartResult
+        .filter(item => {
+          const day =dayjs(item.date).day();
+          return item.open > 0 && day !== 0 && day!== 6;
+        })
+        .sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
+
+      setOriginalData(cleanData);
 
       setWatchlists(watchlistResult);
 
@@ -71,6 +81,9 @@ function StockDetailPage() {
 
   // 관심종목만 따로 갱신
   const refreshWatchlists = async () => {
+    const hasToken = document.cookie.includes('accessToken');
+    if (!hasToken) return;
+
     try {
       const response = await watchlistApi.getWatchlists();
       setWatchlists(response);

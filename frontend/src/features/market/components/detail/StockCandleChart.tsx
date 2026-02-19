@@ -40,17 +40,16 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
     // 날짜 파싱 헬퍼
     const parseDateToTs = useCallback((dateInput: string | Date | number) => {
         if (!dateInput) return 0;
-
         let dateStr = String(dateInput);
+
         if (dateStr.length === 14 && !isNaN(Number(dateStr))) {
             // 20260214120000 -> 2026-02-14T12:00:00
             dateStr = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}T${dateStr.slice(8, 10)}:${dateStr.slice(10, 12)}:${dateStr.slice(12, 14)}`;
         }
 
-        // 한국 주식이면 서울 시간대, 미국이면 뉴욕 시간대로 해석
+        // 한국 주식이면 서울 시간대, 미국이면 뉴욕 시간대
         const tz = currency === 'KRW' ? "Asia/Seoul" : "America/New_York";
 
-        // 해당 타임존의 시간으로 해석해서 timestamp(숫자)로 변환
         const dayjsDate = dayjs.tz(dateStr, tz);
 
         return dayjsDate.isValid() ? dayjsDate.valueOf() : 0;
@@ -193,9 +192,11 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
                 else if (period === '1Y') cutoffDate.setFullYear(today.getFullYear() - 1);
 
                 const filtered = originalData.filter(item => {
-                    const d = new Date(item.date);
-                    return d >= cutoffDate && !isNaN(d.getTime());
-                });
+                    const ts = parseDateToTs(item.date);
+                    const d = new Date(ts);
+                    return d >= cutoffDate && !isNaN(d.getTime()) && Number(item.open) > 0;
+                })
+                .sort((a, b) => parseDateToTs(a.date) - parseDateToTs(b.date));
 
                 setChartData(filtered);
             }
@@ -225,42 +226,33 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
         }
     }, [minuteInterval, rawMinuteData, period, aggCache, aggregateCandles]);
 
+    // 유효 데이터만 추출
+    const validData = useMemo(() => {
+        return chartData.filter(item =>
+            item.open != null && !isNaN(item.open) && item.open > 0 &&
+            item.close != null && !isNaN(item.close)
+        );
+    }, [chartData]);
+
     // 시리즈 데이터 생성
     const apexSeries = useMemo(() => {
-        const validData = chartData.filter(item => 
-            item.open != null && !isNaN(item.open) && isFinite(item.open) &&
-            item.high != null && !isNaN(item.high) && isFinite(item.high) &&
-            item.low != null && !isNaN(item.low) && isFinite(item.low) &&
-            item.close != null && !isNaN(item.close) && isFinite(item.close)
-        );
-
         return [{
-            data: validData.map(item => ({
-                x: parseDateToTs(item.date),
+            name: 'Price',
+            data: validData.map((item, index) => ({
+                x: period === '1D' ? parseDateToTs(item.date) : index,
                 y: [item.open * rate, item.high * rate, item.low * rate, item.close * rate]
             }))
         }];
-    }, [chartData, rate, parseDateToTs]);
+    }, [validData, rate]);
 
     const apexOptions: ApexOptions = useMemo(() => {
+        const isIntraday = period === '1D';
 
         // 날짜 포맷 함수
-        const formatDateTime = (val: number | string) => {
-            if (!val) return '';
-            const date = new Date(val);
-            if (isNaN(date.getTime())) return '';
-
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-
-            // 1D 경우: 월-일 시:분
-            if (period === '1D') {
-                const hours = String(date.getHours()).padStart(2, '0');
-                const mins = String(date.getMinutes()).padStart(2, '0');
-                return `${month}-${day} ${hours}:${mins}`;
-            }
-
-            return `${date.getFullYear()}-${month}-${day}`;
+        const formatDateTime = (ts: number) => {
+            const d = dayjs(ts);
+            if (isIntraday) return d.format('MM-DD HH:mm');
+            return d.format('YY.MM.DD');
         };
 
         // 가격 포맷 함수
@@ -278,26 +270,21 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
         let xaxisMin: number | undefined = undefined;
         let xaxisMax: number | undefined = undefined;
 
-        if (chartData.length > 0 && period === '1D') {
+        if (isIntraday && validData.length > 0) {
             // 가장 최신 데이터의 시간을 가져옴 (오늘 장중이면 오늘, 새벽이면 어제)
-            const lastDataTs = parseDateToTs(chartData[chartData.length - 1].date);
+            const lastTs = parseDateToTs(validData[validData.length - 1].date);
 
             // 그 날짜의 "장 시작 시간"을 계산
-            const marketOpen = new Date(lastDataTs);
+            const baseDate = dayjs(lastTs);
 
             if (currency === 'KRW') {
-                marketOpen.setHours(9, 0, 0, 0); // 한국: 09:00 개장
+                // 한국: 09:00 ~ 15:30
+                xaxisMin = baseDate.hour(9).minute(0).second(0).valueOf();
+                xaxisMax = baseDate.hour(15).minute(30).second(0).valueOf();
             } else {
-                marketOpen.setHours(4, 0, 0, 0); // 미국: 04:00 프리마켓 시작
-            }
-            
-            xaxisMin = marketOpen.getTime();
-            xaxisMax = lastDataTs; // 현재(마지막 데이터) 시점
-
-            const firstDataTs = parseDateToTs(chartData[0].date);
-
-            if (xaxisMin > xaxisMax) {
-                xaxisMin = firstDataTs; 
+                // 미국: 04:00 ~ 20:00 (현지시간)
+                xaxisMin = baseDate.hour(4).minute(0).second(0).valueOf();
+                xaxisMax = baseDate.hour(20).minute(0).second(0).valueOf();
             }
         }
 
@@ -317,16 +304,19 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
                 style: { fontSize: '16px', fontWeight: 'bold', color: '#374151' }
             },
             xaxis: {
-                type: 'datetime',
+                type: isIntraday ? 'datetime' : 'numeric',
                 min: xaxisMin,
                 max: xaxisMax,
+                tickAmount: 6,
                 labels: {
-                    datetimeUTC: false,
-                    datetimeFormatter: {
-                        year: 'yyyy',
-                        month: 'MMM \'yy',
-                        day: 'dd MMM',
-                        hour: 'HH:mm',
+                    formatter: (val) => {
+                        if (isIntraday) {
+                            return dayjs(val).format('MM-DD HH:mm');
+                        } else {
+                            const index = Math.floor(Number(val));
+                            const item = validData[index];
+                            return item ? formatDateTime(parseDateToTs(item.date)) : '';
+                        }
                     },
                     style: { fontSize: '11px', colors: '#6b7280' }
                 },
@@ -358,8 +348,14 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
                     const c = w.globals.seriesCandleC[seriesIndex][dataPointIndex];
 
                     // 날짜 가져오기
-                    const timestamp = w.globals.seriesX[seriesIndex][dataPointIndex];
-                    const dateStr = formatDateTime(timestamp);
+                    let dateStr = '-';
+                    if (isIntraday) {
+                        const ts = w.globals.seriesX[seriesIndex][dataPointIndex];
+                        dateStr = dayjs(ts).format('MM-DD HH:mm');
+                    } else {
+                        const item = validData[dataPointIndex];
+                        dateStr = item ? dayjs(parseDateToTs(item.date)).format('YY.MM.DD') : '-';
+                    }
 
                     // 툴팁 HTML 생성
                     return `
@@ -375,7 +371,11 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
                     `;
                 },
                 x: {
-                    formatter: (val) => formatDateTime(val)
+                    formatter: (val) => {
+                        const index = Math.floor(Number(val));
+                        const item = validData[index];
+                        return item ? formatDateTime(parseDateToTs(item.date)) : '';
+                    }
                 }
             },
             grid: {
@@ -388,7 +388,7 @@ export function StockCandleChart({ originalData, currency, rate, ticker }: Stock
                 }
             }
         };
-    }, [period, rate, currency, chartData, parseDateToTs]);
+    }, [period, rate, currency, validData, parseDateToTs]);
 
     return (
         <Card className="p-4 shadow-sm border-none bg-white">
