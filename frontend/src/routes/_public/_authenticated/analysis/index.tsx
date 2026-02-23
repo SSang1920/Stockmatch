@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { AnalysisDashboard } from '@/features/analysis/components/AnalysisDashboard';
 
 
-export const Route = createFileRoute('/_public/analysis/')({
+export const Route = createFileRoute('/_public/_authenticated/analysis/')({
   component: AnalysisPage,
 });
 

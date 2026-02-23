@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -62,8 +63,17 @@ public class HoldingService {
                     security.getCurrency() != null ? security.getCurrency() : Currency.KRW
             );
         } else {
-            // 있으면 정보 수정
-            holding.updateQuantityAndAvgPrice(request.quantity(), request.avgPrice());
+            // 추가 매수 시 평단가 및 수량 재계산
+            BigDecimal existingQty = holding.getQuantity();
+            BigDecimal existingAvg = holding.getAvgPrice();
+            BigDecimal newQty = request.quantity();
+            BigDecimal newPrice = request.avgPrice();
+
+            BigDecimal totalQty = existingQty.add(newQty);
+            BigDecimal totalCost = (existingAvg.multiply(existingQty)).add(newPrice.multiply(newQty));
+            BigDecimal newAvg = totalCost.divide(totalQty, 4, RoundingMode.HALF_UP);
+
+            holding.updateQuantityAndAvgPrice(totalQty, newAvg);
         }
 
         holdingRepository.save(holding);

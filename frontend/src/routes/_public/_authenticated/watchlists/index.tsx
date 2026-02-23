@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useUser } from '@/context/UserContext';
 
 
-export const Route = createFileRoute('/_public/watchlists/')({
+export const Route = createFileRoute('/_public/_authenticated/watchlists/')({
     component: WatchlistPage,
 });
 
