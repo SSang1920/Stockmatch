@@ -6,10 +6,10 @@ import { Loader2, Trash2 } from "lucide-react";
 
 interface HoldingsTableProps {
     holdings: HoldingItem[];
-    exchangeRate: number;
+    usdToKrwRate: number;
 }
 
-export function HoldingsTable({ holdings, exchangeRate }: HoldingsTableProps) {
+export function HoldingsTable({ holdings, usdToKrwRate }: HoldingsTableProps) {
     const { mutate: deleteHolding, isPending } = useDeleteHolding();
 
     const handleDelete = (id: number, ticker: string) => {
@@ -23,7 +23,7 @@ export function HoldingsTable({ holdings, exchangeRate }: HoldingsTableProps) {
             <CardHeader className="border-b pb-4">
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">보유 종목</CardTitle>
-                    <span className="text-xs text-gray-400">기준 환율: {exchangeRate.toLocaleString()}원/$</span>
+                    <span className="text-xs text-gray-400">기준 환율: {(usdToKrwRate || 0).toLocaleString()}원/$</span>
                 </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -41,7 +41,7 @@ export function HoldingsTable({ holdings, exchangeRate }: HoldingsTableProps) {
                         </thead>
                         <tbody className="divide-y">
                             {holdings.map((item) => {
-                                const isPlus = item.profit >= 0;
+                                const isPlus = (item.pnlAmount || 0) >= 0;
                                 const colorClass = isPlus ? "text-red-500" : "text-blue-500";
 
                                 return (
@@ -55,30 +55,30 @@ export function HoldingsTable({ holdings, exchangeRate }: HoldingsTableProps) {
                                             </div>
                                         </td>
                                         <td className="px-4 py-3 text-right">
-                                            {item.quantity.toLocaleString()}주
+                                            {(item.quantity || 0).toLocaleString()}주
                                         </td>
                                         <td className="px-4 py-3 text-right font-medium">
-                                            <div>{Math.floor(item.valuation).toLocaleString()}원</div>
+                                            <div>{Math.floor(item.value || 0).toLocaleString()}원</div>
                                             {item.currency === "USD" && (
                                                 <div className="text-xs text-gray-400">
-                                                    ${(item.currentPrice * item.quantity).toFixed(2)}
+                                                    ${((item.currentPrice || 0) * (item.quantity || 0)).toFixed(2)}
                                                 </div>
                                             )}
                                         </td>
                                         <td className={`px-4 py-3 text-right font-medium ${colorClass}`}>
                                             {isPlus ? "+" : ""}
-                                            {Math.floor(item.profit).toLocaleString()}원
+                                            {Math.floor(item.pnlAmount || 0).toLocaleString()}원
                                         </td>
                                         <td className={`px-4 py-3 text-right font-bold ${colorClass}`}>
-                                            {item.returnRate >= 0 ? "+" : ""}
-                                            {(item.returnRate * 100).toFixed(2)}%
+                                            {item.pnlRate >= 0 ? "+" : ""}
+                                            {((item.pnlRate || 0) * 100).toFixed(2)}%
                                         </td>
                                         <td className="px-4 py-3 text-right">
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
                                                 className="h-8 w-8 text-gray-400 hover:text-red-500"
-                                                onClick={() => handleDelete(item.holdingId, item.ticker)}
+                                                onClick={() => handleDelete(item.holdingId!, item.ticker)}
                                                 disabled={isPending}
                                             >
                                                 {isPending ? (

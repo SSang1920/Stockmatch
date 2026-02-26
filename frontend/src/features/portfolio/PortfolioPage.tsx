@@ -32,22 +32,22 @@ export default function PortfolioPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800">내 포트폴리오</h1>
         <span className="text-xs text-muted-foreground">
-          적용 환율: ₩{valuation.exchangeRate.toLocaleString()}
+          적용 환율: ₩{(valuation.usdToKrwRate || 0).toLocaleString()}
         </span>
       </div>
 
       {/* 요약 카드 섹션 */}
       <PortfolioSummary
-        totalAsset={valuation.totalAsset}
-        totalPurchaseAmount={valuation.totalPurchaseAmount}
-        totalProfit={valuation.totalProfit}
-        totalReturnRate={valuation.totalReturnRate}
+        totalValue={valuation.totalValue}
+        totalInvested={valuation.totalInvested}
+        totalPnlAmount={valuation.totalPnlAmount}
+        totalPnlRate={valuation.totalPnlRate}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* 왼쪽: 보유 종목 */}
         <div className="md:col-span-2">
-          <HoldingsTable holdings={valuation.holdings} exchangeRate={valuation.exchangeRate}/>
+          <HoldingsTable holdings={valuation.holdings} usdToKrwRate={valuation.usdToKrwRate}/>
         </div>
 
         {/* 오른쪽: 차트 섹션 */}

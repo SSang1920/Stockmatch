@@ -10,7 +10,6 @@ import com.stockmatch.exchangeRate.infra.BokApiClient;
 import com.stockmatch.exchangeRate.repository.ExchangeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -148,22 +147,6 @@ public class ExchangeService {
 
         if (date.isAfter(LocalDate.now())) {
             throw new BusinessException(ErrorCode.INVALID_DATE_RANGE);
-        }
-    }
-
-    /**
-     * 매일 오전 11시 30분 환율 정보를 조회하여 캐시에 저장
-     */
-    @Scheduled(cron = "0 30 11 * * MON-FRI", zone = "Asia/Seoul")
-    public void scheduleDailyExchangeRateUpdate() {
-        LocalDate today = LocalDate.now();
-        log.info("scheduled task: Warming up daily exchange rate cache for {}", today);
-        try {
-            getExchangeRate(today, FromCurrency.USD, ToCurrency.KRW);
-        } catch (BusinessException e) {
-            log.warn("Scheduled update skipped: {}", e.getMessage());
-        } catch (Exception e) {
-            log.error("Scheduled exchange rate update failed", e);
         }
     }
 }

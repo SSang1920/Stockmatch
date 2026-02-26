@@ -26,6 +26,7 @@ function StockDetailPage() {
   const [watchlists, setWatchlists] = useState<Watchlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exchangeRate, setExchangeRate] = useState<number>(1400);
 
   // 설정 상태
   const [currencyMode, setCurrencyMode] = useState<'KRW' | 'USD'>(() => {
@@ -33,7 +34,6 @@ function StockDetailPage() {
     return (saved === 'KRW' || saved === 'USD') ? saved : 'USD';
   });
 
-  const exchangeRate = 1450;
   const isKrMarket = ['KOSPI', 'KOSDAQ', 'KR'].includes(market.toUpperCase());
 
   // 설정 저장
@@ -52,13 +52,19 @@ function StockDetailPage() {
         ? watchlistApi.getWatchlists().catch(() => [])
         : Promise.resolve([]);
 
-      const [detailResult, chartResult, watchlistResult] = await Promise.all([
+      const [detailResult, chartResult, watchlistResult, rateResult] = await Promise.all([
         stockApi.getStockDetail(market, ticker),
         stockApi.getStockChart(ticker),
-        watchlistPromise
+        watchlistPromise,
+        stockApi.getExchangeRate().catch((err) => {
+          console.error("환율 로드 실패, 기본값 1400원 적용", err);
+          return 1400;
+        })
       ]);
 
       setData(detailResult);
+      setWatchlists(watchlistResult);
+      setExchangeRate(rateResult);
 
       // 휴장일 제거
       const cleanData = chartResult
@@ -69,8 +75,6 @@ function StockDetailPage() {
         .sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
 
       setOriginalData(cleanData);
-
-      setWatchlists(watchlistResult);
 
     } catch (err: any) {
       setError(err.message || '정보를 불러오는데 실패했습니다.');
