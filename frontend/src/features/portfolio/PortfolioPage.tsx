@@ -1,10 +1,30 @@
+import { useState } from "react";
 import { HoldingsTable } from "./components/HoldingsTable";
 import { PortfolioSummary } from "./components/PortfolioSummary";
 import { usePortfolioValuation } from "./hooks/usePortfolio";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Plus } from "lucide-react";
+import { HoldingItem } from "./types";
+import { Button } from "@/components/ui/button";
+import { HoldingFormModal } from "./components/HoldingFormModal";
 
 export default function PortfolioPage() {
   const { data: valuation, isLoading, error } = usePortfolioValuation();
+
+  // 모달 상태 관리
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [selectedHolding, setSelectedHolding] = useState<HoldingItem | null>(null);
+
+  // 종목 추가 열기
+  const handleOpenAdd = () => {
+    setSelectedHolding(null);
+    setIsFormModalOpen(true);
+  };
+
+  // 종목 수정 열기
+  const handleOpenEdit = (holding: HoldingItem) => {
+    setSelectedHolding(holding);
+    setIsFormModalOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -29,11 +49,16 @@ export default function PortfolioPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">내 포트폴리오</h1>
-        <span className="text-xs text-muted-foreground">
-          적용 환율: ₩{(valuation.usdToKrwRate || 0).toLocaleString()}
-        </span>
+      <div className="flex items-end justify-between">
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-2xl font-bold text-gray-800">내 포트폴리오</h1>
+          <span className="text-xs text-gray-500 font-medium bg-gray-100 px-2.5 py-1 rounded-md border border-gray-200">
+            적용 환율: ₩{(valuation.usdToKrwRate || 0).toLocaleString()}
+          </span>
+        </div>
+        <Button size="sm" onClick={handleOpenAdd} className="bg-gray-900 text-white hover:bg-gray-800 shadow-sm transition-all">
+          <Plus className="h-4 w-4 mr-1" /> 종목 추가
+        </Button>
       </div>
 
       {/* 요약 카드 섹션 */}
@@ -47,7 +72,11 @@ export default function PortfolioPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* 왼쪽: 보유 종목 */}
         <div className="md:col-span-2">
-          <HoldingsTable holdings={valuation.holdings} usdToKrwRate={valuation.usdToKrwRate}/>
+          <HoldingsTable 
+            holdings={valuation.holdings} 
+            usdToKrwRate={valuation.usdToKrwRate}
+            onEdit={handleOpenEdit} 
+          />
         </div>
 
         {/* 오른쪽: 차트 섹션 */}
@@ -59,6 +88,13 @@ export default function PortfolioPage() {
           </div>
         </div>
       </div>
+
+      {/* ★ 추가/수정 모달 컴포넌트 마운트 */}
+      <HoldingFormModal 
+        isOpen={isFormModalOpen} 
+        onClose={() => setIsFormModalOpen(false)} 
+        holding={selectedHolding}
+      />
     </div>
   );
 }

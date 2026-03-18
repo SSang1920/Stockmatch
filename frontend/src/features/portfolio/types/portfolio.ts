@@ -33,3 +33,9 @@ export interface PortfolioDailySummaryResponse {
     totalValue: number;
     totalPnlRate: number;
 }
+
+export interface HoldingPayload {
+    ticker: string;
+    quantity: number;
+    avgPrice: number;
+};

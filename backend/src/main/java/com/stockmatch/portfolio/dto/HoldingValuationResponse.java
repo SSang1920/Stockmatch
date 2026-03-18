@@ -4,8 +4,11 @@ import java.math.BigDecimal;
 
 public record HoldingValuationResponse(
 
+        Long holdingId,
         String ticker,              // 종목코드
         String name,                // 종목명
+        String krName,              // 한글 종목명
+        String currency,            // 통화
         BigDecimal quantity,        // 보유수량
         BigDecimal avgPrice,        // 매입단가
         BigDecimal currentPrice,    // 현재가

@@ -294,7 +294,16 @@
                 // 종목 기본 정보
                 var s = h.getSecurity();
                 var ticker = s.getTicker();
-                var name = s.getName();
+
+                String name = s.getName();
+                String krName = name;
+
+                String currency;
+                if (s.getCurrency() != null) {
+                    currency = s.getCurrency().name();
+                } else {
+                    currency = s.isKorean() ? "KRW" : "USD";
+                }
 
                 BigDecimal current = priceMap.getOrDefault(ticker, BigDecimal.ZERO)
                         .setScale(SCALE_PRICE, RoundingMode.HALF_UP);
@@ -330,8 +339,11 @@
 
                 // 종목별 상세 결과 적재
                 details.add(new HoldingValuationResponse(
+                        h.getId(),
                         ticker,
                         name,
+                        krName,
+                        currency,
                         qty,
                         avg,
                         current,
