@@ -6,6 +6,8 @@ import { AlertCircle, Loader2, Plus } from "lucide-react";
 import { HoldingItem } from "./types";
 import { Button } from "@/components/ui/button";
 import { HoldingFormModal } from "./components/HoldingFormModal";
+import { PortfolioDonutChart } from "./components/PortfolioDonutChart";
+import { PortfolioLineChart } from "./components/PortfolioLineChart";
 
 export default function PortfolioPage() {
   const { data: valuation, isLoading, error } = usePortfolioValuation();
@@ -81,15 +83,16 @@ export default function PortfolioPage() {
 
         {/* 오른쪽: 차트 섹션 */}
         <div className="space-y-4">
-          <div className="bg-white p-4 rounded-xl shadow-sm border h-64 flex flex-col items-center justify-center text-gray-400">
-            <span className="text-3xl mb-2">📊</span>
-            <p className="text-sm font-medium">자산 배분 차트</p>
-            <p className="text-xs mt-1">준비중인 기능입니다.</p>
-          </div>
+          <PortfolioDonutChart holdings={valuation.holdings} />
         </div>
       </div>
 
-      {/* ★ 추가/수정 모달 컴포넌트 마운트 */}
+      {/* 일별 자산 추이 차트 */}
+      <PortfolioLineChart />
+
+
+
+      {/* 추가/수정 모달 컴포넌트 */}
       <HoldingFormModal 
         isOpen={isFormModalOpen} 
         onClose={() => setIsFormModalOpen(false)} 

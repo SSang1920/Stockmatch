@@ -32,7 +32,7 @@ export const useAddHolding = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (payload: HoldingPayload) => portfolioApi.saveHolding(payload),
+        mutationFn: (payload: HoldingPayload) => portfolioApi.addHolding(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['portfolio', 'me'] });
         },
@@ -46,12 +46,28 @@ export const useUpdateHolding = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (payload: HoldingPayload) => portfolioApi.saveHolding(payload),
+        mutationFn: ({ holdingId, payload }: { holdingId: number; payload:HoldingPayload }) => portfolioApi.updateHolding(holdingId, payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['portfolio', 'me'] });
         },
         onError: (error: any) => {
             alert(error.response.data.message || '종목 수정 중 오류가 발생했습니다.');
         }
+    });
+};
+
+export const useDailyHistory = () => {
+    return useQuery({
+        queryKey: ['portfolio', 'me', 'dailyHistory'],
+        queryFn: () => {
+            const today = new Date();
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+
+            const to = today.toISOString().split('T')[0];
+            const from = thirtyDaysAgo.toISOString().split('T')[0];
+
+            return portfolioApi.getDailyHistory(from, to);
+        },
     });
 };

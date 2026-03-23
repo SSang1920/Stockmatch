@@ -1,7 +1,6 @@
 import axios from "@/lib/axios"
 import { ApiResponse } from "@/types/common"
-import { HoldingItem, PortfolioDailySummaryResponse, PortfolioValuationResponse } from "../types";
-import { HoldingPayload } from "../hooks/usePortfolio";
+import { HoldingItem, HoldingPayload, PortfolioDailySummaryResponse, PortfolioValuationResponse } from "../types";
 
 export const portfolioApi = {
     // 내 포트폴리오 요약 및 평가액 조회
@@ -51,14 +50,25 @@ export const portfolioApi = {
         return response.data.data;
     },
 
-    // 종목 추가 및 수정 (매수/업데이트)
-    saveHolding: async (payload: HoldingPayload) => {
-        const response = await axios.post<ApiResponse<HoldingItem>>('/portfolio/me/holdings', payload);
+    // 종목 추가
+    addHolding: async (payload: HoldingPayload) => {
+        const response = await axios.post<ApiResponse<any>>('/portfolio/me/holdings', payload);
 
         if (!response.data.success) {
-            throw new Error(response.data.error?.message || '종목 저장에 실패했습니다.');
+            throw new Error(response.data.error?.message || '종목 추가에 실패했습니다.');
+        }
+        
+        return response.data.data;
+    },
+
+    // 종목 수정
+    updateHolding: async (holdingId: number, payload: HoldingPayload) => {
+        const response = await axios.put<ApiResponse<any>>(`/portfolio/me/holdings/${holdingId}`, payload);
+
+        if (!response.data.success) {
+            throw new Error(response.data.error?.message || '종목 수정에 실패했습니다.');
         }
 
         return response.data.data;
-    },
+    }
 }

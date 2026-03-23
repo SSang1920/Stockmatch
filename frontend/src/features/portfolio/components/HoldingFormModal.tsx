@@ -52,7 +52,11 @@ export function HoldingFormModal({ isOpen, onClose, holding }: HoldingFormModalP
         };
 
         if (holding) {
-            updateHolding(payload, { onSuccess: onClose });
+            if (!holding.holdingId) {
+                alert("수정할 종목 고유 ID가 없습니다.");
+                return;
+            }
+            updateHolding({ holdingId: holding.holdingId, payload }, { onSuccess: onClose });
         } else {
             addHolding(payload, { onSuccess: onClose });
         }
@@ -116,15 +120,6 @@ export function HoldingFormModal({ isOpen, onClose, holding }: HoldingFormModalP
                                     </span>
                                 )}
                             </Label>
-                            <div className="relative">
-                                {selectedMarket && (
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span className="text-gray-500 sm:text-sm">
-                                            {isUsMarket ? "$" : "₩"}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
                             <Input
                                 id="avgPrice"
                                 type="number"
