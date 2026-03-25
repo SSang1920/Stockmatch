@@ -5,25 +5,12 @@ import { CartesianGrid, Label, Line, LineChart, ReferenceLine, ResponsiveContain
 
 export function PortfolioLineChart() {
     const { data: apiHistoryData, isLoading: historyLoading, isError: historyError } = useDailyHistory();
-    // const { data: valuationData, isLoading: valuationLoading } = usePortfolioValuation();
+    const { data: valuationData, isLoading: valuationLoading } = usePortfolioValuation();
 
-    const MOCK_HISTORY_DATA = [
-        { date: "2026-03-10", totalValue: 9800000, totalPnlRate: -0.02 }, // 손실 구간 시작
-        { date: "2026-03-11", totalValue: 9500000, totalPnlRate: -0.05 },
-        { date: "2026-03-12", totalValue: 10000000, totalPnlRate: 0.00 }, // 원금 도달
-        { date: "2026-03-13", totalValue: 10800000, totalPnlRate: 0.08 }, // 수익 구간 진입
-        { date: "2026-03-14", totalValue: 11500000, totalPnlRate: 0.15 },
-        { date: "2026-03-15", totalValue: 11200000, totalPnlRate: 0.12 },
-        { date: "2026-03-16", totalValue: 11800000, totalPnlRate: 0.18 },
-        { date: "2026-03-17", totalValue: 12500000, totalPnlRate: 0.25 },
-        { date: "2026-03-18", totalValue: 12100000, totalPnlRate: 0.21 },
-        { date: "2026-03-19", totalValue: 13000000, totalPnlRate: 0.30 },
-    ];
+    const historyData = apiHistoryData;
+    const totalInvested = valuationData?.totalInvested;
 
-    const historyData = MOCK_HISTORY_DATA;
-    const totalInvested = 10000000; // 가로선을 위한 가짜 총 매수금액 (천만원)
-
-    if (historyLoading) {
+    if (historyLoading || valuationLoading) {
         return (
             <Card className="shadow-sm border-none bg-white w-full h-[350px] flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
@@ -49,8 +36,8 @@ export function PortfolioLineChart() {
                     <p className="text-blue-600 font-semibold text-lg">
                         {dataItem.totalValue.toLocaleString()}원
                     </p>
-                    <p className={`text-sm font-medium ${dataItem.totalPnlRate >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                        수익률: {(dataItem.totalPnlRate * 100).toFixed(2)}%
+                    <p className={`text-sm font-medium ${dataItem.totalRate >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                        수익률: {(dataItem.totalRate * 100).toFixed(2)}%
                     </p>
                 </div>
             );

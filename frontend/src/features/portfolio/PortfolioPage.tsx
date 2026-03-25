@@ -89,9 +89,7 @@ export default function PortfolioPage() {
 
       {/* 일별 자산 추이 차트 */}
       <PortfolioLineChart />
-
-
-
+      
       {/* 추가/수정 모달 컴포넌트 */}
       <HoldingFormModal 
         isOpen={isFormModalOpen} 

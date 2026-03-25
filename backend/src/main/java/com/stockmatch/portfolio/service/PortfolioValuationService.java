@@ -7,12 +7,14 @@
     import com.stockmatch.exchangeRate.domain.ToCurrency;
     import com.stockmatch.exchangeRate.service.FxRateService;
     import com.stockmatch.portfolio.domain.Holding;
+    import com.stockmatch.portfolio.domain.PortfolioDailySummary;
     import com.stockmatch.portfolio.domain.TradeType;
     import com.stockmatch.portfolio.domain.Transaction;
     import com.stockmatch.portfolio.dto.HoldingValuationResponse;
     import com.stockmatch.portfolio.dto.PortfolioDailySummaryResponse;
     import com.stockmatch.portfolio.dto.PortfolioValuationResponse;
     import com.stockmatch.portfolio.repository.HoldingRepository;
+    import com.stockmatch.portfolio.repository.PortfolioDailySummaryRepository;
     import com.stockmatch.portfolio.repository.PortfolioRepository;
     import com.stockmatch.portfolio.repository.TransactionRepository;
     import com.stockmatch.stock.domain.Security;
@@ -53,6 +55,7 @@
         private final FxRateService fxRateService;
         private final DailyPriceService dailyPriceService;
         private final ExchangeRateCacheService exchangeRateCacheService;
+        private final PortfolioDailySummaryRepository dailySummaryRepository;
 
         /**
          * 거래내역을 리플레이하여 from ~ to 구간의 일자별 평가 요약을 계산
@@ -370,6 +373,24 @@
                     usdToKrw,
                     details
             );
+        }
+
+        @Transactional(readOnly = true)
+        public List<PortfolioDailySummaryResponse> calculateDailyHistory(Long portfolioId, LocalDate from, LocalDate to) {
+            // DB에서 날짜 범위에 맞는 기록 조회
+            List<PortfolioDailySummary> summaries = dailySummaryRepository
+                    .findByPortfolioIdAndDateBetweenOrderByDateAsc(portfolioId, from, to);
+
+            // 엔티티를 DTO 변환
+            return summaries.stream()
+                    .map(summary -> new PortfolioDailySummaryResponse(
+                            summary.getDate(),
+                            summary.getTotalInvested(),
+                            summary.getTotalValue(),
+                            summary.getTotalPnl(),
+                            summary.getTotalRate()
+                    ))
+                    .toList();
         }
 
         /**

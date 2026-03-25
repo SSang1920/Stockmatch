@@ -64,8 +64,15 @@ export const useDailyHistory = () => {
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(today.getDate() - 30);
 
-            const to = today.toISOString().split('T')[0];
-            const from = thirtyDaysAgo.toISOString().split('T')[0];
+            const formatDate = (date: Date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            const to = formatDate(today);
+            const from = formatDate(thirtyDaysAgo);
 
             return portfolioApi.getDailyHistory(from, to);
         },

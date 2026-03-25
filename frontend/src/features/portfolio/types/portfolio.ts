@@ -31,7 +31,7 @@ export interface PortfolioValuationResponse {
 export interface PortfolioDailySummaryResponse {
     date: string;
     totalValue: number;
-    totalPnlRate: number;
+    totalRate: number;
 }
 
 export interface HoldingPayload {

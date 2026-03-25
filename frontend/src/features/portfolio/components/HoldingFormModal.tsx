@@ -21,8 +21,8 @@ export function HoldingFormModal({ isOpen, onClose, holding }: HoldingFormModalP
     const [ticker, setTicker] = useState("");
     const [selectedName, setSelectedName] = useState("");
     const [selectedMarket, setSelectedMarket] = useState("");
-    const [quantity, setQuantity] = useState<number | "">("");
-    const [avgPrice, setAvgPrice] = useState<number | "">("");
+    const [quantity, setQuantity] = useState<string>("");
+    const [avgPrice, setAvgPrice] = useState<string>("");
 
     // 모달이 열릴 때 수정 모드면 기존 데이터 세팅
     useEffect(() => {
@@ -30,8 +30,8 @@ export function HoldingFormModal({ isOpen, onClose, holding }: HoldingFormModalP
             setTicker(holding.ticker);
             setSelectedName(holding.krName || holding.name || "");
             setSelectedMarket(holding.currency === 'USD' ? 'US' : 'KR');
-            setQuantity(holding.quantity);
-            setAvgPrice(holding.avgPrice);
+            setQuantity(String(holding.quantity));
+            setAvgPrice(String(holding.avgPrice));
         } else {
             setTicker("");
             setSelectedName("");
@@ -64,6 +64,19 @@ export function HoldingFormModal({ isOpen, onClose, holding }: HoldingFormModalP
 
     const isPending = isAdding || isUpdating;
     const isUsMarket = ["NASDAQ", "NYSE", "AMEX", "US"].includes(selectedMarket.toUpperCase());
+
+    // 숫자에 콤마 찍어주는 함수
+    const addComma = (value: string | number) => {
+        if (!value) return "";
+        const parts = value.toString().split(".");
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return parts.join(".");
+    };
+
+    // 콤마를 다시 빼서 순수 숫자로 돌려주는 함수
+    const removeComma = (value: string) => {
+        return value.replace(/,/g, "");
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -104,10 +117,14 @@ export function HoldingFormModal({ isOpen, onClose, holding }: HoldingFormModalP
                             <Label htmlFor="quantity">보유 수량</Label>
                             <Input
                                 id="quantity"
-                                type="number"
-                                step="any"
-                                value={quantity}
-                                onChange={(e) => setQuantity(e.target.value ? Number(e.target.value) : "")}
+                                type="text"
+                                value={addComma(quantity)}
+                                onChange={(e) => {
+                                    const rawValue = removeComma(e.target.value);
+                                    if (/^\d*\.?\d*$/.test(rawValue)) {
+                                        setQuantity(rawValue);
+                                    }
+                                }}
                                 placeholder="예: 10"
                             />
                         </div>
@@ -122,10 +139,14 @@ export function HoldingFormModal({ isOpen, onClose, holding }: HoldingFormModalP
                             </Label>
                             <Input
                                 id="avgPrice"
-                                type="number"
-                                step="any"
-                                value={avgPrice}
-                                onChange={(e) => setAvgPrice(e.target.value ? Number(e.target.value) : "")}
+                                type="text"
+                                value={addComma(avgPrice)}
+                                onChange={(e) => {
+                                    const rawValue = removeComma(e.target.value);
+                                    if (/^\d*\.?\d*$/.test(rawValue)) {
+                                        setAvgPrice(rawValue);
+                                    }
+                                }}
                                 placeholder={isUsMarket ? "예: 150.5" : "예: 75000"}
                                 className={selectedMarket ? "pl-7" : ""}
                             />
