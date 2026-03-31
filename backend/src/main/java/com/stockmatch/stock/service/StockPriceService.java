@@ -7,10 +7,13 @@ import com.stockmatch.stock.cache.PriceCacheService;
 import com.stockmatch.stock.client.ExternalMinutePriceClient;
 import com.stockmatch.stock.client.PriceClientRouter;
 import com.stockmatch.stock.client.kis.dto.MinutePriceItem;
+import com.stockmatch.stock.domain.Security;
 import com.stockmatch.stock.dto.StockPriceResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,5 +73,38 @@ public class StockPriceService {
      */
     public List<MinutePriceItem> getMinuteChart(String ticker) {
         return chartCache.getOrLoad(ticker, () -> minutePriceClient.getMinutePrices(ticker));
+    }
+
+    /**
+     * 여러 티커를 한 번에 받아 시세 정보를 Map 반환
+     */
+    public Map<String, BigDecimal> getBulkPrices(List<Security> securities) {
+        List<String> krTickers = securities.stream()
+                .filter(Security::isKorean)
+                .map(Security::getTicker)
+                .toList();
+
+        List<String> usTickers = securities.stream()
+                .filter(s -> !s.isKorean())
+                .map(Security::getTicker)
+                .toList();
+
+        Map<String, BigDecimal> priceMap = new HashMap<>();
+
+        // 한국 주식 벌크 조회
+        if (!krTickers.isEmpty()) {
+            krTickers.forEach(ticker -> {
+                priceMap.put(ticker, getKrStockPrice(ticker).getCurrentPrice());
+            });
+        }
+
+        // 미국 주식 벌크 조회
+        if (!usTickers.isEmpty()) {
+            usTickers.forEach(ticker -> {
+                priceMap.put(ticker, getUsStockPrice(ticker).getCurrentPrice());
+            });
+        }
+
+        return priceMap;
     }
 }

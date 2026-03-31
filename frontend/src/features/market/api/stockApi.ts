@@ -1,6 +1,6 @@
 import axios from '@/lib/axios';
 import { ApiResponse } from "@/types/common";
-import { StockChartItem, StockDetailResponse, StockSearchResponse } from "../types";
+import { MinuteChartItem, StockChartItem, StockDetailResponse, StockSearchResponse } from "../types";
 
 // 주식 검색 API
 export const searchStocks = async (query: string): Promise<StockSearchResponse[]> => {
@@ -62,9 +62,23 @@ export const getStockChart = async (ticker: string): Promise<StockChartItem[]> =
         open: item.openPrice ?? item.open_price ?? item.open ?? 0,
         high: item.highPrice ?? item.high_price ?? item.high ?? 0,
         low: item.lowPrice ?? item.low_price ?? item.low?? 0,
-        close: item.closePrice ?? item.close_price ?? item.close ?? 0
+        close: item.closePrice ?? item.close_price ?? item.close ?? 0,
+        volume: item.volume ?? item.volume ?? 0,
+        change: item.change ?? 0,
+        changeRate: item.changeRate ?? item.change_rate ?? 0
     }))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+}
+
+// 분봉 차트 데이터 조회 API
+export const getStockMinuteChart = async (ticker: string): Promise<MinuteChartItem[]> => {
+    const response = await axios.get<ApiResponse<MinuteChartItem[]>>(`/stocks/${ticker}/chart/minute`);
+
+    if (!response.data.success || !response.data.data) {
+        return [];
+    }
+
+    return response.data.data;
 }
 
 // 날짜 변환 유틸 함수

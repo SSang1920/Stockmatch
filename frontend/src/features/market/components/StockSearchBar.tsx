@@ -2,8 +2,13 @@ import { useEffect, useRef, useState } from "react"
 import { StockSearchResponse } from "../types";
 import { useNavigate } from "@tanstack/react-router";
 import { searchStocks } from "../api/stockApi";
+import { on } from "node:cluster";
 
-export const StockSearchBar = () => {
+interface StockSearchBarProps {
+    onSelectStock?: (stock: StockSearchResponse) => void;
+}
+
+export const StockSearchBar = ({ onSelectStock }: StockSearchBarProps) => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<StockSearchResponse[]>([]);
     const [isOpen, setIsOpen] = useState(false);
@@ -70,13 +75,17 @@ export const StockSearchBar = () => {
     const handleSelect = (stock: StockSearchResponse) => {
         addToRecent(stock);     // 최근 검색어 저장
 
-        navigate({
-            to: '/stocks/$market/$ticker',
-            params: {
-                market: stock.market,
-                ticker: stock.ticker
-            },
-        });
+        if (onSelectStock) {
+            onSelectStock(stock);
+        } else {
+            navigate({
+                to: '/stocks/$market/$ticker',
+                params: {
+                    market: stock.market,
+                    ticker: stock.ticker
+                },
+            });            
+        }
 
         setIsOpen(false);
         setQuery('');   // 검색창 초기화

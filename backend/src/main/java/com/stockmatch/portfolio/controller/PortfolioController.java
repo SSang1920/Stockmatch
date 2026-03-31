@@ -34,11 +34,21 @@ public class PortfolioController {
     }
 
     @PostMapping("/me/holdings")
-    public ResponseEntity<ApiResponse<HoldingResponse>> addMyHolding(
+    public ResponseEntity<ApiResponse<HoldingResponse>> addHolding(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid HoldingRequest request
     ) {
-        var result = holdingService.addOrUpdateHolding(userDetails.getUser().getId(), request);
+        HoldingResponse result = holdingService.addHolding(userDetails.getUser().getId(), request);
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
+    @PutMapping("/me/holdings/{holdingId}")
+    public ResponseEntity<ApiResponse<HoldingResponse>> updateHolding(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long holdingId,
+            @RequestBody @Valid HoldingRequest request
+    ) {
+        HoldingResponse result = holdingService.updateHolding(userDetails.getUser().getId(), holdingId, request);
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 

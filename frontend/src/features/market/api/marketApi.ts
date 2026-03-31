@@ -23,3 +23,14 @@ export const fetchMarketTrends = async (): Promise<MarketTrendResponse> => {
 
     return response.data.data;
 };
+
+// 최신 환율 조회 API
+export const getExchangeRate = async () : Promise<number> => {
+    const response = await axios.get<ApiResponse<number>>('/exchange-rate/usd-krw');
+
+    if (!response.data.success) {
+        throw new Error(response.data.error?.message || '환율 조회 실패');
+    }
+
+    return response.data.data;
+};

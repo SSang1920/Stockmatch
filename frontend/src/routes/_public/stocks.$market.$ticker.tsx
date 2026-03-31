@@ -10,6 +10,7 @@ import { StockCandleChart } from '@/features/market/components/detail/StockCandl
 import { Watchlist } from '@/features/watchlist/types';
 import * as stockApi from '@/features/market/api';
 import * as watchlistApi from '@/features/watchlist/api';
+import dayjs from 'dayjs';
 
 // 라우트 정의
 export const Route = createFileRoute('/_public/stocks/$market/$ticker')({
@@ -25,6 +26,7 @@ function StockDetailPage() {
   const [watchlists, setWatchlists] = useState<Watchlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exchangeRate, setExchangeRate] = useState<number>(1400);
 
   // 설정 상태
   const [currencyMode, setCurrencyMode] = useState<'KRW' | 'USD'>(() => {
@@ -32,7 +34,6 @@ function StockDetailPage() {
     return (saved === 'KRW' || saved === 'USD') ? saved : 'USD';
   });
 
-  const exchangeRate = 1450;
   const isKrMarket = ['KOSPI', 'KOSDAQ', 'KR'].includes(market.toUpperCase());
 
   // 설정 저장
@@ -43,24 +44,37 @@ function StockDetailPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
+
     try {
-      const [detailResult, chartResult, watchlistResult] = await Promise.all([
+      const hasToken = document.cookie.includes('accessToken');
+
+      const watchlistPromise = hasToken
+        ? watchlistApi.getWatchlists().catch(() => [])
+        : Promise.resolve([]);
+
+      const [detailResult, chartResult, watchlistResult, rateResult] = await Promise.all([
         stockApi.getStockDetail(market, ticker),
         stockApi.getStockChart(ticker),
-        watchlistApi.getWatchlists()
+        watchlistPromise,
+        stockApi.getExchangeRate().catch((err) => {
+          console.error("환율 로드 실패, 기본값 1400원 적용", err);
+          return 1400;
+        })
       ]);
 
       setData(detailResult);
-
-      // 주말 제거 로직
-      const filteredWeekends = chartResult.filter(item => {
-        const date = new Date(item.date);
-        const day = date.getDay();
-        return day !== 0 && day !== 6;
-      });
-      setOriginalData(filteredWeekends);
-
       setWatchlists(watchlistResult);
+      setExchangeRate(rateResult);
+
+      // 휴장일 제거
+      const cleanData = chartResult
+        .filter(item => {
+          const day =dayjs(item.date).day();
+          return item.open > 0 && day !== 0 && day!== 6;
+        })
+        .sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
+
+      setOriginalData(cleanData);
 
     } catch (err: any) {
       setError(err.message || '정보를 불러오는데 실패했습니다.');
@@ -71,6 +85,9 @@ function StockDetailPage() {
 
   // 관심종목만 따로 갱신
   const refreshWatchlists = async () => {
+    const hasToken = document.cookie.includes('accessToken');
+    if (!hasToken) return;
+
     try {
       const response = await watchlistApi.getWatchlists();
       setWatchlists(response);
@@ -130,6 +147,7 @@ function StockDetailPage() {
         originalData={originalData}
         currency={displayCurrency}
         rate={rate}
+        ticker={ticker}
       />
 
     </div>

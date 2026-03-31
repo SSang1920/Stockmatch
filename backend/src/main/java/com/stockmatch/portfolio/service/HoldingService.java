@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -30,10 +31,10 @@ public class HoldingService {
     private final TransactionService transactionService;
 
     /**
-     * 로그인한 사용자의 포트폴리오에 보유 종목 1개 추가/수정
+     * 로그인한 사용자의 포트폴리오에 보유 종목 1개 추가
      */
     @Transactional
-    public HoldingResponse addOrUpdateHolding(Long userId, HoldingRequest request) {
+    public HoldingResponse addHolding(Long userId, HoldingRequest request) {
         // 수량 검증
         if (request.quantity() == null || request.quantity().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
@@ -62,8 +63,17 @@ public class HoldingService {
                     security.getCurrency() != null ? security.getCurrency() : Currency.KRW
             );
         } else {
-            // 있으면 정보 수정
-            holding.updateQuantityAndAvgPrice(request.quantity(), request.avgPrice());
+            // 추가 매수 시 평단가 및 수량 재계산
+            BigDecimal existingQty = holding.getQuantity();
+            BigDecimal existingAvg = holding.getAvgPrice();
+            BigDecimal newQty = request.quantity();
+            BigDecimal newPrice = request.avgPrice();
+
+            BigDecimal totalQty = existingQty.add(newQty);
+            BigDecimal totalCost = (existingAvg.multiply(existingQty)).add(newPrice.multiply(newQty));
+            BigDecimal newAvg = totalCost.divide(totalQty, 4, RoundingMode.HALF_UP);
+
+            holding.updateQuantityAndAvgPrice(totalQty, newAvg);
         }
 
         holdingRepository.save(holding);
@@ -84,6 +94,42 @@ public class HoldingService {
                 .id(holding.getId())
                 .ticker(security.getTicker())
                 .name(security.getName())
+                .quantity(holding.getQuantity())
+                .avgPrice(holding.getAvgPrice())
+                .currency(holding.getCurrency().name())
+                .build();
+    }
+
+    /**
+     * 로그인한 사용자의 포트폴리오에 보유 종목 1개 수정
+     */
+    @Transactional
+    public HoldingResponse updateHolding(Long userId, Long holdingId, HoldingRequest request) {
+        // 수량 검증
+        if (request.quantity() == null || request.quantity().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
+        // 포트폴리오 조회
+        Portfolio portfolio = portfolioRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND));
+
+        // 종목 조회
+        Holding holding = holdingRepository.findById(holdingId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.HOLDING_NOT_FOUND));
+
+        // 내 포트폴리오의 종목이 맞는지 검증
+        if (!holding.getPortfolio().getId().equals(portfolio.getId())) {
+            throw new BusinessException(ErrorCode.HOLDING_NOT_IN_PORTFOLIO);
+        }
+
+        // 업데이트
+        holding.updateQuantityAndAvgPrice(request.quantity(), request.avgPrice());
+
+        return HoldingResponse.builder()
+                .id(holding.getId())
+                .ticker(holding.getSecurity().getTicker())
+                .name(holding.getSecurity().getName())
                 .quantity(holding.getQuantity())
                 .avgPrice(holding.getAvgPrice())
                 .currency(holding.getCurrency().name())

@@ -7,12 +7,14 @@
     import com.stockmatch.exchangeRate.domain.ToCurrency;
     import com.stockmatch.exchangeRate.service.FxRateService;
     import com.stockmatch.portfolio.domain.Holding;
+    import com.stockmatch.portfolio.domain.PortfolioDailySummary;
     import com.stockmatch.portfolio.domain.TradeType;
     import com.stockmatch.portfolio.domain.Transaction;
     import com.stockmatch.portfolio.dto.HoldingValuationResponse;
     import com.stockmatch.portfolio.dto.PortfolioDailySummaryResponse;
     import com.stockmatch.portfolio.dto.PortfolioValuationResponse;
     import com.stockmatch.portfolio.repository.HoldingRepository;
+    import com.stockmatch.portfolio.repository.PortfolioDailySummaryRepository;
     import com.stockmatch.portfolio.repository.PortfolioRepository;
     import com.stockmatch.portfolio.repository.TransactionRepository;
     import com.stockmatch.stock.domain.Security;
@@ -53,6 +55,7 @@
         private final FxRateService fxRateService;
         private final DailyPriceService dailyPriceService;
         private final ExchangeRateCacheService exchangeRateCacheService;
+        private final PortfolioDailySummaryRepository dailySummaryRepository;
 
         /**
          * 거래내역을 리플레이하여 from ~ to 구간의 일자별 평가 요약을 계산
@@ -274,42 +277,43 @@
                 return PortfolioValuationResponse.empty(portfolioId);
             }
 
+            // 모든 Security 객체 추출
+            List<Security> securities = holdings.stream()
+                    .map(Holding::getSecurity)
+                    .toList();
+
+            // 한 번에 시세 조회
+            Map<String, BigDecimal> priceMap = stockPriceService.getBulkPrices(securities);
+
             LocalDate today = LocalDate.now();
-            BigDecimal usdToKrw = null;
+            BigDecimal usdToKrw = getUsdToKrwRate(today);
 
             BigDecimal totalInvested = BigDecimal.ZERO;     // 총 매입금액
             BigDecimal totalValue = BigDecimal.ZERO;        // 총 평가금액
 
             List<HoldingValuationResponse> details = new ArrayList<>();
 
-            try {
-                usdToKrw = exchangeRateCacheService.getCurrentRate(FromCurrency.USD, ToCurrency.KRW);
-            } catch (Exception e) {
-                log.warn("Redis exchange rate fetch failed", e);
-            }
-
-            if (usdToKrw == null) {
-                try {
-                    usdToKrw = fxRateService.getLatestUsdToKrwRate(today);
-                    exchangeRateCacheService.saveCurrentRate(FromCurrency.USD, ToCurrency.KRW, usdToKrw);
-                } catch (Exception e) {
-                    log.error("Failed to fetch exchange rate", e);
-                    throw new BusinessException(ErrorCode.EXCHANGE_RATE_NOT_FOUND);
-                }
-            }
-
             for (Holding h : holdings) {
                 // 종목 기본 정보
                 var s = h.getSecurity();
                 var ticker = s.getTicker();
-                var name = s.getName();
+
+                String name = s.getName();
+                String krName = name;
+
+                String currency;
+                if (s.getCurrency() != null) {
+                    currency = s.getCurrency().name();
+                } else {
+                    currency = s.isKorean() ? "KRW" : "USD";
+                }
+
+                BigDecimal current = priceMap.getOrDefault(ticker, BigDecimal.ZERO)
+                        .setScale(SCALE_PRICE, RoundingMode.HALF_UP);
 
                 // 보유 수량/평단가
                 var qty = nz(h.getQuantity());
                 var avg = nz(h.getAvgPrice());
-
-                // 현재가 조회
-                BigDecimal current = getCurrentPrice(s, ticker).setScale(SCALE_PRICE, RoundingMode.HALF_UP);
 
                 // 환율 결정
                 BigDecimal fx = BigDecimal.ONE;
@@ -338,8 +342,11 @@
 
                 // 종목별 상세 결과 적재
                 details.add(new HoldingValuationResponse(
+                        h.getId(),
                         ticker,
                         name,
+                        krName,
+                        currency,
                         qty,
                         avg,
                         current,
@@ -368,14 +375,47 @@
             );
         }
 
+        @Transactional(readOnly = true)
+        public List<PortfolioDailySummaryResponse> calculateDailyHistory(Long portfolioId, LocalDate from, LocalDate to) {
+            // DB에서 날짜 범위에 맞는 기록 조회
+            List<PortfolioDailySummary> summaries = dailySummaryRepository
+                    .findByPortfolioIdAndDateBetweenOrderByDateAsc(portfolioId, from, to);
+
+            // 엔티티를 DTO 변환
+            return summaries.stream()
+                    .map(summary -> new PortfolioDailySummaryResponse(
+                            summary.getDate(),
+                            summary.getTotalInvested(),
+                            summary.getTotalValue(),
+                            summary.getTotalPnl(),
+                            summary.getTotalRate()
+                    ))
+                    .toList();
+        }
+
         /**
-         * 시장 구분에 따라 현재가 조회
+         * 최신 USD -> KRW 환율 조회 (Redis 캐시 우선 확인)
          */
-        private BigDecimal getCurrentPrice(Security security, String ticker) {
-            var price = security.isKorean()
-                    ? stockPriceService.getKrStockPrice(ticker).getCurrentPrice()
-                    : stockPriceService.getUsStockPrice(ticker).getCurrentPrice();
-            return price;
+        private BigDecimal getUsdToKrwRate(LocalDate date) {
+            try {
+                // 캐시 확인
+                BigDecimal cachedRate = exchangeRateCacheService.getCurrentRate(FromCurrency.USD, ToCurrency.KRW);
+                if (cachedRate != null) return cachedRate;
+
+                // DB 또는 외부 API 조회
+                BigDecimal latestRate = fxRateService.getLatestUsdToKrwRate(date);
+                if (latestRate == null) {
+                    throw new BusinessException(ErrorCode.EXCHANGE_RATE_NOT_FOUND);
+                }
+
+                // 캐시 저장
+                exchangeRateCacheService.saveCurrentRate(FromCurrency.USD, ToCurrency.KRW, latestRate);
+                return latestRate;
+
+            } catch (Exception e) {
+                log.error("환율 조회 중 오류 발생", e);
+                throw new BusinessException(ErrorCode.EXCHANGE_RATE_NOT_FOUND);
+            }
         }
 
         /**

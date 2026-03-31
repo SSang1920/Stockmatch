@@ -13,6 +13,7 @@ import { Route as SurveyRouteImport } from './routes/survey'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PublicRouteRouteImport } from './routes/_public/route'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
+import { Route as PublicAuthenticatedRouteImport } from './routes/_public/_authenticated'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
 import { Route as errors404RouteImport } from './routes/(errors)/404'
@@ -20,9 +21,10 @@ import { Route as errors403RouteImport } from './routes/(errors)/403'
 import { Route as errors401RouteImport } from './routes/(errors)/401'
 import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
 import { Route as adminAdminRouteImport } from './routes/(admin)/admin'
-import { Route as PublicWatchlistsIndexRouteImport } from './routes/_public/watchlists/index'
-import { Route as PublicAnalysisIndexRouteImport } from './routes/_public/analysis/index'
 import { Route as adminAdminIndexRouteImport } from './routes/(admin)/admin/index'
+import { Route as PublicAuthenticatedWatchlistsIndexRouteImport } from './routes/_public/_authenticated/watchlists/index'
+import { Route as PublicAuthenticatedPortfolioIndexRouteImport } from './routes/_public/_authenticated/portfolio/index'
+import { Route as PublicAuthenticatedAnalysisIndexRouteImport } from './routes/_public/_authenticated/analysis/index'
 import { Route as PublicStocksMarketTickerRouteImport } from './routes/_public/stocks.$market.$ticker'
 
 const SurveyRoute = SurveyRouteImport.update({
@@ -42,6 +44,10 @@ const PublicRouteRoute = PublicRouteRouteImport.update({
 const PublicIndexRoute = PublicIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
+const PublicAuthenticatedRoute = PublicAuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => PublicRouteRoute,
 } as any)
 const errors503Route = errors503RouteImport.update({
@@ -79,21 +85,29 @@ const adminAdminRoute = adminAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PublicWatchlistsIndexRoute = PublicWatchlistsIndexRouteImport.update({
-  id: '/watchlists/',
-  path: '/watchlists/',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
-const PublicAnalysisIndexRoute = PublicAnalysisIndexRouteImport.update({
-  id: '/analysis/',
-  path: '/analysis/',
-  getParentRoute: () => PublicRouteRoute,
-} as any)
 const adminAdminIndexRoute = adminAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => adminAdminRoute,
 } as any)
+const PublicAuthenticatedWatchlistsIndexRoute =
+  PublicAuthenticatedWatchlistsIndexRouteImport.update({
+    id: '/watchlists/',
+    path: '/watchlists/',
+    getParentRoute: () => PublicAuthenticatedRoute,
+  } as any)
+const PublicAuthenticatedPortfolioIndexRoute =
+  PublicAuthenticatedPortfolioIndexRouteImport.update({
+    id: '/portfolio/',
+    path: '/portfolio/',
+    getParentRoute: () => PublicAuthenticatedRoute,
+  } as any)
+const PublicAuthenticatedAnalysisIndexRoute =
+  PublicAuthenticatedAnalysisIndexRouteImport.update({
+    id: '/analysis/',
+    path: '/analysis/',
+    getParentRoute: () => PublicAuthenticatedRoute,
+  } as any)
 const PublicStocksMarketTickerRoute =
   PublicStocksMarketTickerRouteImport.update({
     id: '/stocks/$market/$ticker',
@@ -113,9 +127,10 @@ export interface FileRoutesByFullPath {
   '/503': typeof errors503Route
   '/': typeof PublicIndexRoute
   '/admin/': typeof adminAdminIndexRoute
-  '/analysis': typeof PublicAnalysisIndexRoute
-  '/watchlists': typeof PublicWatchlistsIndexRoute
   '/stocks/$market/$ticker': typeof PublicStocksMarketTickerRoute
+  '/analysis': typeof PublicAuthenticatedAnalysisIndexRoute
+  '/portfolio': typeof PublicAuthenticatedPortfolioIndexRoute
+  '/watchlists': typeof PublicAuthenticatedWatchlistsIndexRoute
 }
 export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
@@ -128,9 +143,10 @@ export interface FileRoutesByTo {
   '/503': typeof errors503Route
   '/': typeof PublicIndexRoute
   '/admin': typeof adminAdminIndexRoute
-  '/analysis': typeof PublicAnalysisIndexRoute
-  '/watchlists': typeof PublicWatchlistsIndexRoute
   '/stocks/$market/$ticker': typeof PublicStocksMarketTickerRoute
+  '/analysis': typeof PublicAuthenticatedAnalysisIndexRoute
+  '/portfolio': typeof PublicAuthenticatedPortfolioIndexRoute
+  '/watchlists': typeof PublicAuthenticatedWatchlistsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -144,11 +160,13 @@ export interface FileRoutesById {
   '/(errors)/404': typeof errors404Route
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
+  '/_public/_authenticated': typeof PublicAuthenticatedRouteWithChildren
   '/_public/': typeof PublicIndexRoute
   '/(admin)/admin/': typeof adminAdminIndexRoute
-  '/_public/analysis/': typeof PublicAnalysisIndexRoute
-  '/_public/watchlists/': typeof PublicWatchlistsIndexRoute
   '/_public/stocks/$market/$ticker': typeof PublicStocksMarketTickerRoute
+  '/_public/_authenticated/analysis/': typeof PublicAuthenticatedAnalysisIndexRoute
+  '/_public/_authenticated/portfolio/': typeof PublicAuthenticatedPortfolioIndexRoute
+  '/_public/_authenticated/watchlists/': typeof PublicAuthenticatedWatchlistsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -164,9 +182,10 @@ export interface FileRouteTypes {
     | '/503'
     | '/'
     | '/admin/'
-    | '/analysis'
-    | '/watchlists'
     | '/stocks/$market/$ticker'
+    | '/analysis'
+    | '/portfolio'
+    | '/watchlists'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/profile'
@@ -179,9 +198,10 @@ export interface FileRouteTypes {
     | '/503'
     | '/'
     | '/admin'
-    | '/analysis'
-    | '/watchlists'
     | '/stocks/$market/$ticker'
+    | '/analysis'
+    | '/portfolio'
+    | '/watchlists'
   id:
     | '__root__'
     | '/_public'
@@ -194,11 +214,13 @@ export interface FileRouteTypes {
     | '/(errors)/404'
     | '/(errors)/500'
     | '/(errors)/503'
+    | '/_public/_authenticated'
     | '/_public/'
     | '/(admin)/admin/'
-    | '/_public/analysis/'
-    | '/_public/watchlists/'
     | '/_public/stocks/$market/$ticker'
+    | '/_public/_authenticated/analysis/'
+    | '/_public/_authenticated/portfolio/'
+    | '/_public/_authenticated/watchlists/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -242,6 +264,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof PublicIndexRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/_authenticated': {
+      id: '/_public/_authenticated'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof PublicAuthenticatedRouteImport
       parentRoute: typeof PublicRouteRoute
     }
     '/(errors)/503': {
@@ -293,26 +322,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof adminAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_public/watchlists/': {
-      id: '/_public/watchlists/'
-      path: '/watchlists'
-      fullPath: '/watchlists'
-      preLoaderRoute: typeof PublicWatchlistsIndexRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
-    '/_public/analysis/': {
-      id: '/_public/analysis/'
-      path: '/analysis'
-      fullPath: '/analysis'
-      preLoaderRoute: typeof PublicAnalysisIndexRouteImport
-      parentRoute: typeof PublicRouteRoute
-    }
     '/(admin)/admin/': {
       id: '/(admin)/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof adminAdminIndexRouteImport
       parentRoute: typeof adminAdminRoute
+    }
+    '/_public/_authenticated/watchlists/': {
+      id: '/_public/_authenticated/watchlists/'
+      path: '/watchlists'
+      fullPath: '/watchlists'
+      preLoaderRoute: typeof PublicAuthenticatedWatchlistsIndexRouteImport
+      parentRoute: typeof PublicAuthenticatedRoute
+    }
+    '/_public/_authenticated/portfolio/': {
+      id: '/_public/_authenticated/portfolio/'
+      path: '/portfolio'
+      fullPath: '/portfolio'
+      preLoaderRoute: typeof PublicAuthenticatedPortfolioIndexRouteImport
+      parentRoute: typeof PublicAuthenticatedRoute
+    }
+    '/_public/_authenticated/analysis/': {
+      id: '/_public/_authenticated/analysis/'
+      path: '/analysis'
+      fullPath: '/analysis'
+      preLoaderRoute: typeof PublicAuthenticatedAnalysisIndexRouteImport
+      parentRoute: typeof PublicAuthenticatedRoute
     }
     '/_public/stocks/$market/$ticker': {
       id: '/_public/stocks/$market/$ticker'
@@ -324,17 +360,32 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface PublicAuthenticatedRouteChildren {
+  PublicAuthenticatedAnalysisIndexRoute: typeof PublicAuthenticatedAnalysisIndexRoute
+  PublicAuthenticatedPortfolioIndexRoute: typeof PublicAuthenticatedPortfolioIndexRoute
+  PublicAuthenticatedWatchlistsIndexRoute: typeof PublicAuthenticatedWatchlistsIndexRoute
+}
+
+const PublicAuthenticatedRouteChildren: PublicAuthenticatedRouteChildren = {
+  PublicAuthenticatedAnalysisIndexRoute: PublicAuthenticatedAnalysisIndexRoute,
+  PublicAuthenticatedPortfolioIndexRoute:
+    PublicAuthenticatedPortfolioIndexRoute,
+  PublicAuthenticatedWatchlistsIndexRoute:
+    PublicAuthenticatedWatchlistsIndexRoute,
+}
+
+const PublicAuthenticatedRouteWithChildren =
+  PublicAuthenticatedRoute._addFileChildren(PublicAuthenticatedRouteChildren)
+
 interface PublicRouteRouteChildren {
+  PublicAuthenticatedRoute: typeof PublicAuthenticatedRouteWithChildren
   PublicIndexRoute: typeof PublicIndexRoute
-  PublicAnalysisIndexRoute: typeof PublicAnalysisIndexRoute
-  PublicWatchlistsIndexRoute: typeof PublicWatchlistsIndexRoute
   PublicStocksMarketTickerRoute: typeof PublicStocksMarketTickerRoute
 }
 
 const PublicRouteRouteChildren: PublicRouteRouteChildren = {
+  PublicAuthenticatedRoute: PublicAuthenticatedRouteWithChildren,
   PublicIndexRoute: PublicIndexRoute,
-  PublicAnalysisIndexRoute: PublicAnalysisIndexRoute,
-  PublicWatchlistsIndexRoute: PublicWatchlistsIndexRoute,
   PublicStocksMarketTickerRoute: PublicStocksMarketTickerRoute,
 }
 

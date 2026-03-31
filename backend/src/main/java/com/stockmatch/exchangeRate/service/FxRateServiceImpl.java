@@ -15,6 +15,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -72,6 +73,7 @@ public class FxRateServiceImpl implements FxRateService {
 
     // 5분마다 환율 정보 수집 및 저장
     @Override
+    @Transactional
     @Scheduled(cron = "0 0/5 * * * ?")
     public void fetchAndSaveExchangeRateTrend() {
         try {
@@ -79,8 +81,8 @@ public class FxRateServiceImpl implements FxRateService {
 
             StockPriceResponse response = kisUsStockClient.getUsIndexPrice(USD_KRW_TICKER, USD_KRW_NAME);
 
-            if (response.getCurrentPrice() == null) {
-                log.warn("Exchange rate is null. Skipping update.");
+            if (response == null || response.getCurrentPrice() == null || response.getCurrentPrice().compareTo(BigDecimal.ZERO) <= 0) {
+                log.warn("Exchange rate is null or zero. Skipping update to protect existing data.");
                 return;
             }
 
