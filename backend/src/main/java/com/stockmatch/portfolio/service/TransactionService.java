@@ -14,6 +14,8 @@ import com.stockmatch.portfolio.repository.TransactionRepository;
 import com.stockmatch.stock.domain.Security;
 import com.stockmatch.stock.repository.SecurityRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,16 +60,14 @@ public class TransactionService {
     /**
      * 특정 포트폴리오의 거래 내역 전체 조회
      */
-    public List<TransactionResponse> getTransactions(Long userId, Long portfolioId) {
+    public Slice<TransactionResponse> getTransactions(Long userId, Long portfolioId, Pageable pageable) {
 
         // 포트폴리오 조회
         Portfolio portfolio = findPortfolioOfUser(userId, portfolioId);
 
         return transactionRepository
-                .findByPortfolioIdOrderByTradeAtDesc(portfolio.getId())
-                .stream()
-                .map(TransactionResponse::from)
-                .toList();
+                .findByPortfolioIdOrderByTradeAtDesc(portfolio.getId(), pageable)
+                .map(TransactionResponse::from);
     }
 
     /**
@@ -161,6 +161,31 @@ public class TransactionService {
     }
 
     /**
+     * 특정 거래 내역 삭제 및 보유 종목 재계산
+     */
+    @Transactional
+    public void deleteTransaction(Long userId, Long portfolioId, Long transactionId) {
+        Portfolio portfolio = findPortfolioOfUser(userId, portfolioId);
+
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.TRANSACTION_NOT_FOUND));
+
+        // 해당 거래가 이 포트폴리오의 거래가 맞는지 검증
+        if (!transaction.getPortfolio().getId().equals(portfolioId)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        }
+
+        Security security = transaction.getSecurity();
+
+        // 거래 내역 삭제
+        transactionRepository.delete(transaction);
+        transactionRepository.flush();
+
+        // 보유 종목 재계산
+        recalculateHolding(portfolio, security);
+    }
+
+    /**
      * 포트폴리오가 해당 사용자 소유인지 검증 후 반환 메서드
      */
     private Portfolio findPortfolioOfUser(Long userId, Long portfolioId) {
@@ -239,5 +264,49 @@ public class TransactionService {
 
         // 수량 갱신
         holding.updateQuantity(newQuantity);
+    }
+
+    /**
+     * 보유 종목 재계산 및 평단가 재계산
+     */
+    private void recalculateHolding(Portfolio portfolio, Security security) {
+        List<Transaction> remainingTxs = transactionRepository.findByPortfolioAndSecurityOrderByTradeAtAsc(portfolio, security);
+
+        Holding holding = holdingRepository.findByPortfolioAndSecurity(portfolio, security).orElse(null);
+
+        // 남은 거래 내역이 없으면 보유 종목에서 삭제
+        if (remainingTxs.isEmpty()) {
+            if (holding != null) holdingRepository.delete(holding);
+            return;
+        }
+
+        // 처음부터 계산
+        BigDecimal totalQuantity = BigDecimal.ZERO;
+        BigDecimal totalCost = BigDecimal.ZERO;
+
+        for (Transaction tx : remainingTxs) {
+            if (tx.getType() == TradeType.BUY || tx.getType() == TradeType.INITIAL_BUY) {
+                totalQuantity = totalQuantity.add(tx.getQuantity());
+                totalCost = totalCost.add(tx.getPrice().multiply(tx.getQuantity())).add(defaultFee(tx.getFee()));
+            } else if (tx.getType() == TradeType.SELL) {
+                if (totalQuantity.compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal currentAvg = totalCost.divide(totalQuantity, 4, RoundingMode.HALF_UP);
+                    totalQuantity = totalQuantity.subtract(tx.getQuantity());
+                    totalCost = totalQuantity.multiply(currentAvg);
+                }
+            }
+        }
+
+        if (totalQuantity.compareTo(BigDecimal.ZERO) <= 0) {
+            if (holding != null) holdingRepository.delete(holding);
+        } else {
+            if (holding == null) {
+                holding = getOrCreateHolding(portfolio, security);
+            }
+
+            BigDecimal finalAvgPrice = totalCost.divide(totalQuantity, 4, RoundingMode.HALF_UP);
+            holding.updateQuantity(totalQuantity);
+            holding.updateAvgPrice(finalAvgPrice);
+        }
     }
 }

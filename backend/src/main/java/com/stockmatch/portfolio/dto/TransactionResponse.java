@@ -1,5 +1,6 @@
 package com.stockmatch.portfolio.dto;
 
+import com.stockmatch.portfolio.domain.Currency;
 import com.stockmatch.portfolio.domain.TradeType;
 import com.stockmatch.portfolio.domain.Transaction;
 
@@ -11,23 +12,34 @@ public record TransactionResponse(
         Long id,
         Long portfolioId,
         Long securityId,
+        String ticker,
+        String name,
+        Currency Currency,
         TradeType type,
         BigDecimal quantity,
         BigDecimal price,
         BigDecimal fee,
+        BigDecimal totalAmount,
         LocalDateTime tradeAt,
         String memo
 ) {
 
     public static TransactionResponse from(Transaction transaction) {
+        // 총 거래 금액 계산 (수량 * 단가)
+        BigDecimal total = transaction.getQuantity().multiply(transaction.getPrice());
+
         return new TransactionResponse(
                 transaction.getId(),
                 transaction.getPortfolio().getId(),
                 transaction.getSecurity().getId(),
+                transaction.getSecurity().getTicker(),
+                transaction.getSecurity().getName(),
+                transaction.getSecurity().getCurrency(),
                 transaction.getType(),
                 transaction.getQuantity(),
                 transaction.getPrice(),
                 normalizeFee(transaction.getFee()),
+                total,
                 transaction.getTradeAt(),
                 transaction.getMemo()
         );
@@ -35,7 +47,7 @@ public record TransactionResponse(
 
     private static BigDecimal normalizeFee(BigDecimal fee) {
         if (fee == null) {
-            return BigDecimal.ZERO;
+            return java.math.BigDecimal.ZERO;
         }
         return fee.stripTrailingZeros();
     }

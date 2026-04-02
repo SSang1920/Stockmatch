@@ -18,6 +18,7 @@ public class PortfolioDataCleanupScheduler {
 
     /**
      * 매월 1일 새벽 3시 자동 실행
+     * 1년 넘은 데이터 압축 작업
      */
     @Scheduled(cron = "0 0 3 1 * ?")
     @Transactional
