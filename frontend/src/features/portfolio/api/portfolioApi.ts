@@ -66,7 +66,51 @@ export const portfolioApi = {
         const response = await axios.put<ApiResponse<any>>(`/portfolio/me/holdings/${holdingId}`, payload);
 
         if (!response.data.success) {
-            throw new Error(response.data.error?.message || '종목 수정에 실패했습니다.');
+            throw new Error(response.data.error?.message || '종목 수정에 실패');
+        }
+
+        return response.data.data;
+    },
+
+    // 거래 내역 조회
+    getTransactions: async (portfolioId: number, page: number = 0, size: number = 30) => {
+        const response = await axios.get<ApiResponse<any[]>>(`/portfolio/${portfolioId}/transaction?page=${page}&size=${size}`);
+
+        if (!response.data.success) {
+            throw new Error(response.data.error?.message || '거래 내역 조회에 실패');
+        }
+
+        return response.data.data;
+    },
+
+    // 매수
+    buyTransaction: async (portfolioId: number, payload: any) => {
+        const response = await axios.post<ApiResponse<any>>(`/portfolio/${portfolioId}/transaction/buy`, payload);
+
+        if (!response.data.success) {
+            throw new Error(response.data.error?.message || ' 매수 실패');
+        }
+
+        return response.data.data;
+    },
+
+    // 매도
+    sellTransaction: async (portfolioId: number, payload: any) => {
+        const response = await axios.post<ApiResponse<any>>(`/portfolio/${portfolioId}/transaction/sell`, payload);
+
+        if (!response.data.success) {
+            throw new Error(response.data.error?.message || ' 매도 실패');
+        }
+
+        return response.data.data;
+    },
+
+    // 거래 내역 삭제
+    deleteTransaction: async (portfolioId: number, transactionId: number) => {
+        const response = await axios.delete<ApiResponse<any>>(`/portfolio/${portfolioId}/transaction/${transactionId}`);
+
+        if (!response.data.success) {
+            throw new Error(response.data.error?.message || '거래 내역 삭제 실패');
         }
 
         return response.data.data;

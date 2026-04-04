@@ -5,9 +5,9 @@ import { usePortfolioValuation } from "./hooks/usePortfolio";
 import { AlertCircle, Loader2, Plus } from "lucide-react";
 import { HoldingItem } from "./types";
 import { Button } from "@/components/ui/button";
-import { HoldingFormModal } from "./components/HoldingFormModal";
 import { PortfolioDonutChart } from "./components/PortfolioDonutChart";
 import { PortfolioLineChart } from "./components/PortfolioLineChart";
+import { UnifiedTradeModal } from "./components/UnifiedTradeModal";
 
 export default function PortfolioPage() {
   const { data: valuation, isLoading, error } = usePortfolioValuation();
@@ -91,10 +91,11 @@ export default function PortfolioPage() {
       <PortfolioLineChart />
       
       {/* 추가/수정 모달 컴포넌트 */}
-      <HoldingFormModal 
+      <UnifiedTradeModal
+        portfolioId={valuation.portfolioId}
         isOpen={isFormModalOpen} 
         onClose={() => setIsFormModalOpen(false)} 
-        holding={selectedHolding}
+        holdingToEdit={selectedHolding}
       />
     </div>
   );

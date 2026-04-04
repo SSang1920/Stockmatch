@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { portfolioApi } from "../api/portfolioApi"
 import { HoldingPayload } from "../types";
 
@@ -76,5 +76,51 @@ export const useDailyHistory = () => {
 
             return portfolioApi.getDailyHistory(from, to);
         },
+    });
+};
+
+export const useTransactionsInfinite = (portfolioId?: number) => {
+    return useInfiniteQuery({
+        queryKey: ['portfolio', portfolioId, 'transactions', 'infinite'],
+        queryFn: ({ pageParam }) => portfolioApi.getTransactions(portfolioId!, pageParam as number, 30),
+        initialPageParam: 0,
+        getNextPageParam: (lastPage: any, allPages, lastPageParam) => {
+            return lastPage.last ? undefined : (lastPageParam as number) + 1;
+        },
+        enabled: !!portfolioId,
+    });
+};
+
+export const useAddTransaction = (portfolioId?: number) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ type, payload }: { type: 'BUY' | 'SELL', payload: any }) => {
+            if (type === 'BUY') {
+                return await portfolioApi.buyTransaction(portfolioId!, payload);
+            } else {
+                return await portfolioApi.sellTransaction(portfolioId!, payload);
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId, 'transactions', 'infinite'] });
+            queryClient.invalidateQueries({ queryKey: ['portfolio', 'me'] });
+        }
+    });
+};
+
+export const useDeleteTransaction = (portfolioId?: number) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (transactionId: number) => portfolioApi.deleteTransaction(portfolioId!, transactionId),
+        onSuccess: () => {
+            alert('거래 기록이 삭제되었습니다.');
+            queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId, 'transactions', 'infinite'] });
+            queryClient.invalidateQueries({ queryKey: ['portfolio', 'me'] });
+        },
+        onError: (error: any) => {
+            alert(error.response.data.message || '삭제에 실패했습니다.');
+        }
     });
 };

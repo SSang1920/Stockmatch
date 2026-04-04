@@ -27,7 +27,7 @@ public class PortfolioSnapshotScheduler {
     /**
      * 매일 밤 23시 50분에 모든 포트폴리오의 오늘 자산 상태 기록
      */
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(cron = "0 50 23 * * ?")
     @Transactional
     public void captureDailyPortfolioSnapshots() {
         log.info("일별 포트폴리오 자산 스냅샷 기록 시작");

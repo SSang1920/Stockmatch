@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from "react"
 import { StockSearchResponse } from "../types";
 import { useNavigate } from "@tanstack/react-router";
 import { searchStocks } from "../api/stockApi";
-import { on } from "node:cluster";
 
 interface StockSearchBarProps {
     onSelectStock?: (stock: StockSearchResponse) => void;
+    hideRecent?: boolean;
 }
 
-export const StockSearchBar = ({ onSelectStock }: StockSearchBarProps) => {
+export const StockSearchBar = ({ onSelectStock, hideRecent = false }: StockSearchBarProps) => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<StockSearchResponse[]>([]);
     const [isOpen, setIsOpen] = useState(false);
@@ -130,7 +130,7 @@ export const StockSearchBar = ({ onSelectStock }: StockSearchBarProps) => {
             </div>
 
             {/* 최근 검색어 영역 */}
-            {!query && recentSearches.length > 0 && (
+            {!hideRecent && !query && recentSearches.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-2 items-center">
                     <span className="text-xs text-gray-500 mr-1">최근 검색:</span>
                     {recentSearches.map((stock) => (

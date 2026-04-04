@@ -6,11 +6,12 @@ import com.stockmatch.portfolio.dto.TransactionCreateRequest;
 import com.stockmatch.portfolio.dto.TransactionResponse;
 import com.stockmatch.portfolio.service.TransactionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,12 +21,15 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<TransactionResponse>>> getTransactions(
+    public ResponseEntity<ApiResponse<Slice<TransactionResponse>>> getTransactions(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable Long portfolioId
+            @PathVariable Long portfolioId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size
     ) {
-        List<TransactionResponse> result =
-                transactionService.getTransactions(userDetails.getUser().getId(), portfolioId);
+        Pageable pageable = PageRequest.of(page, size);
+        Slice<TransactionResponse> result =
+                transactionService.getTransactions(userDetails.getUser().getId(), portfolioId, pageable);
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
@@ -49,5 +53,15 @@ public class TransactionController {
         TransactionResponse result =
                 transactionService.sell(userDetails.getUser().getId(), portfolioId, request);
         return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
+    @DeleteMapping("/{transactionId}")
+    public ResponseEntity<ApiResponse<ApiResponse<Void>>> deleteTransaction(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long portfolioId,
+            @PathVariable Long transactionId
+    ) {
+        transactionService.deleteTransaction(userDetails.getUser().getId(), portfolioId, transactionId);
+        return ResponseEntity.ok(ApiResponse.ok(null));
     }
 }
