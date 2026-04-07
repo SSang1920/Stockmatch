@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { portfolioApi } from "../api/portfolioApi"
 import { HoldingPayload } from "../types";
+import { toast } from "sonner";
 
 export const usePortfolioValuation = () => {
     return useQuery({
@@ -22,7 +23,6 @@ export const useDeleteHolding = () => {
     return useMutation({
         mutationFn: (holidingId: number) => portfolioApi.deleteHolding(holidingId),
         onSuccess: () => {
-            // 삭제 성공 시 평가액과 보유종목 리스트를 다시 불러옴
             queryClient.invalidateQueries({ queryKey: ['portfolio', 'me'] });
         },
     });
@@ -115,12 +115,16 @@ export const useDeleteTransaction = (portfolioId?: number) => {
     return useMutation({
         mutationFn: (transactionId: number) => portfolioApi.deleteTransaction(portfolioId!, transactionId),
         onSuccess: () => {
-            alert('거래 기록이 삭제되었습니다.');
+            toast.success("삭제 완료", {
+                description: "거래 기록이 성공적으로 삭제되었습니다.",
+            });
             queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId, 'transactions', 'infinite'] });
             queryClient.invalidateQueries({ queryKey: ['portfolio', 'me'] });
         },
         onError: (error: any) => {
-            alert(error.response.data.message || '삭제에 실패했습니다.');
+            toast.error("삭제 실패", {
+                description: error.message || "삭제 중 오류가 발생했습니다.",
+            });
         }
     });
 };

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { StockSearchBar } from "@/features/market/components/StockSearchBar";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface UnifiedTradeModalProps {
     isOpen: boolean;
@@ -97,7 +98,14 @@ export function UnifiedTradeModal({ isOpen, onClose, portfolioId, holdingToEdit 
                 tradeAt: new Date().toISOString(),
                 memo: memo
             };
-            addTxMutation.mutate({ type: mode, payload }, { onSuccess: onClose });
+            addTxMutation.mutate({ type: mode, payload }, {
+                onSuccess: () => {
+                    toast.success(`${mode === 'BUY' ? '매수' : '매도'} 완료`, {
+                        description: "포트폴리오에 성공적으로 반영되었습니다."
+                    });
+                    onClose();
+                }
+            });
         }
     };
 

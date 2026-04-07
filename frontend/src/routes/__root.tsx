@@ -30,16 +30,29 @@ export const Route = createRootRouteWithContext<{
 
         <Outlet context={{ user }} />
         <Toaster
+          richColors={true}
           position="top-center"
           duration={3000}
           toastOptions={{
             style: {
-              background: '#333333',
-              color: '#ffffff',
-              border: 'none',
               borderRadius: '16px',
               fontSize: '15px',
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              border: 'none',
+            },
+            success: {
+              style: {
+                background: '#ECFDF5',
+                color: '#059669',
+                border: '1px solid #10B981',
+              },
+            },
+            error: {
+              style: {
+                background: '#FEF2F2',
+                color: '#DC2626',
+                border: '1px solid #EF4444',
+              },
             },
           }}
         />

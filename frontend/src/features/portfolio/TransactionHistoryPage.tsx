@@ -1,15 +1,17 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowDownRight, ArrowUpRight, Loader2, Plus } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Loader2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { usePortfolioValuation, useTransactionsInfinite } from "./hooks/usePortfolio";
+import { useDeleteTransaction, usePortfolioValuation, useTransactionsInfinite } from "./hooks/usePortfolio";
 import { Button } from "@/components/ui/button";
 import { StockSearchBar } from "../market/components/StockSearchBar";
 import { UnifiedTradeModal } from "./components/UnifiedTradeModal";
+import { DeleteConfirmModal } from "./components/DeleteConfirmModal";
 
 export default function TransactionHistoryPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 
     const { data: valuationData, isLoading: isValuationLoading } = usePortfolioValuation();
     const portfolioId = valuationData?.portfolioId;
@@ -21,6 +23,8 @@ export default function TransactionHistoryPage() {
         hasNextPage,
         isFetchingNextPage
     } = useTransactionsInfinite(portfolioId);
+
+    const deleteMutation = useDeleteTransaction(portfolioId);
 
     // 로딩 처리
     if (isValuationLoading || isTxLoading) {
@@ -123,7 +127,7 @@ export default function TransactionHistoryPage() {
                                         </div>
 
                                         {/* 오른쪽: 매수/매도 정보 & 금액 */}
-                                        <div className="text-right">
+                                        <div className="text-right flex items-center gap-4">
                                             <div className="flex items-center justify-end gap-2 mb-0.5">
                                                 <Badge variant={isPositiveAction ? 'destructive' : 'default'} className={isPositiveAction ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'}>
                                                     {typeLabel}
@@ -135,6 +139,14 @@ export default function TransactionHistoryPage() {
                                             <div className="text-sm text-gray-500">
                                                 {currencySymbol}{price} × {tx.quantity}주
                                             </div>
+
+                                            <button 
+                                                onClick={() => setDeleteTargetId(tx.id)}
+                                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                                                title="거래 기록 삭제"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
                                         </div>
                                     </div>
                                 );
@@ -169,6 +181,22 @@ export default function TransactionHistoryPage() {
                     onClose={() => setIsAddModalOpen(false)}
                 />
             )}
+            
+            {/* 삭제 확인 모달 마운트 */}
+            <DeleteConfirmModal
+                isOpen={deleteTargetId !== null}
+                onClose={() => setDeleteTargetId(null)}
+                onConfirm={() => {
+                    if (deleteTargetId !== null) {
+                        deleteMutation.mutate(deleteTargetId, {
+                            onSettled: () => {
+                                setDeleteTargetId(null);
+                            }
+                        });
+                    }
+                }}
+                isDeleting={deleteMutation.isPending}
+            />
         </div>
     );
 }

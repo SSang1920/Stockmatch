@@ -15,7 +15,6 @@ import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'
 import { routeTree } from './routeTree.gen'
 import './styles/index.css'
-import { SidebarProvider } from '@/components/ui/sidebar'
 import { UserProvider } from './context/UserContext'
 
 const queryClient = new QueryClient({
