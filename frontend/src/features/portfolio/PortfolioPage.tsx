@@ -8,13 +8,26 @@ import { Button } from "@/components/ui/button";
 import { PortfolioDonutChart } from "./components/PortfolioDonutChart";
 import { PortfolioLineChart } from "./components/PortfolioLineChart";
 import { UnifiedTradeModal } from "./components/UnifiedTradeModal";
+import { ProfitStatCards } from "./components/ProfitStatCards";
 
 export default function PortfolioPage() {
   const { data: valuation, isLoading, error } = usePortfolioValuation();
+  const { data: valuationData } = usePortfolioValuation();
+
+  const dummyStats = {
+    totalProfit: 1250000,
+    totalRate: 8.5,
+    monthlyProfit: 350000,
+    monthlyRate: 2.1,
+    annualProfit: -120000,
+    annualRate: -0.8,
+    realizedProfit: 450000
+  };
 
   // 모달 상태 관리
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [selectedHolding, setSelectedHolding] = useState<HoldingItem | null>(null);
+
 
   // 종목 추가 열기
   const handleOpenAdd = () => {
@@ -71,13 +84,15 @@ export default function PortfolioPage() {
         totalPnlRate={valuation.totalPnlRate}
       />
 
+      <ProfitStatCards stats={dummyStats} />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* 왼쪽: 보유 종목 */}
         <div className="md:col-span-2">
-          <HoldingsTable 
-            holdings={valuation.holdings} 
+          <HoldingsTable
+            holdings={valuation.holdings}
             usdToKrwRate={valuation.usdToKrwRate}
-            onEdit={handleOpenEdit} 
+            onEdit={handleOpenEdit}
           />
         </div>
 
@@ -89,12 +104,12 @@ export default function PortfolioPage() {
 
       {/* 일별 자산 추이 차트 */}
       <PortfolioLineChart />
-      
+
       {/* 추가/수정 모달 컴포넌트 */}
       <UnifiedTradeModal
         portfolioId={valuation.portfolioId}
-        isOpen={isFormModalOpen} 
-        onClose={() => setIsFormModalOpen(false)} 
+        isOpen={isFormModalOpen}
+        onClose={() => setIsFormModalOpen(false)}
         holdingToEdit={selectedHolding}
       />
     </div>
