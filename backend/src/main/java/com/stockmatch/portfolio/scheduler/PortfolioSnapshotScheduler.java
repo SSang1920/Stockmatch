@@ -49,6 +49,7 @@ public class PortfolioSnapshotScheduler {
                         .totalValue(currentValuation.totalValue())
                         .totalPnl(currentValuation.totalPnlAmount())
                         .totalRate(currentValuation.totalPnlRate())
+                        .realizedPnl(portfolio.getRealizedPnl())
                         .build();
 
                 dailySummaryRepository.save(dailySummary);

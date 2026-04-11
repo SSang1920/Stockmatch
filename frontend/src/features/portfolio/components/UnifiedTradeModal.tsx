@@ -7,6 +7,7 @@ import { StockSearchBar } from "@/features/market/components/StockSearchBar";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface UnifiedTradeModalProps {
     isOpen: boolean;
@@ -18,6 +19,8 @@ interface UnifiedTradeModalProps {
 type TradeMode = 'INITIAL' | 'BUY' | 'SELL';
 
 export function UnifiedTradeModal({ isOpen, onClose, portfolioId, holdingToEdit }: UnifiedTradeModalProps) {
+    const queryClient = useQueryClient();
+
     // API 훅
     const { mutate: addHolding, isPending: isAddingHolding } = useAddHolding();
     const { mutate: updateHolding, isPending: isUpdatingHolding } = useUpdateHolding();
@@ -69,6 +72,13 @@ export function UnifiedTradeModal({ isOpen, onClose, portfolioId, holdingToEdit 
         return usMarkets.includes(upperMarket) ? "$" : "₩";
     })();
 
+    // 한국 시간으로 포맷팅
+    const getKstISOString = () => {
+        const now = new Date();
+        const offset = now.getTimezoneOffset() * 60000;
+        return new Date(now.getTime() - offset).toISOString().slice(0, -1);
+    };
+
     // 폼 제출 로직
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -95,11 +105,12 @@ export function UnifiedTradeModal({ isOpen, onClose, portfolioId, holdingToEdit 
                 price: numPrice,
                 quantity: numQuantity,
                 fee: 0,
-                tradeAt: new Date().toISOString(),
+                tradeAt: getKstISOString(),
                 memo: memo
             };
             addTxMutation.mutate({ type: mode, payload }, {
                 onSuccess: () => {
+                    queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId, 'stats'] });
                     toast.success(`${mode === 'BUY' ? '매수' : '매도'} 완료`, {
                         description: "포트폴리오에 성공적으로 반영되었습니다."
                     });

@@ -1,28 +1,33 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { BarChart3, Calendar, Receipt, TrendingDown, TrendingUp, Wallet } from "lucide-react";
-import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BarChart3, CalendarDays, Clock, Receipt, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import React, { useMemo } from "react";
 
 interface StatItemProps {
     title: string;
     value: number;
     rate?: number;
     icon: React.ReactNode;
+    selector?: React.ReactNode;
 }
 
-function StatItem({ title, value, rate, icon }: StatItemProps) {
+function StatCard({ title, value, rate, icon, selector }: StatItemProps) {
     const isPositive = value >= 0;
     const colorClass = isPositive ? "text-red-500" : "text-blue-500";
     const bgClass = isPositive ? "bg-red-50" : "bg-blue-50";
 
     return (
-        <Card className="border-none shadow-sm bg-white overflow-hidden">
-            <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-500">{title}</span>
+        <Card className="border-none shadow-sm bg-white min-h-[140px] flex flex-col justify-between">
+            <CardHeader className="p-5 pb-2 flex flex-row items-center justify-between space-y-0">
+                <div className="flex items-center gap-2">
                     <div className={`p-2 rounded-lg ${bgClass} ${colorClass}`}>
                         {icon}
                     </div>
+                    <CardTitle className="text-sm font-medium text-gray-500">{title}</CardTitle>
                 </div>
+                {selector}
+            </CardHeader>
+            <CardContent className="p-5 pt-0">
                 <div className="flex flex-col">
                     <span className="text-2xl font-bold text-gray-800">
                         {isPositive ? "" : "-"}{Math.abs(value).toLocaleString()}
@@ -40,31 +45,83 @@ function StatItem({ title, value, rate, icon }: StatItemProps) {
     );
 }
 
-export function ProfitStatCards({ stats }: { stats: any }) {
+export function ProfitStatCards({ stats, userCreatedAt, selectedYear, setSelectedYear, selectedMonth, setSelectedMonth }: any) {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    const signupDate = userCreatedAt ? new Date(userCreatedAt) : new Date();
+    const signupYear = signupDate.getFullYear();
+    const signupMonth = signupDate.getMonth() + 1;
+
+    // 연도 리스트 생성
+    const availableYears = useMemo(() => {
+        const years = [];
+        for (let y = currentYear; y >= signupYear; y--) {
+            years.push(y.toString());
+        }
+        return years;
+    }, [currentYear, signupYear]);
+
+    // 월 리스트 생성
+    const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString());
+
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <StatItem
-                title="총 수익"
-                value={stats?.totalProfit || 0}
+            {/* 누적 수익 (전체 기간) */}
+            <StatCard
+                title="누적 수익"
+                value={stats?.realizedProfit ?? stats?.totalProfit ?? 0}
                 rate={stats?.totalRate}
                 icon={<Wallet className="w-4 h-4" />}
             />
-            <StatItem
-                title="월간 수익"
-                value={stats?.monthlyProfit || 0}
-                rate={stats?.monthlyRate}
-                icon={<Calendar className="w-4 h-4" />}
-            />
-            <StatItem
+
+            {/* 연간 수익 */}
+            <StatCard
                 title="연간 수익"
-                value={stats?.annualProfit || 0}
+                value={stats?.annualProfit ?? 0}
                 rate={stats?.annualRate}
                 icon={<BarChart3 className="w-4 h-4" />}
+                selector={
+                    <Select value={selectedYear} onValueChange={setSelectedYear}>
+                        <SelectTrigger className="w-[90px] h-8 text-xs border-none bg-gray-50">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableYears.map(year => (
+                                <SelectItem key={year} value={year}>{year}년</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                }
             />
-            <StatItem
-                title="실현 손익"
-                value={stats?.realizedProfit || 0}
-                icon={<Receipt className="w-4 h-4" />}
+
+            {/* 월간 수익 */}
+            <StatCard
+                title="월간 수익"
+                value={stats?.monthlyProfit ?? 0}
+                rate={stats?.monthlyRate}
+                icon={<CalendarDays className="w-4 h-4" />}
+                selector={
+                    <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                        <SelectTrigger className="w-[80px] h-8 text-xs border-none bg-gray-50">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {months.map(m => (
+                                <SelectItem key={m} value={m}>{m}월</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                }
+            />
+
+            {/* 일간 수익 */}
+            <StatCard
+                title="일간 수익"
+                value={stats?.dailyProfit ?? 0}
+                rate={stats?.dailyRate}
+                icon={<Clock className="w-4 h-4" />}
             />
         </div>
     );

@@ -22,6 +22,8 @@ export interface PortfolioValuationResponse {
     totalPnlRate: number;           // 총 수익률
     usdToKrwRate: number;           // 환율
     holdings: HoldingItem[];        // 보유 종목 리스트
+    userCreatedAt: string;          // 유저 생성일
+    realizedPnl: number;            // 누적 실현 손익
 
     dailyChange: number;            // 전일 대비 변도액
     dailyChangeRate: number;        // 전일 대비 변동률
@@ -39,3 +41,15 @@ export interface HoldingPayload {
     quantity: number;
     avgPrice: number;
 };
+
+export interface PortfolioProfitStatsResponse {
+    totalProfit: number;
+    totalRate: number;
+    annualProfit: number;
+    annualRate: number;
+    monthlyProfit: number;
+    monthlyRate: number;
+    dailyProfit: number;
+    dailyRate: number;
+    realizedProfit: number;
+}

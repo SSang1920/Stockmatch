@@ -1,5 +1,6 @@
 package com.stockmatch.portfolio.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.stockmatch.portfolio.domain.Currency;
 import com.stockmatch.portfolio.domain.TradeType;
 import com.stockmatch.portfolio.domain.Transaction;
@@ -20,6 +21,7 @@ public record TransactionResponse(
         BigDecimal price,
         BigDecimal fee,
         BigDecimal totalAmount,
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         LocalDateTime tradeAt,
         String memo
 ) {

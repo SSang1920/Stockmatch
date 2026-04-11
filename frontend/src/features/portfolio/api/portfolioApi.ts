@@ -1,6 +1,6 @@
 import axios from "@/lib/axios"
 import { ApiResponse } from "@/types/common"
-import { HoldingItem, HoldingPayload, PortfolioDailySummaryResponse, PortfolioValuationResponse } from "../types";
+import { HoldingItem, HoldingPayload, PortfolioDailySummaryResponse, PortfolioProfitStatsResponse, PortfolioValuationResponse } from "../types";
 
 export const portfolioApi = {
     // 내 포트폴리오 요약 및 평가액 조회
@@ -111,6 +111,22 @@ export const portfolioApi = {
 
         if (!response.data.success) {
             throw new Error(response.data.error?.message || '거래 내역 삭제 실패');
+        }
+
+        return response.data.data;
+    },
+
+    // 포트폴리오 수익 통계 조회 (누적, 연간, 월간, 일간)
+    getStats: async (portfolioId: number, year: string, month: string) => {
+        const response = await axios.get<ApiResponse<PortfolioProfitStatsResponse>>(
+            `/portfolio/${portfolioId}/stats`,
+            {
+                params: { year, month }
+            }
+        );
+
+        if (!response.data.success) {
+            throw new Error(response.data.error?.message || '포트폴리오 수익 통계 조회 실패');
         }
 
         return response.data.data;

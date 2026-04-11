@@ -2,13 +2,13 @@ package com.stockmatch.portfolio.service;
 
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
-import com.stockmatch.portfolio.domain.Holding;
-import com.stockmatch.portfolio.domain.Portfolio;
-import com.stockmatch.portfolio.domain.TradeType;
-import com.stockmatch.portfolio.domain.Transaction;
+import com.stockmatch.exchangeRate.service.FxRateService;
+import com.stockmatch.portfolio.domain.*;
+import com.stockmatch.portfolio.dto.PortfolioValuationResponse;
 import com.stockmatch.portfolio.dto.TransactionCreateRequest;
 import com.stockmatch.portfolio.dto.TransactionResponse;
 import com.stockmatch.portfolio.repository.HoldingRepository;
+import com.stockmatch.portfolio.repository.PortfolioDailySummaryRepository;
 import com.stockmatch.portfolio.repository.PortfolioRepository;
 import com.stockmatch.portfolio.repository.TransactionRepository;
 import com.stockmatch.stock.domain.Security;
@@ -21,7 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 
 @Service
@@ -33,6 +35,9 @@ public class TransactionService {
     private final SecurityRepository securityRepository;
     private final HoldingRepository holdingRepository;
     private final TransactionRepository transactionRepository;
+    private final PortfolioDailySummaryRepository dailySummaryRepository;
+    private final PortfolioValuationService valuationService;
+    private final FxRateService fxRateService;
 
     /**
      * 초기 보유분을 INITIAL_BUY로 기록
@@ -54,7 +59,12 @@ public class TransactionService {
                 .memo("초기 보유분 등록")
                 .build();
 
-        return transactionRepository.save(transaction);
+        Transaction savedTx = transactionRepository.save(transaction);
+
+        // 초기 보유분 등록 후 스냅샷 동기화
+        syncSnapshot(portfolio);
+
+        return savedTx;
     }
 
     /**
@@ -108,6 +118,9 @@ public class TransactionService {
         Holding holding = getOrCreateHolding(portfolio, security);
         updateHoldingOnBuy(holding, request);
 
+        // 매수 후 스냅샷 동가화
+        syncSnapshot(portfolio);
+
         return TransactionResponse.from(transaction);
     }
 
@@ -116,12 +129,9 @@ public class TransactionService {
      */
     @Transactional
     public TransactionResponse sell(Long userId, Long portfolioId, TransactionCreateRequest request) {
-        // 수량, 가격 검증
-        if (request.price() == null || request.price().compareTo(BigDecimal.ZERO) < 0) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-
-        if (request.quantity() == null || request.quantity().compareTo(BigDecimal.ZERO) <= 0) {
+        // 검증 (가격, 수량)
+        if (request.price() == null || request.price().compareTo(BigDecimal.ZERO) < 0 ||
+                request.quantity() == null || request.quantity().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
 
@@ -141,6 +151,25 @@ public class TransactionService {
             throw new BusinessException(ErrorCode.INSUFFICIENT_HOLDING_QUANTITY);
         }
 
+        // 해당 종목의 통화 기준 수익
+        BigDecimal profitInOriginalCurrency = request.price()
+                .subtract(holding.getAvgPrice())
+                .multiply(request.quantity());
+
+        BigDecimal finalProfitKrw;
+
+        if (!security.isKorean()) {
+            BigDecimal usdToKrw = fxRateService.getLatestUsdToKrwRate(LocalDate.now());
+            if (usdToKrw == null) {
+                throw new BusinessException(ErrorCode.EXCHANGE_RATE_NOT_FOUND);
+            }
+            finalProfitKrw = profitInOriginalCurrency.multiply(usdToKrw);
+        } else {
+            finalProfitKrw = profitInOriginalCurrency;
+        }
+
+        portfolio.updateRealizedPnl(finalProfitKrw.setScale(2, RoundingMode.HALF_UP));
+
         // 거래기록 dto로 변환해서 저장
         Transaction transaction = Transaction.builder()
                 .portfolio(portfolio)
@@ -156,6 +185,9 @@ public class TransactionService {
 
         // 보유 종목 수량 감소
         updateHoldingOnSell(holding, request);
+
+        // 매도 후 스냅샷 동기화
+        syncSnapshot(portfolio);
 
         return TransactionResponse.from(transaction);
     }
@@ -183,6 +215,12 @@ public class TransactionService {
 
         // 보유 종목 재계산
         recalculateHolding(portfolio, security);
+
+        // 실현 손익 전체 재계산
+        recalculateTotalRealizedPnl(portfolio);
+
+        // 삭제 후 스냅샷 동기화
+        syncSnapshot(portfolio);
     }
 
     /**
@@ -309,4 +347,67 @@ public class TransactionService {
             holding.updateAvgPrice(finalAvgPrice);
         }
     }
+
+    /**
+     * 오늘자 스냅샷을 최신 상태로 유지
+     */
+    private void syncSnapshot(Portfolio portfolio) {
+        LocalDate today = LocalDate.now();
+
+        // 현재 실시간 평가액 계산
+        PortfolioValuationResponse current = valuationService.calculate(portfolio.getId());
+
+        // 오늘 이미 기록된 스냅샷이 있는지 조회
+        PortfolioDailySummary summary = dailySummaryRepository
+                .findByPortfolioIdAndDate(portfolio.getId(), today)
+                .orElseGet(() -> PortfolioDailySummary.builder()
+                        .portfolio(portfolio)
+                        .date(today)
+                        .build());
+
+        summary.updateSnapshotValues(
+                current.totalInvested(),
+                current.totalValue(),
+                current.totalPnlAmount(),
+                current.totalPnlRate(),
+                portfolio.getRealizedPnl() // 실현 손익 포함
+        );
+
+        dailySummaryRepository.save(summary);
+    }
+
+    /**
+     * 포트폴리오의 모든 거래를 조회하여 누적 실현 손익 계산
+     */
+    private void recalculateTotalRealizedPnl(Portfolio portfolio) {
+        List<Transaction> allTxs = transactionRepository.findAllByPortfolioIdOrderByTradeAtAsc(portfolio.getId());
+
+        BigDecimal newRealizedPnl = BigDecimal.ZERO;
+        HashMap<Long, BigDecimal> avgPriceMap = new HashMap<>();
+        HashMap<Long, BigDecimal> qtyMap = new HashMap<>();
+
+        for (Transaction tx : allTxs) {
+            Long sId = tx.getSecurity().getId();
+            BigDecimal currentQty = qtyMap.getOrDefault(sId, BigDecimal.ZERO);
+            BigDecimal currentAvg = avgPriceMap.getOrDefault(sId, BigDecimal.ZERO);
+
+            if (tx.getType() == TradeType.BUY || tx.getType() == TradeType.INITIAL_BUY) {
+                BigDecimal oldTotal = currentAvg.multiply(currentQty);
+                BigDecimal newTotal = oldTotal.add(tx.getPrice().multiply(tx.getQuantity())).add(defaultFee(tx.getFee()));
+                BigDecimal newQty = currentQty.add(tx.getQuantity());
+
+                qtyMap.put(sId, newQty);
+                avgPriceMap.put(sId, newQty.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ZERO : newTotal.divide(newQty, 4, RoundingMode.HALF_UP));
+            } else if (tx.getType() == TradeType.SELL) {
+                BigDecimal profit = tx.getPrice().subtract(currentAvg).multiply(tx.getQuantity());
+                newRealizedPnl = newRealizedPnl.add(profit);
+
+                qtyMap.put(sId, currentQty.subtract(tx.getQuantity()));
+            }
+        }
+
+        portfolio.setRealizedPnl(newRealizedPnl.setScale(2, RoundingMode.HALF_UP));
+
+    }
+
 }

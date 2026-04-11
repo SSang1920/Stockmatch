@@ -128,3 +128,15 @@ export const useDeleteTransaction = (portfolioId?: number) => {
         }
     });
 };
+
+export const usePortfolioStats = (portfolioId: number | undefined, year: string, month: string) => {
+    return useQuery({
+        queryKey: ['portfolio', portfolioId, 'stats', year, month],
+        queryFn: () => {
+            if (!portfolioId) throw new Error("Portfolio ID is required");
+            return portfolioApi.getStats(portfolioId, year, month);
+        },
+        enabled: !!portfolioId,
+        staleTime: 1000 * 60 * 5,
+    });
+};

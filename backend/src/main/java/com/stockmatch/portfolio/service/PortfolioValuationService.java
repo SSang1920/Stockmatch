@@ -6,12 +6,10 @@
     import com.stockmatch.exchangeRate.domain.FromCurrency;
     import com.stockmatch.exchangeRate.domain.ToCurrency;
     import com.stockmatch.exchangeRate.service.FxRateService;
-    import com.stockmatch.portfolio.domain.Holding;
-    import com.stockmatch.portfolio.domain.PortfolioDailySummary;
-    import com.stockmatch.portfolio.domain.TradeType;
-    import com.stockmatch.portfolio.domain.Transaction;
+    import com.stockmatch.portfolio.domain.*;
     import com.stockmatch.portfolio.dto.HoldingValuationResponse;
     import com.stockmatch.portfolio.dto.PortfolioDailySummaryResponse;
+    import com.stockmatch.portfolio.dto.PortfolioProfitStatsResponse;
     import com.stockmatch.portfolio.dto.PortfolioValuationResponse;
     import com.stockmatch.portfolio.repository.HoldingRepository;
     import com.stockmatch.portfolio.repository.PortfolioDailySummaryRepository;
@@ -30,6 +28,7 @@
     import java.math.BigDecimal;
     import java.math.RoundingMode;
     import java.time.LocalDate;
+    import java.time.temporal.TemporalAdjusters;
     import java.util.ArrayList;
     import java.util.HashMap;
     import java.util.List;
@@ -271,10 +270,26 @@
          * 포트폴리오의 보유 종목을 조회하여 실시간 시세 기반으로 평가 지표 계산
          */
         public PortfolioValuationResponse calculate(long portfolioId) {
+            Portfolio portfolio = portfolioRepository.findById(portfolioId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.PORTFOLIO_NOT_FOUND));
+
+            // 유저 생성일 추출
+            String userCreatedAt = portfolio.getUser().getCreatedAt().toString();
+
             // 보유 종목 조회
             var holdings = holdingRepository.findAllWithSecurityByPortfolioId(portfolioId);
             if (holdings.isEmpty()) {
-                return PortfolioValuationResponse.empty(portfolioId);
+                return new PortfolioValuationResponse(
+                        portfolioId,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        getUsdToKrwRate(LocalDate.now()),
+                        new ArrayList<>(),
+                        userCreatedAt,
+                        BigDecimal.ZERO
+                );
             }
 
             // 모든 Security 객체 추출
@@ -358,10 +373,14 @@
             }
 
             // 총 손익 및 총 수익률
-            var totalPnl = totalValue.subtract(totalInvested).setScale(SCALE_MONEY, RoundingMode.HALF_UP);
-            var totalRate = totalInvested.compareTo(BigDecimal.ZERO) == 0
+            BigDecimal unrealizedPnl = totalValue.subtract(totalInvested);
+            BigDecimal realizedPnl = portfolio.getRealizedPnl();
+
+            BigDecimal totalPnl = unrealizedPnl.add(realizedPnl).setScale(SCALE_MONEY, RoundingMode.HALF_UP);
+
+            BigDecimal totalRate = totalInvested.compareTo(BigDecimal.ZERO) == 0
                     ? BigDecimal.ZERO
-                    : totalValue.divide(totalInvested, SCALE_RATE, RoundingMode.HALF_UP).subtract(BigDecimal.ONE);
+                    : totalPnl.divide(totalInvested, SCALE_RATE, RoundingMode.HALF_UP);
 
             // 결과 반환
             return new PortfolioValuationResponse(
@@ -371,7 +390,9 @@
                     totalPnl,
                     totalRate,
                     usdToKrw,
-                    details
+                    details,
+                    userCreatedAt,
+                    realizedPnl
             );
         }
 
@@ -391,6 +412,74 @@
                             summary.getTotalRate()
                     ))
                     .toList();
+        }
+
+        public PortfolioProfitStatsResponse getAdvancedStats(Long portfolioId, String year, String month) {
+            // 실시간 현재 상태 조회
+            PortfolioValuationResponse current = calculate(portfolioId);
+            BigDecimal nowRealized = current.realizedPnl();
+
+            // 날짜 및 현재 여부 파악
+            LocalDate now = LocalDate.now();
+            int y = Integer.parseInt(year);
+            int m = month.equals("annual") ? (y == now.getYear() ? now.getMonthValue() : 12) : Integer.parseInt(month);
+
+            boolean isCurrentYear = (y == now.getYear());
+            boolean isCurrentMonth = isCurrentYear && (m == now.getMonthValue());
+
+            // 비교 기준점 날짜 설정
+            LocalDate selectedMonthEnd = LocalDate.of(y, m, 1).with(TemporalAdjusters.lastDayOfMonth());
+            LocalDate prevMonthEnd = selectedMonthEnd.minusMonths(1).with(TemporalAdjusters.lastDayOfMonth());
+            LocalDate lastYearEnd = LocalDate.of(y - 1, 12, 31);
+            LocalDate yesterday = now.minusDays(1);
+
+            // 각 기준점의 누적 실현 수익 조회
+            BigDecimal realizedAtSelectedMonth = getSnapshotRealizedPnl(portfolioId, selectedMonthEnd);
+            BigDecimal realizedAtLastYear = getSnapshotRealizedPnl(portfolioId, lastYearEnd);
+            BigDecimal realizedAtPrevMonth = getSnapshotRealizedPnl(portfolioId, prevMonthEnd);
+            BigDecimal realizedAtYesterday = getSnapshotRealizedPnl(portfolioId, yesterday);
+
+            // 총 수익
+            BigDecimal totalProfit = nowRealized;
+
+            // 연간 수익
+            BigDecimal annualProfit = nowRealized.subtract(realizedAtLastYear);
+
+            // 월간 수익
+            BigDecimal monthlyProfit = nowRealized.subtract(realizedAtPrevMonth);
+
+            // 일간 수익
+            BigDecimal dailyProfit = nowRealized.subtract(realizedAtYesterday);
+
+            return new PortfolioProfitStatsResponse(
+                    current.totalPnlAmount(),
+                    current.totalPnlRate().doubleValue(),
+                    annualProfit,
+                    calculateRate(annualProfit, current.totalInvested()),
+                    monthlyProfit,
+                    calculateRate(monthlyProfit, current.totalInvested()),
+                    dailyProfit,
+                    calculateRate(dailyProfit, current.totalInvested()),
+                    nowRealized
+            );
+        }
+
+        /**
+         * 스냅샷에서 실현 손익 값을 가져오는 헬퍼 메소드
+         */
+        private BigDecimal getSnapshotRealizedPnl(Long portfolioId, LocalDate date) {
+            return dailySummaryRepository.findFirstByPortfolioIdAndDateLessThanEqualOrderByDateDesc(portfolioId, date)
+                    .map(PortfolioDailySummary::getRealizedPnl)
+                    .orElse(BigDecimal.ZERO);
+        }
+
+        private Double calculateRate(BigDecimal current, BigDecimal base) {
+            if (base == null || base.compareTo(BigDecimal.ZERO) <= 0) {
+                return 0.0;
+            }
+            return current.divide(base, 6, RoundingMode.HALF_UP)
+                    .subtract(BigDecimal.ONE)
+                    .doubleValue() * 100;
         }
 
         /**

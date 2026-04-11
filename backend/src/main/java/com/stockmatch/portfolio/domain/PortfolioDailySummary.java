@@ -38,4 +38,21 @@ public class PortfolioDailySummary {
 
     @Column(nullable = false, precision = 18, scale = 4)
     private BigDecimal totalRate;
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal realizedPnl;
+
+    public void updateSnapshotValues(
+            BigDecimal totalInvested,
+            BigDecimal totalValue,
+            BigDecimal totalPnl,
+            BigDecimal totalRate,
+            BigDecimal realizedPnl
+    ) {
+        this.totalInvested = totalInvested;
+        this.totalValue = totalValue;
+        this.totalPnl = totalPnl;
+        this.totalRate = totalRate;
+        this.realizedPnl = realizedPnl;
+    }
 }

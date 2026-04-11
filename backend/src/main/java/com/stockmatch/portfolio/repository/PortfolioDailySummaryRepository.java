@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface PortfolioDailySummaryRepository extends JpaRepository<PortfolioDailySummary, Long> {
 
@@ -25,4 +26,16 @@ public interface PortfolioDailySummaryRepository extends JpaRepository<Portfolio
             "AND date != LAST_DAY(date)",
             nativeQuery = true)
     int deleteOldDailyDataLeavingOnlyLastDayOfMonth(@Param("cutoffDate") LocalDate cutoffDate);
+
+    // 특정 포트폴리오에서 특정 날짜와 같거나 그 이전의 가장 최근 기록 1건 조회
+    Optional<PortfolioDailySummary> findFirstByPortfolioIdAndDateLessThanEqualOrderByDateDesc(
+            Long portfolioId,
+            LocalDate date
+    );
+
+    // 오늘 날짜의 스냅샷 존재 여부 확인
+    boolean existsByPortfolioIdAndDate(Long portfolioId, LocalDate date);
+
+    // 오늘 날짜의 스냅샷 조회
+    Optional<PortfolioDailySummary> findByPortfolioIdAndDate(Long portfolioId, LocalDate date);
 }

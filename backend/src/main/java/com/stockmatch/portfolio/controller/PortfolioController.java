@@ -88,4 +88,14 @@ public class PortfolioController {
         var history = portfolioValuationService.calculateDailyHistory(portfolio.getPortfolioId(), from, to);
         return ResponseEntity.ok(ApiResponse.ok(history));
     }
+
+    @GetMapping("/{portfolioId}/stats")
+    public ResponseEntity<ApiResponse<PortfolioProfitStatsResponse>> getPortfolioStats(
+            @PathVariable Long portfolioId,
+            @RequestParam String year,
+            @RequestParam String month
+    ) {
+        PortfolioProfitStatsResponse result = portfolioValuationService.getAdvancedStats(portfolioId, year, month);
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
 }

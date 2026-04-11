@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { HoldingsTable } from "./components/HoldingsTable";
 import { PortfolioSummary } from "./components/PortfolioSummary";
-import { usePortfolioValuation } from "./hooks/usePortfolio";
+import { usePortfolioStats, usePortfolioValuation } from "./hooks/usePortfolio";
 import { AlertCircle, Loader2, Plus } from "lucide-react";
 import { HoldingItem } from "./types";
 import { Button } from "@/components/ui/button";
@@ -12,17 +12,15 @@ import { ProfitStatCards } from "./components/ProfitStatCards";
 
 export default function PortfolioPage() {
   const { data: valuation, isLoading, error } = usePortfolioValuation();
-  const { data: valuationData } = usePortfolioValuation();
 
-  const dummyStats = {
-    totalProfit: 1250000,
-    totalRate: 8.5,
-    monthlyProfit: 350000,
-    monthlyRate: 2.1,
-    annualProfit: -120000,
-    annualRate: -0.8,
-    realizedProfit: 450000
-  };
+  const now = new Date();
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear().toString());
+  const [selectedMonth, setSelectedMonth] = useState((now.getMonth() + 1).toString());
+
+  const {
+    data: statsData,
+    isLoading: isStatsLoading
+  } = usePortfolioStats(valuation?.portfolioId, selectedYear, selectedMonth);
 
   // 모달 상태 관리
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -84,7 +82,15 @@ export default function PortfolioPage() {
         totalPnlRate={valuation.totalPnlRate}
       />
 
-      <ProfitStatCards stats={dummyStats} />
+      <ProfitStatCards
+        stats={statsData}
+        isLoading={isStatsLoading}
+        userCreatedAt={valuation?.userCreatedAt || new Date().toISOString()}
+        selectedYear={selectedYear}
+        setSelectedYear={setSelectedYear}
+        selectedMonth={selectedMonth}
+        setSelectedMonth={setSelectedMonth}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* 왼쪽: 보유 종목 */}

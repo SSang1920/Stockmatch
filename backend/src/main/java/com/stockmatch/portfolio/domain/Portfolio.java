@@ -6,6 +6,7 @@ import com.stockmatch.user.member.domain.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +43,19 @@ public class Portfolio extends BaseEntity {
     @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<RiskAnalysis> riskAnalyses = new ArrayList<>();
+
+    @Column(precision = 19, scale = 2)
+    @Builder.Default
+    private BigDecimal realizedPnl = BigDecimal.ZERO;
+
+    // === 비즈니스 메서드 === //
+    public void updateRealizedPnl(BigDecimal pnl) {
+        this.realizedPnl = this.realizedPnl.add(pnl);
+    }
+
+    public void setRealizedPnl(BigDecimal realizedPnl) {
+        this.realizedPnl = realizedPnl;
+    }
 
     // === 연관관계 편의 메서드 === //
     public void setUser(User user) {

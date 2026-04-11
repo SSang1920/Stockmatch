@@ -86,7 +86,7 @@ export function PortfolioDonutChart({ holdings }: PortfolioDonutChartProps) {
             <CardHeader className="border-b pb-4">
                 <CardTitle className="text-lg">자산 비중</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6 h-[320px]">
+            <CardContent className="pt-6 h-[320px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
