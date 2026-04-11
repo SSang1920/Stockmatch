@@ -74,14 +74,12 @@ public class JwtUtil {
     public void validateTokenOrThrow(String token) {
         ensureKeyIsInitialized();
         try {
-            log.info("검증 시도 토큰: {}", token);
 
             Jws<Claims> jws = Jwts.parser()
                     .verifyWith(cachedSigningKey)
                     .build()
                     .parseSignedClaims(token);
 
-            log.info("검증 성공 - 알고리즘: {}", jws.getHeader().getAlgorithm());
 
         } catch (ExpiredJwtException e){
             throw e;

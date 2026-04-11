@@ -2,17 +2,17 @@ import React, { useState } from 'react';
 import { Sparkles, SearchX, History, X } from 'lucide-react';
 import { AnalysisSearchInput } from './AnalysisSearchInput';
 import { AnalysisResultCard } from './AnalysisResultCard';
-import { AiResponseDto, AnalysisHistoryResponse, AnalysisHistoryListResponse } from '../types';
-import { MOCK_ANALYSIS_RESULT } from '../api/mockData';
-import { fetchAiAnalysis, fetchUserHistoryList, fetchHistoryDetail } from '../api/analysis';
+import { AnalysisHistoryResponse, AnalysisHistoryListResponse } from '../../types';
+import { MOCK_ANALYSIS_RESULT } from '../../api/mockData';
+import { fetchAiStockAnalysis, fetchUserHistoryList, fetchHistoryDetail } from '../../api/analysis';
+import { AnalysisLayout } from '../common/AnalysisLayout';
 
 export const AnalysisDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<AiResponseDto | null>(null);
+  const [result, setResult] = useState<StockSuitabilityResponse | null>(null);
   const [searchTicker, setSearchTicker] = useState<string>(''); // 현재 보여지는 티커
   const [searchName, setSearchName] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-
   const [history, setHistory] = useState<AnalysisHistoryListResponse[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -20,7 +20,8 @@ const handleOpenHistory = async () => {
     try {
       const response = await fetchUserHistoryList();
       if (response && response.data) {
-        setHistory(response.data);
+        const stockHistory = response.data.filter(item => item.type === 'STOCK');
+        setHistory(stockHistory);
         setIsDrawerOpen(true);
     }
     } catch (err) {
@@ -28,13 +29,13 @@ const handleOpenHistory = async () => {
     }
   };
 
-  // 2. 히스토리 항목 클릭 시 메인 결과 업데이트
+  //  히스토리 항목 클릭 시 메인 결과 업데이트
   const handleHistoryItemClick = async (item: AnalysisHistoryListResponse) => {
     try {
         setIsLoading(true); // 상세 데이터를 가져오는 동안 로딩 표시
-
         // 개별 상세 조회 API 호출
         const response = await fetchHistoryDetail(item.id);
+
         if (response && response.data) {
           setResult(response.data);      // 상세 분석 결과(AiResponseDto) 세팅
           setSearchTicker(item.symbol);  // 티커 세팅
@@ -58,7 +59,7 @@ const handleOpenHistory = async () => {
     setSearchName(inputName || '');
 
     try {
-      const response = await fetchAiAnalysis(inputTicker);
+      const response = await fetchAiStockAnalysis(inputTicker);
 
       if(response && response.data) {
           setResult(response.data);
@@ -103,14 +104,10 @@ const handleOpenHistory = async () => {
     </div>
 
       {/* 메인 박스 */}
-      <div className="rounded-xl border bg-white text-card-foreground shadow-sm min-h-[500px]">
-        <div className="p-6">
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold mb-1">포트폴리오 맞춤 분석 AI 서비스</h2>
-            <p className="text-sm text-gray-500">
-              보유 중인 포트폴리오와 시장 데이터를 결합하여 최적의 투자의견을 제시합니다.
-            </p>
-          </div>
+      <AnalysisLayout
+        title="포트폴리오 추가 적합 여부"
+        description="보유 중인 포트폴리오와 시장 데이터를 결합하여 최적의 투자의견을 제시합니다."
+      >
 
           {/* 검색 입력창 */}
           <div className="mb-8">
@@ -140,7 +137,7 @@ const handleOpenHistory = async () => {
           {/*성공 결과 화면 */}
           {!isLoading && !error && result && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 mt-6 pt-6 border-t border-gray-100">
-              <AnalysisResultCard ticker={searchTicker} name={searchName} data={result} />
+              <AnalysisResultCard ticker={searchTicker} name={searchName} data={result} type="STOCK" />
             </div>
           )}
 
@@ -152,12 +149,11 @@ const handleOpenHistory = async () => {
                       <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded font-medium">Example</span>
                   </div>
                   <div className="opacity-100 scale-100">
-                      <AnalysisResultCard ticker="AAPL" data={MOCK_ANALYSIS_RESULT} />
+                      <AnalysisResultCard ticker="AAPL" data={MOCK_ANALYSIS_RESULT} type="STOCK" />
                   </div>
               </div>
           )}
-        </div>
-      </div>
+      </AnalysisLayout>
       {isDrawerOpen && (
               <>
                  {/* 사이드바 본체: 우측 고정 슬라이드 애니메이션 적용 */}

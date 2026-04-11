@@ -22,6 +22,10 @@ public class AiAnalysisLog {
     @Column(nullable = false)
     private Long userId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AnalysisType analysisType;
+
     @Column(nullable = false)
     private String symbol;
 
@@ -33,10 +37,15 @@ public class AiAnalysisLog {
     @Column(nullable = false)
     private LocalDateTime analyzedAt;
 
+    @Column(columnDefinition = "TEXT")
+    private String userComment;
+
     @Builder
-    public AiAnalysisLog(Long userId, String symbol, String aiResponseJson){
+    public AiAnalysisLog(Long userId, AnalysisType analysisType, String symbol, String userComment, String aiResponseJson){
         this.userId = userId;
+        this.analysisType = analysisType;
         this.symbol = symbol;
+        this.userComment = userComment;
         this.aiResponseJson = aiResponseJson;
     }
 }
