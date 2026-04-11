@@ -38,6 +38,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain
     ) throws ServletException, IOException {
 
+        //요청 경로 확인
+        String requestURI = request.getRequestURI();
+        if ("/api/auth/refresh".equals(requestURI)) {
+            log.info("재발급 요청 감지: 필터 검증을 스킵합니다.");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         // 헤더에서 토큰 추출
         String accessToken = resolveToken(request);
         log.info("검증 시작 - 토큰: {}", accessToken); // 조작된 토큰이 맞는지 확인
@@ -51,7 +59,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             // AccessToken 유효성 검사
             jwtUtil.validateTokenOrThrow(accessToken);
-            log.info("검증 통과함 - 이 로그가 보이면 안 됨(조작 시)");
+            log.debug("토큰 검증 통과함");
 
             // 토큰에서 userPk 추출
             String userPk = jwtUtil.getUserPkFromToken(accessToken);
