@@ -86,7 +86,7 @@ export const AnalysisResultCard = ({ ticker, name, data, type = 'STOCK'}: Props)
          <div className="bg-gray-50 rounded-lg p-5 border border-gray-100 mb-6">
            <h4 className="text-gray-700 font-semibold text-sm mb-3">주요 판단 근거</h4>
            <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                 {detailedAnalysis}
+                 {detailedAnalysis?.replace(/\\n/g, '\n')}
            </div>
          </div>
 

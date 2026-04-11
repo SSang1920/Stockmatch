@@ -107,9 +107,8 @@ export const PortfolioResultCard = ({ data }: Props) => {
            {/* 상세 진단 리포트 */}
            <div className="flex-1 bg-gray-50 rounded-lg p-5 border border-gray-100">
              <h4 className="text-gray-700 font-semibold text-sm mb-3">상세 진단 리포트</h4>
-             {/* whitespace-pre-wrap으로 줄바꿈 살리기 */}
              <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-               {detailedAnalysis}
+               {detailedAnalysis?.replace(/\\n/g, '\n')}
              </div>
            </div>
          </div>

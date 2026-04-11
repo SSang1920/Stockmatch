@@ -8,6 +8,7 @@ import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.corporate.analysis.Entity.AnalysisType;
 import com.stockmatch.corporate.analysis.dto.data.AnalysisPackage;
 import com.stockmatch.corporate.analysis.dto.response.AiResponseDto;
+import com.stockmatch.corporate.analysis.guard.AiRequestGuard;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,7 @@ public class AiAnalysisService {
     private final RestTemplateBuilder restTemplateBuilder;
     private final ObjectMapper objectMapper;
     private final AiHistoryService aiHistoryService;
+    private final AiRequestGuard aiRequestGuard;
 
     @Value("${openai.api.url}")
     private String apiUrl;
@@ -142,6 +144,7 @@ public class AiAnalysisService {
            """;
 
     public AiResponseDto getInvestmentAdvice(Long userId, String symbol, AnalysisPackage analysisPackage) {
+        aiRequestGuard.checkAvailabilityOrThrow(userId);
         try {
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("model", model);
@@ -167,6 +170,8 @@ public class AiAnalysisService {
             JsonNode response = restTemplate.postForObject(apiUrl, entity, JsonNode.class);
 
             AiResponseDto resultDto = parseAiResponse(response);
+            aiRequestGuard.incrementCount(userId);
+
             String companyName = analysisPackage.getTargetStock().getName();
             aiHistoryService.saveAnalysisLog(userId, AnalysisType.STOCK, symbol, companyName, resultDto);
 
