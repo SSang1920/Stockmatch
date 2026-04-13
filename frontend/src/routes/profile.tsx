@@ -24,7 +24,7 @@ function RouteComponent() {
 
 
     useEffect(() => {
-        if (user && user.alphaVantageKey) {
+        if (user && user.apiKey) {
                     setHasSavedKey(true);
                     setApiKey('');
                 } else if (user) {
