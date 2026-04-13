@@ -16,8 +16,8 @@ export function Header() {
         } catch (error) {
             console.error("로그아웃 요청 중 에러 발생 ", error);
         } finally {
-            // 클라이언트 측 쿠키 삭제 및 상태 초기화
-            localStorage.removeItem('accessToken');
+            // 로그인 여부 플래그 삭제
+            localStorage.removeItem('isLoggedIn');
 
             // 메인 페이지로 이동하면서 새로고침 (상태 완전 초기화)
             window.location.href = '/';

@@ -47,7 +47,7 @@ public class AuthController {
         // accessToken 쿠키 생성
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken)
                 .path("/")
-                .httpOnly(false) //프론트에서 읽을시 false
+                .httpOnly(true) //프론트에서 읽을시 false
                 .secure(false) // 로컬 환경 false, 배포 환경 true
                 .sameSite("Lax") // 타 도메인간 리다이렉트 시 쿠키 전달 허용
                 .maxAge(60*60)
@@ -73,13 +73,24 @@ public class AuthController {
      */
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<TokenResponseDto>> refreshAccessToken(
-            @CookieValue(name = "refreshToken", required = false) String refreshToken) {
+            @CookieValue(name = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse response) {
 
         if (refreshToken == null) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
 
         TokenResponseDto responseData = authService.refreshAccessToken(refreshToken);
+
+        ResponseCookie newAccessCookie = ResponseCookie.from("accessToken", responseData.getAccessToken())
+                .path("/")
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Lax")
+                .maxAge(60 * 60)
+                .build();
+
+        response.addHeader("Set-Cookie", newAccessCookie.toString());
 
         return ResponseEntity.ok(ApiResponse.ok(responseData));
     }

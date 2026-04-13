@@ -10,12 +10,12 @@ const instance = axios.create({
 let isRefreshing = false;
 let failedQueue: any[] = [];
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: any) => {
     failedQueue.forEach((prom) => {
         if (error) {
             prom.reject(error);
         } else {
-            prom.resolve(token);
+            prom.resolve();
         }
     });
 
@@ -24,12 +24,6 @@ const processQueue = (error: any, token: string | null = null) => {
 
 instance.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('accessToken');
-
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-
         return config;
         },
     (error) => {
@@ -47,8 +41,7 @@ instance.interceptors.response.use(
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
                     failedQueue.push({
-                        resolve: (token: string) => {
-                            originalRequest.headers['Authorization'] = `Bearer ${token}`;
+                        resolve: () => {
                             resolve(instance(originalRequest));
                         },
                         reject: (err: any) => {
@@ -70,28 +63,20 @@ instance.interceptors.response.use(
 
                 console.log('재발급 성공! AccessToken 갱신.');
 
-                const newAccessToken = res.data.data?.accessToken || res.data.accessToken;
+                processQueue(null);
 
-                if (newAccessToken) {
-                    // 새 토큰 저장
-                    localStorage.setItem('accessToken', newAccessToken);
 
-                    instance.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+                return instance(originalRequest);
 
-                    document.cookie = `accessToken=${newAccessToken}; path=/;`;
-
-                    processQueue(null, newAccessToken);
-
-                    // 실패했던 요청에 새 토큰 끼워서 재요청
-                    originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-                    return instance(originalRequest);
-                    }
                 } catch (refreshError) {
                     // 재발급 요청조차 실패하면 진짜 로그인 풀린 것임
                     console.error('재발급 실패 (쿠키 만료됨). 로그아웃 처리.');
                     processQueue(refreshError, null);
+
                     localStorage.removeItem('accessToken');
-                    document.cookie = "accessToken=; Max-Age=0; path=/;";
+                    sessionStorage.clear();
+
+                    window.location.href = '/sign-in';
                     return Promise.reject(refreshError);
                 }finally {
                      isRefreshing = false;
