@@ -21,6 +21,8 @@ function RouteComponent() {
     const [isEditing, setIsEditing] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
 
+
+
     useEffect(() => {
         if (user && user.alphaVantageKey) {
                     setHasSavedKey(true);
@@ -60,8 +62,11 @@ function RouteComponent() {
                 const errorCode = errorData?.error?.code || errorData?.code;
                 const isGoogleUser = user?.authprovider === 'GOOGLE';
 
-                if (errorCode === 'A008' && isGoogleUser) {
-                    if (window.confirm("구글 계정 연동 해제를 위해 보안 재인증이 필요합니다.\n확인을 누르면 구글 로그인 화면으로 이동합니다.")) {
+                if ((errorCode === 'A008' || errorCode === 'A007') && isGoogleUser) {
+                    if (window.confirm("구글 계정 연동 해제를 위해 보안 재인증이 필요합니다.\n확인을 누르면 구글 로그인 화면으로 이동합니다. \n 로그인 후 회원 탈퇴를 한번 더 눌러주세요.")) {
+
+                        localStorage.setItem('loginRedirect', '/profile');
+
                         const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
                         const REDIRECT_URI = 'http://localhost:8080/api/auth/callback/google';
                         const SCOPE = 'email profile';

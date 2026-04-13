@@ -69,14 +69,7 @@ public class AnalysisService {
         Security security = securityRepository.findByTicker(symbol)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SECURITY_NOT_FOUND));
 
-        List<HoldingResponse> myHoldings = holdingService.getMyHoldings(userId);
-
-        var profile = user.getInvestmentProfile();
-        UserContext userContext = UserContext.builder()
-                .investmentType(profile != null ? profile.getInvestmentType().name() : "UNDETERMINED")
-                .investmentScore(profile != null ? profile.getTotalScore() : 0)
-                .currentHoldings(myHoldings) // 추후 포트폴리오 연동
-                .build();
+        UserContext userContext = buildAiUserContext(user,userId);
 
         AnalysisPackage.TargetStockInfo targetStockInfo = AnalysisPackage.TargetStockInfo.builder()
                 .ticker(security.getTicker())
@@ -167,6 +160,54 @@ public class AnalysisService {
                 .marketMomentum(momentumMapper.map(overview, news, earnings, symbol))
                 .financialHealth(financialMapper.map(balance, cash))
                 .missingData(missingData)
+                .build();
+    }
+
+    public AnalysisPackage analyzeMyPortfolio(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(()-> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        var profile = user.getInvestmentProfile();
+        UserContext userContext = buildAiUserContext(user,userId);
+
+        return AnalysisPackage.builder()
+                .user(userContext)
+                .build();
+    }
+
+    private UserContext buildAiUserContext(User user, Long userId) {
+        //  원본 데이터 가져오기
+        List<HoldingResponse> rawHoldings = holdingService.getMyHoldings(userId);
+
+        //  총 자산 계산
+        double totalValue = rawHoldings.stream()
+                .mapToDouble(h -> h.quantity().multiply(h.avgPrice()).doubleValue())
+                .sum();
+
+        // 비중 계산 및 AI 전용 DTO로 변환
+        List<UserContext.AiPortfolioHoldingDto> aiHoldings = rawHoldings.stream()
+                .map(h -> {
+                    double itemValue = h.quantity().multiply(h.avgPrice()).doubleValue();
+                    double weight = totalValue > 0 ? Math.round((itemValue / totalValue) * 1000) / 10.0 : 0.0;
+
+                    return UserContext.AiPortfolioHoldingDto.builder()
+                            .ticker(h.ticker())
+                            .name(h.name())
+                            .quantity(h.quantity())
+                            .avgPrice(h.avgPrice())
+                            .currency(h.currency())
+                            .amount(itemValue)
+                            .weightPct(weight)
+                            .build();
+                })
+                .toList();
+
+        // 4. 완벽한 UserContext 반환
+        var profile = user.getInvestmentProfile();
+        return UserContext.builder()
+                .investmentType(profile != null ? profile.getInvestmentType().name() : "UNDETERMINED")
+                .investmentScore(profile != null ? profile.getTotalScore() : 0)
+                .currentHoldings(aiHoldings) //
                 .build();
     }
 

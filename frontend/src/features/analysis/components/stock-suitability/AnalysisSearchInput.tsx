@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { StockSearchResponse } from "@/features/market/types";
-import { searchStocks } from "../../market/api";
+import { searchStocks } from "../../../market/api";
 
 interface Props {
     onSearch : (ticker: string, name?: string) =>void;

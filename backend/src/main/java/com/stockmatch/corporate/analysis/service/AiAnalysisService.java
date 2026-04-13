@@ -5,11 +5,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
-import com.stockmatch.corporate.analysis.Entity.AiAnalysisLog;
+import com.stockmatch.corporate.analysis.Entity.AnalysisType;
 import com.stockmatch.corporate.analysis.dto.data.AnalysisPackage;
 import com.stockmatch.corporate.analysis.dto.response.AiResponseDto;
-import com.stockmatch.corporate.analysis.dto.response.AnalysisHistoryListResponse;
-import com.stockmatch.corporate.analysis.repository.AiAnalysisLogRepository;
+import com.stockmatch.corporate.analysis.guard.AiRequestGuard;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -33,7 +35,8 @@ public class AiAnalysisService {
     private RestTemplate restTemplate;
     private final RestTemplateBuilder restTemplateBuilder;
     private final ObjectMapper objectMapper;
-    private final AiAnalysisLogRepository logRepository;
+    private final AiHistoryService aiHistoryService;
+    private final AiRequestGuard aiRequestGuard;
 
     @Value("${openai.api.url}")
     private String apiUrl;
@@ -121,29 +124,27 @@ public class AiAnalysisService {
                   '분석 대상 기업이 포트폴리오에 미치는 영향'이 되도록 작성하십시오.
                 - 확정·보장 뉘앙스
                   ("반드시 오른다", "안전하다", "무조건 성공")는 금지합니다.
-            
-             3. 결론:
+                  
+             3. 전문 용어 표기 규칙 (필수):
+                              - PER, PBR, ROE, FCF 등 영문 약어로 된 전문 금융/재무 지표를 언급할 때는 반드시 한글 설명을 괄호 안에 병기하여 가독성과 전문성을 높이십시오.
+                              - (예시) "PER(주가수익비율)", "ROE(자기자본이익률)", "FCF(잉여현금흐름)"
+             4. 결론:
                 - 아래 3가지 중 1개를 명확히 선택하십시오.
                   · 보완: 분산 효과 또는 구조적 약점 보완
                   · 중립: 기존 포트폴리오 성격과 유사
                   · 부담: 재무, 현금흐름, 리스크 부담 증가
                 - 결론 문장에는 투자 성향을 다시 반복할 필요는 없습니다.
             
-             4. 출력 구성:
-                - 판단 근거(reasons)는 2~3개로 제한하십시오.
-                - 각 reason은 1~2문장으로 작성하며,
-                  반드시
-                  "데이터/지표 → 해석 → 포트폴리오 관점의 의미"
-                  순서를 유지하십시오.
+             5. 출력 구성:
+                - 상세 분석(detailedAnalysis)는 필드는 2~3개의 단락으로 구성된 하나의 완성된 글로 작성.
+                - 글의 전개는 "데이터/지표 제시 → 해석 → 포트폴리오 관점의 의미" 흐름이 자연스럽게 이어지도록 작성하십시오.
+                - 하나의 긴 통글이 아닌 줄바꿈 문자(\\n\\n)을 이용하여 가독성을 좋게 하십시오.
+                - 면책 조항 분리 : 면책 조항은 본문(detailedAnalysis)에 절대 포함하지 마십시오. 오직 JSON의 `disclaimer` 필드에만 작성해야 합니다.
             
-             [분석 범위 고지 (필수)]
-             - 분석 마지막 문장에 반드시 다음 취지의 문장을 포함하십시오:
-               "본 분석은 제공된 데이터 범위 내에서 이루어졌으며,
-                외부 거시 환경, 시장 심리, 미공개 정보 및
-                향후 발생 가능한 이벤트는 반영되지 않았습니다."
            """;
 
     public AiResponseDto getInvestmentAdvice(Long userId, String symbol, AnalysisPackage analysisPackage) {
+        aiRequestGuard.checkAvailabilityOrThrow(userId);
         try {
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("model", model);
@@ -169,8 +170,10 @@ public class AiAnalysisService {
             JsonNode response = restTemplate.postForObject(apiUrl, entity, JsonNode.class);
 
             AiResponseDto resultDto = parseAiResponse(response);
+            aiRequestGuard.incrementCount(userId);
+
             String companyName = analysisPackage.getTargetStock().getName();
-            saveAnalysisLog(userId, symbol, companyName, resultDto);
+            aiHistoryService.saveAnalysisLog(userId, AnalysisType.STOCK, symbol, companyName, resultDto);
 
             return resultDto;
         } catch (BusinessException e){
@@ -206,22 +209,21 @@ public class AiAnalysisService {
 
         properties.put("oneLineReview", Map.of(
                 "type", "string",
-                "description" , "투자 성향에 따른 한 줄 요약"
+                "description" , "신규 기업 편입 시 투자 성향 및 기존 포트폴리오와의 시너지를 고려한 핵심 한 줄 요약 (50자 내외)"
         ));
 
-        properties.put("reasons", Map.of(
-                "type", "array",
-                "items", Map.of("type", "string"),
-                "description", "판단 근거 2~3가지 (각 항목은 1~2문장의 간결한 설명)"
+        properties.put("detailedAnalysis", Map.of(
+                "type", "string",
+                "description", "기존 보유 종목과의 리스크/득실 상관관계 분석을 포함한 상세 종합 분석 리포트 (2~3개의 단락으로 가독성 좋게 구성)"
         ));
 
         properties.put("disclaimer", Map.of(
                 "type", "string",
-                "description", "면책 조항"
+                "description", "면책 조항은 반드시 다음 문장을 그대로 출력하십시오: '본 분석은 제공된 데이터 범위 내에서 이루어졌으며, 외부 거시 환경, 시장 심리, 미공개 정보 및 향후 발생 가능한 이벤트는 반영되지 않았습니다.`"
         ));
 
         schemaContent.put("properties", properties);
-        schemaContent.put("required", List.of("conclusionCode", "oneLineReview", "reasons" , "disclaimer"));
+        schemaContent.put("required", List.of("conclusionCode", "oneLineReview", "detailedAnalysis" , "disclaimer"));
 
         jsonSchema.put("schema", schemaContent);
         schema.put("json_schema", jsonSchema);
@@ -246,51 +248,12 @@ public class AiAnalysisService {
 
     private AiResponseDto createFallbackResponse() {
         return AiResponseDto.builder()
-                .conclusionCode(AiResponseDto.ConclusionCode.NEUTRAL)
+                .conclusionCode(AiResponseDto.ConclusionCode.ERROR)
                 .oneLineReview("현재 AI 분석 서비스 연결이 지연되고 있습니다.")
-                .reasons(List.of("일시적인 네트워크 오류입니다.", "잠시 후 시도해주세요."))
+                .detailedAnalysis("일시적인 네트워크 오류입니다. 잠시 후 시도해주세요.")
                 .disclaimer("시스템 오류로 인한 기본 응답입니다.")
                 .build();
     }
 
-    private void saveAnalysisLog(Long userId, String symbol,String companyName ,AiResponseDto dto){
-        try{
-            String jsonResult = objectMapper.writeValueAsString(dto);
 
-            AiAnalysisLog logEntity = AiAnalysisLog.builder()
-                    .userId(userId)
-                    .symbol(companyName + " (" + symbol + ")")
-                    .aiResponseJson(jsonResult)
-                    .build();
-
-            logRepository.save(logEntity);
-
-        } catch (Exception e){
-            log.error("AI 분석 기록 저장중 오류 발생");
-        }
-    }
-
-    public List<AnalysisHistoryListResponse> getHistoryList(long userId) {
-        List<AiAnalysisLog> logs = logRepository.findAllByUserIdOrderByAnalyzedAtDesc(userId);
-
-        return logs.stream()
-                .map(logEntity -> AnalysisHistoryListResponse.builder()
-                        .id(logEntity.getId())
-                        .symbol(logEntity.getSymbol())
-                        .analyzedAt(logEntity.getAnalyzedAt())
-                        .build())
-                .toList();
-    }
-
-    public AiResponseDto getHistoryDetail(Long id) {
-        AiAnalysisLog logEntity = logRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.DART_CORP_CODE_NOT_FOUNT));
-
-        try{
-            return objectMapper.readValue(logEntity.getAiResponseJson(), AiResponseDto.class);
-        } catch (Exception e){
-            log.error("상세 데이터 파싱 실패: {}", e.getMessage());
-            throw new BusinessException(ErrorCode.INVALID_JSON_FORMAT);
-        }
-    }
 }

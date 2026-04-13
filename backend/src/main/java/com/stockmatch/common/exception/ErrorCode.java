@@ -78,11 +78,16 @@ public enum ErrorCode {
     EXTERNAL_API_PARSING_ERROR("E010", "외부 API 데이터 형식이 올바르지 않아 처리할 수 없습니다.", HttpStatus.BAD_GATEWAY),
     INVALID_AI_RESPONSE("E011", "AI API로부터 응답이 오지 않았습니다.", HttpStatus.BAD_GATEWAY),
     AI_REFUSAL_RESPONSE("E012", "AI 로부터 응답이 거절되었습니다.", HttpStatus.BAD_GATEWAY),
+
     // DART API
     DART_FILE_ERROR("E007", "DART 데이터를 처리하는 중 파일 오류가 발생했습니다.(DART)", HttpStatus.BAD_REQUEST),
     DART_SYNC_ERROR("E008", "DART 고유번호 동기화 중 오류가 발생했습니다.(DART)", HttpStatus.BAD_REQUEST),
-    DART_CORP_CODE_NOT_FOUNT("E009", "해당 종목의 DART 고유번호를 찾을 수 없습니다.(DART)", HttpStatus.BAD_REQUEST);
+    DART_CORP_CODE_NOT_FOUNT("E009", "해당 종목의 DART 고유번호를 찾을 수 없습니다.(DART)", HttpStatus.BAD_REQUEST),
 
+
+    //open AI
+    RATE_LIMIT_EXCEEDED("C001", "요청이 너무 잦습니다. 30초 후 다시 시도해주세요.", HttpStatus.TOO_MANY_REQUESTS),
+    DAILY_QUOTA_EXCEEDED("C001", "일일 분석 횟수를 모두 소진하였습니다. (일일 20회)", HttpStatus.FORBIDDEN);
 
 
     private final String code;
