@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowDownRight, ArrowUpRight, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 
 const formatKrw = (val: number) => {
   const num = Number(val) || 0;
@@ -7,18 +7,22 @@ const formatKrw = (val: number) => {
 };
 
 interface Props {
-    totalValue: number;
-    totalInvested: number;
-    totalPnlAmount: number;
-    totalPnlRate: number;
+  totalValue: number;
+  totalInvested: number;
+  totalPnlAmount: number;
+  totalPnlRate: number;
 }
 
 export function PortfolioSummary({ totalValue, totalInvested, totalPnlAmount, totalPnlRate }: Props) {
-    const isPlus = totalPnlAmount >= 0;
-    const colorClass = isPlus ? "text-red-500" : "text-blue-500";
+  const unrealizedPnL = Math.floor(totalValue - totalInvested);
+  const unrealizedRate = totalInvested > 0 ? (unrealizedPnL / totalInvested) * 100 : 0;
 
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  const isPlus = totalPnlAmount >= 0;
+  const isUnrealizedPlus = unrealizedPnL >= 0;
+  const colorClass = isPlus ? "text-red-500" : "text-blue-500";
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* 총 자산 */}
       <Card className="border-none shadow-md bg-gradient-to-br from-gray-900 to-gray-800 text-white">
         <CardContent className="p-6 flex flex-col justify-between h-full">
@@ -26,9 +30,12 @@ export function PortfolioSummary({ totalValue, totalInvested, totalPnlAmount, to
             <p className="text-gray-400 text-sm font-medium">총 자산 평가액</p>
             <h2 className="text-3xl font-bold mt-2">{formatKrw(totalValue)}</h2>
           </div>
-          <div className="flex items-center gap-2 mt-4 text-sm text-gray-300">
-            <TrendingUp className="w-4 h-4" />
-            <span>실시간 시세 반영됨</span>
+          <div className={`flex items-center gap-1 mt-4 text-sm font-bold ${isUnrealizedPlus ? 'text-red-400' : 'text-blue-400'}`}>
+            {unrealizedPnL >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingUp className="w-4 h-4 rotate-180" />}
+            <span>
+              {isUnrealizedPlus ? "+" : ""}{unrealizedPnL.toLocaleString()}원
+              ({unrealizedRate.toFixed(2)}%)
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -38,7 +45,7 @@ export function PortfolioSummary({ totalValue, totalInvested, totalPnlAmount, to
         <CardContent className="p-6 flex flex-col justify-center h-full">
           <p className="text-gray-500 text-sm font-medium">총 투자 손익</p>
           <div className={`text-2xl font-bold mt-2 flex items-center gap-1 ${colorClass}`}>
-            {isPlus ? <ArrowUpRight className="w-6 h-6" /> : <ArrowDownRight className="w-6 h-6" />}
+            {isPlus ? <TrendingUp className="w-6 h-6" /> : <TrendingUp className="w-4 h-4 rotate-180" />}
             {isPlus ? "+" : ""}{formatKrw(totalPnlAmount)}
           </div>
           <p className={`text-sm mt-1 font-medium ${colorClass}`}>
@@ -58,5 +65,5 @@ export function PortfolioSummary({ totalValue, totalInvested, totalPnlAmount, to
         </CardContent>
       </Card>
     </div>
-    )
+  )
 }

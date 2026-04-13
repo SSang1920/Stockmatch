@@ -3,7 +3,11 @@ import { useDailyHistory, usePortfolioValuation } from "../hooks/usePortfolio";
 import { Loader2 } from "lucide-react";
 import { CartesianGrid, Label, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-export function PortfolioLineChart() {
+interface PortfolioLineChartProps {
+    className?: string;
+}
+
+export function PortfolioLineChart({ className }: PortfolioLineChartProps) {
     const { data: apiHistoryData, isLoading: historyLoading, isError: historyError } = useDailyHistory();
     const { data: valuationData, isLoading: valuationLoading } = usePortfolioValuation();
 
@@ -30,15 +34,24 @@ export function PortfolioLineChart() {
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
             const dataItem = payload[0].payload;
+            const totalValue = Math.floor(dataItem.totalValue || 0);
+            const totalInvested = Math.floor(dataItem.totalInvested || 0);
+            const totalRate = (dataItem.totalRate || 0) * 100;
+
             return (
                 <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-md z-50">
-                    <p className="font-bold text-gray-600 mb-1">{label}</p>
-                    <p className="text-blue-600 font-semibold text-lg">
-                        {dataItem.totalValue.toLocaleString()}원
-                    </p>
-                    <p className={`text-sm font-medium ${dataItem.totalRate >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                        수익률: {(dataItem.totalRate * 100).toFixed(2)}%
-                    </p>
+                    <p className="font-bold text-gray-600 mb-2">{label}</p>
+                    <div className="space-y-1">
+                        <p className="text-blue-600 font-semibold">
+                            평가금액: {totalValue.toLocaleString()}원
+                        </p>
+                        <p className="text-emerald-500 text-sm font-medium">
+                            매수금액: {totalInvested.toLocaleString()}원
+                        </p>
+                        <p className={`text-sm font-bold ${totalRate >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                            수익률: {totalRate >= 0 ? "+" : ""}{totalRate.toFixed(2)}%
+                        </p>
+                    </div>
                 </div>
             );
         }
@@ -46,13 +59,13 @@ export function PortfolioLineChart() {
     };
 
     return (
-        <Card className="shadow-sm border-none bg-white w-full mt-6">
+        <Card className={`shadow-sm border-none bg-white w-full flex flex-col h-full ${className}`}>
             <CardHeader className="border-b pb-4">
                 <CardTitle className="text-lg">자산 추이 (최근 30일)</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6 h-[300px]">
+            <CardContent className="pt-6 h-[350px]">
                 <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={historyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <LineChart data={historyData} margin={{ top: 10, right: 30, left: 20, bottom: 0 }}>
                         {/* 배경에 연한 점선 그리드 */}
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
 
@@ -68,34 +81,32 @@ export function PortfolioLineChart() {
 
                         {/* Y축: 금액 */}
                         <YAxis
-                            tickFormatter={(value) => `${(value / 10000).toLocaleString()}만`}
+                            tickFormatter={(value) => `${Math.floor(value / 10000).toLocaleString()}만`}
                             tick={{ fontSize: 12, fill: '#6b7280' }}
                             axisLine={false}
                             tickLine={false}
-                            width={60}
-                            domain={['dataMin - 500000', 'dataMax + 500000']}
+                            width={80}
+                            domain={[
+                                (dataMin) => Math.max(0, Math.floor(dataMin - 100000)),
+                                (dataMax) => Math.floor(dataMax + 100000)
+                            ]}
                         />
 
                         <Tooltip content={<CustomTooltip />} />
 
-                        {/* 총 매수 금액 가로선 추가 */}
-                        <ReferenceLine
-                            y={totalInvested}
+                        {/* 매수금액 히스토리 선 */}
+                        <Line
+                            name="매수금액"
+                            type="stepAfter" 
+                            dataKey="totalInvested"
                             stroke="#10b981"
-                            strokeDasharray="7 7"
                             strokeWidth={2}
-                        >
-                            <Label
-                                value="매수금액"
-                                position="top"
-                                fill="#10b981"
-                                fontSize={12}
-                                className="font-medium"
-                                offset={10}
-                            />
-                        </ReferenceLine>
+                            strokeDasharray="5 5"
+                            dot={false}
+                        />
 
                         <Line
+                            name="평가금액"
                             type="monotone"
                             dataKey="totalValue"
                             stroke="#3b82f6"

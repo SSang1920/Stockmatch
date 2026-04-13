@@ -4,6 +4,7 @@ import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recha
 
 interface PortfolioDonutChartProps {
     holdings: HoldingItem[];
+    className?: string;
 }
 
 const COLORS = [
@@ -16,7 +17,7 @@ const OTHER_COLOR = '#cbd5e1';
 // 비중 5% 미만 기타 처리
 const MIN_PERCENTAGE = 0.05;
 
-export function PortfolioDonutChart({ holdings }: PortfolioDonutChartProps) {
+export function PortfolioDonutChart({ holdings, className }: PortfolioDonutChartProps) {
     // 전체 자산 총액 계산
     const totalValue = holdings.reduce((sum, item) => sum + Math.max(0, item.value || 0), 0);
 
@@ -82,11 +83,11 @@ export function PortfolioDonutChart({ holdings }: PortfolioDonutChartProps) {
     };
 
     return (
-        <Card className="shadow-sm border-none bg-white h-full">
+        <Card className={`shadow-sm border-none bg-white flex flex-col h-full ${className}`}>
             <CardHeader className="border-b pb-4">
                 <CardTitle className="text-lg">자산 비중</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6 h-[320px] w-full">
+            <CardContent className="pt-6 h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Edit2, Loader2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Link } from "@tanstack/react-router";
 
 interface HoldingsTableProps {
     holdings: HoldingItem[];
@@ -48,6 +49,7 @@ export function HoldingsTable({ holdings, usdToKrwRate, onEdit }: HoldingsTableP
                                 <tr>
                                     <th className="px-4 py-3 font-medium">종목명</th>
                                     <th className="px-4 py-3 font-medium text-right">보유수량</th>
+                                    <th className="px-4 py-3 font-medium text-right">현재가</th>
                                     <th className="px-4 py-3 font-medium text-right">평가금액</th>
                                     <th className="px-4 py-3 font-medium text-right">평가손익</th>
                                     <th className="px-4 py-3 font-medium text-right">수익률</th>
@@ -58,14 +60,36 @@ export function HoldingsTable({ holdings, usdToKrwRate, onEdit }: HoldingsTableP
                                 {holdings.map((item) => {
                                     const isPlus = (item.pnlAmount || 0) >= 0;
                                     const colorClass = isPlus ? "text-red-500" : "text-blue-500";
+                                    const marketParam = item.currency === 'USD' ? 'US' : 'KR';
 
                                     return (
                                         <tr key={item.ticker} className="hover:bg-gray-50 transition-colors">
                                             <td className="px-4 py-3">
-                                                <div className="font-bold text-gray-800">{item.krName || item.name}</div>
-                                                <div className="text-xs text-gray-500">{item.ticker}</div>
+                                                <Link
+                                                    to="/stocks/$market/$ticker"
+                                                    params={{
+                                                        market: marketParam,
+                                                        ticker: item.ticker
+                                                    }}
+                                                    className="Group"
+                                                >
+                                                    <div className="font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+                                                        {item.krName || item.name}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 group-hover:text-blue-400 transition-colors">
+                                                        {item.ticker}
+                                                    </div>
+                                                </Link>
+
                                             </td>
                                             <td className="px-4 py-3 text-right">{(item.quantity || 0).toLocaleString()}주</td>
+
+                                            <td className="px-4 py-3 text-right font-medium">
+                                                {item.currency === "USD" ? "$" : ""}
+                                                {(item.currentPrice || 0).toLocaleString()}
+                                                {item.currency === "KRW" ? "원" : ""}
+                                            </td>
+
                                             <td className="px-4 py-3 text-right font-medium">
                                                 <div>{Math.floor(item.value || 0).toLocaleString()}원</div>
                                                 {item.currency === "USD" && (

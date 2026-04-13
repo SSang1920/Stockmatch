@@ -61,7 +61,7 @@ export default function PortfolioPage() {
   if (!valuation) return null;
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
+    <div className="w-full px-4 md:px-8 py-6 space-y-6">
       <div className="flex items-end justify-between">
         <div className="flex items-baseline gap-3">
           <h1 className="text-2xl font-bold text-gray-800">내 포트폴리오</h1>
@@ -82,6 +82,7 @@ export default function PortfolioPage() {
         totalPnlRate={valuation.totalPnlRate}
       />
 
+      {/* 실현 수익 통계 섹션 */}
       <ProfitStatCards
         stats={statsData}
         isLoading={isStatsLoading}
@@ -92,24 +93,27 @@ export default function PortfolioPage() {
         setSelectedMonth={setSelectedMonth}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* 왼쪽: 보유 종목 */}
-        <div className="md:col-span-2">
-          <HoldingsTable
-            holdings={valuation.holdings}
-            usdToKrwRate={valuation.usdToKrwRate}
-            onEdit={handleOpenEdit}
-          />
-        </div>
-
-        {/* 오른쪽: 차트 섹션 */}
-        <div className="space-y-4">
-          <PortfolioDonutChart holdings={valuation.holdings} />
-        </div>
+      {/* 보유 종목 테이블 */}
+      <div className="w-full">
+        <HoldingsTable
+          holdings={valuation.holdings}
+          usdToKrwRate={valuation.usdToKrwRate}
+          onEdit={handleOpenEdit}
+        />
       </div>
 
-      {/* 일별 자산 추이 차트 */}
-      <PortfolioLineChart />
+      {/* 하단 분석 섹션 */}
+      <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 items-stretch">
+        <div className="lg:col-span-7">
+          <PortfolioLineChart />
+        </div>
+
+        <div className="lg:col-span-3">
+          {/* 도넛 차트 섹션 */}
+          <PortfolioDonutChart 
+            holdings={valuation.holdings} />
+        </div>
+      </div>
 
       {/* 추가/수정 모달 컴포넌트 */}
       <UnifiedTradeModal
