@@ -17,8 +17,13 @@ import com.stockmatch.corporate.global.incomestatement.service.IncomeStatementSe
 import com.stockmatch.corporate.global.news.service.NewsService;
 import com.stockmatch.corporate.global.overview.service.OverviewService;
 import com.stockmatch.corporate.korea.finance.service.KoreaFinanceService;
+import com.stockmatch.exchangeRate.domain.FromCurrency;
+import com.stockmatch.exchangeRate.domain.ToCurrency;
+import com.stockmatch.exchangeRate.service.ExchangeService;
 import com.stockmatch.portfolio.dto.HoldingResponse;
+import com.stockmatch.portfolio.dto.PortfolioValuationResponse;
 import com.stockmatch.portfolio.service.HoldingService;
+import com.stockmatch.portfolio.service.PortfolioValuationService;
 import com.stockmatch.stock.domain.Market;
 import com.stockmatch.stock.domain.Security;
 import com.stockmatch.stock.repository.SecurityRepository;
@@ -29,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import  com.stockmatch.corporate.korea.finance.dto.DartFinancialRawResponse.RawAccountItem;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +64,7 @@ public class AnalysisService {
     private final CachflowService cashflowService;
     private final NewsService newsService;
     private final EarningsService earningsService;
-
+    private final PortfolioValuationService portfolioValuationService;
 
     public AnalysisPackage analyzeStock(Long userId, String symbol){
         List<MissingDataItem> missingData = new ArrayList<>();
@@ -176,27 +182,27 @@ public class AnalysisService {
     }
 
     private UserContext buildAiUserContext(User user, Long userId) {
-        //  원본 데이터 가져오기
-        List<HoldingResponse> rawHoldings = holdingService.getMyHoldings(userId);
+
+        PortfolioValuationResponse valuation = portfolioValuationService.calculate(user.getPortfolio().getId());
 
         //  총 자산 계산
-        double totalValue = rawHoldings.stream()
-                .mapToDouble(h -> h.quantity().multiply(h.avgPrice()).doubleValue())
-                .sum();
+        double totalValue = valuation.totalValue().doubleValue();
 
         // 비중 계산 및 AI 전용 DTO로 변환
-        List<UserContext.AiPortfolioHoldingDto> aiHoldings = rawHoldings.stream()
+        List<UserContext.AiPortfolioHoldingDto> aiHoldings = valuation.holdings().stream()
                 .map(h -> {
-                    double itemValue = h.quantity().multiply(h.avgPrice()).doubleValue();
-                    double weight = totalValue > 0 ? Math.round((itemValue / totalValue) * 1000) / 10.0 : 0.0;
+                    double itemCurrentValue = h.value().doubleValue();
+
+                    double weight = totalValue > 0 ? Math.round((itemCurrentValue / totalValue) * 1000) / 10.0 : 0.0;
 
                     return UserContext.AiPortfolioHoldingDto.builder()
                             .ticker(h.ticker())
                             .name(h.name())
                             .quantity(h.quantity())
                             .avgPrice(h.avgPrice())
+                            .currentPrice(h.currentPrice())
                             .currency(h.currency())
-                            .amount(itemValue)
+                            .amount(itemCurrentValue)
                             .weightPct(weight)
                             .build();
                 })
@@ -217,9 +223,9 @@ public class AnalysisService {
             if(result == null ) {
                 throw new BusinessException(ErrorCode.UPSTREAM_DATA_EMPTY);
             }
-                return result;
+            return result;
 
-         } catch (Exception e) {
+        } catch (Exception e) {
             log.error("Error fetching {} {}: {}", section, field, e.getMessage());
 
             String reason = "데이터가 누락되었습니다.";

@@ -374,7 +374,7 @@
 
             // 총 손익 및 총 수익률
             BigDecimal unrealizedPnl = totalValue.subtract(totalInvested);
-            BigDecimal realizedPnl = portfolio.getRealizedPnl();
+            BigDecimal realizedPnl = nz(portfolio.getRealizedPnl());
 
             BigDecimal totalPnl = unrealizedPnl.add(realizedPnl).setScale(SCALE_MONEY, RoundingMode.HALF_UP);
 
