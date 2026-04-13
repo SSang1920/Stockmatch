@@ -102,8 +102,21 @@ public class AuthController {
         Long userId = userDetails.getUser().getId();
         authService.logout(userId);
 
-        ResponseCookie expiredAccess = ResponseCookie.from("accessToken", "").path("/").maxAge(0).build();
-        ResponseCookie expiredRefresh = ResponseCookie.from("refreshToken", "").path("/").httpOnly(true).maxAge(0).build();
+        ResponseCookie expiredAccess = ResponseCookie.from("accessToken", "")
+                .path("/")
+                .maxAge(0)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .build();
+
+        ResponseCookie expiredRefresh = ResponseCookie.from("refreshToken", "")
+                .path("/")
+                .maxAge(0)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .build();
 
         return ResponseEntity.ok()
                 .header("Set-Cookie", expiredAccess.toString())

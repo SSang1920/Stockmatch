@@ -21,6 +21,8 @@ function RouteComponent() {
     const [isEditing, setIsEditing] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
 
+
+
     useEffect(() => {
         if (user && user.hasApiKey) {
                     setHasSavedKey(true);
@@ -38,7 +40,6 @@ function RouteComponent() {
             if (refreshUser) {
                 await refreshUser();
             }
-
             setHasSavedKey(true);
             setApiKey('');
             setIsEditing(false);
@@ -53,8 +54,6 @@ function RouteComponent() {
             onSuccess: () => {
                 toast.success("회원 탈퇴가 완료되었습니다.");
 
-                document.cookie = "accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                document.cookie = "refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
                 localStorage.clear();
 
                 window.location.href = '/';
@@ -66,7 +65,7 @@ function RouteComponent() {
                 const isGoogleUser = user?.authprovider === 'GOOGLE';
 
                 if ((errorCode === 'A008' || errorCode === 'A007') && isGoogleUser) {
-                    if (window.confirm("구글 계정 연동 해제를 위해 보안 재인증이 필요합니다.\n확인을 누르면 구글 로그인 화면으로 이동합니다. \n 로그인 후 회원 탈퇴를 한번 더 눌러주세요.")) {
+                    if (window.confirm("구글 계정 연동 해제를 위해 보안 재인증이 필요합니다.\n확인을 누르면 구글 로그인 화면으로 이동합니다. \n재 로그인 후 회원 탈퇴를 한번 더 눌러주세요.")) {
 
                         localStorage.setItem('loginRedirect', '/profile');
 

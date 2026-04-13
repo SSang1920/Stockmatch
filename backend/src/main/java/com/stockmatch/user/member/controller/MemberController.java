@@ -9,9 +9,12 @@ import com.stockmatch.user.member.dto.request.InvestmentResultRequest;
 import com.stockmatch.user.member.dto.response.UserInfoResponse;
 import com.stockmatch.user.member.dto.request.UserProfileUpdateRequest;
 import com.stockmatch.user.member.service.MemberService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -89,7 +92,8 @@ public class MemberController {
     @DeleteMapping("/me")
     public ResponseEntity<ApiResponse<Void>> deleteUser(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @CookieValue(name = "refreshToken", required=false) String refreshToken) {
+            @CookieValue(name = "refreshToken", required=false) String refreshToken,
+            HttpServletResponse response) {
 
         if (refreshToken == null) {
             throw new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
@@ -98,6 +102,25 @@ public class MemberController {
         Long userId = userDetails.getUser().getId();
         userService.deleteUser(userId);
 
-        return ResponseEntity.ok(ApiResponse.ok());
+        ResponseCookie expiredAccess = ResponseCookie.from("accessToken", "")
+                .path("/")
+                .maxAge(0)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .build();
+
+        ResponseCookie expiredRefresh = ResponseCookie.from("refreshToken", "")
+                .path("/")
+                .maxAge(0)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, expiredAccess.toString())
+                .header(HttpHeaders.SET_COOKIE, expiredRefresh.toString())
+                .body(ApiResponse.ok());
     }
 }
