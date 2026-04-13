@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Link } from '@tanstack/react-router';
+import { useUser } from '@/context/UserContext';
 import { Sparkles, SearchX, History, X } from 'lucide-react';
 import { AnalysisSearchInput } from './AnalysisSearchInput';
 import { AnalysisResultCard } from './AnalysisResultCard';
@@ -15,6 +17,9 @@ export const AnalysisDashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<AnalysisHistoryListResponse[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const { user } = useUser();
+
+  const isApiKeyMissing = !user?.hasApiKey;
 
 const handleOpenHistory = async () => {
     try {
@@ -114,7 +119,15 @@ const handleOpenHistory = async () => {
 
           {/* 검색 입력창 */}
           <div className="mb-8">
-             <AnalysisSearchInput onSearch={handleSearch} isLoading={isLoading} />
+             <AnalysisSearchInput onSearch={handleSearch} isLoading={isLoading} disabled={isApiKeyMissing}/>
+
+             {isApiKeyMissing && (
+                  <div className="mt-3 px-1">
+                    <p className="text-sm font-medium text-red-500 animate-pulse">
+                      분석을 시작하려면 먼저 <Link to="/profile" className="underline font-bold hover:text-red-700">내 프로필</Link>에서 AlphaVantage API 키를 등록해 주세요.
+                    </p>
+                  </div>
+                )}
           </div>
 
           {/*  로딩 화면 */}

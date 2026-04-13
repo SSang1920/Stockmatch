@@ -15,16 +15,14 @@ export const Route = createFileRoute('/profile')({
 function RouteComponent() {
     const navigate = useNavigate();
 
-    const {user, isLoading } = useUser();
+    const {user, refreshUser, isLoading } = useUser();
     const [apiKey, setApiKey] = useState('');
     const [hasSavedKey, setHasSavedKey] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
 
-
-
     useEffect(() => {
-        if (user && user.apiKey) {
+        if (user && user.hasApiKey) {
                     setHasSavedKey(true);
                     setApiKey('');
                 } else if (user) {
@@ -34,8 +32,13 @@ function RouteComponent() {
 
     const mutation = useMutation({
         mutationFn : updateApiKey,
-        onSuccess: () => {
+        onSuccess: async () => {
             toast.success("Alpha Vantage Key가 저장되었습니다.");
+
+            if (refreshUser) {
+                await refreshUser();
+            }
+
             setHasSavedKey(true);
             setApiKey('');
             setIsEditing(false);

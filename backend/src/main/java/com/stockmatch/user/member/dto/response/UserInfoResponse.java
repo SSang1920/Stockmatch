@@ -18,6 +18,7 @@ public class UserInfoResponse {
     private final UserInvestmentType investmentType;
     private final String apiKey;
     private final UserRole role;
+    private final boolean hasApiKey;
 
 
     public UserInfoResponse(User user, AlphaVantageKey alphaVantageKey){
@@ -29,6 +30,7 @@ public class UserInfoResponse {
         this.authprovider = user.getProvider();
         this.investmentType = user.getInvestmentType();
         this.apiKey = (alphaVantageKey != null) ? alphaVantageKey.getKeyCipher() : null;
+        this.hasApiKey = (alphaVantageKey != null);
     }
 
 

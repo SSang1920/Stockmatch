@@ -5,9 +5,10 @@ import { searchStocks } from "../../../market/api";
 interface Props {
     onSearch : (ticker: string, name?: string) =>void;
     isLoading?:boolean;
+    disabled?: boolean;
     }
 
-export const AnalysisSearchInput = ({ onSearch, isLoading } : Props) => {
+export const AnalysisSearchInput = ({ onSearch, isLoading, disabled } : Props) => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<StockSearchResponse[]>([]);
     const [isOpen, setIsOpen] = useState(false);
@@ -83,12 +84,12 @@ export const AnalysisSearchInput = ({ onSearch, isLoading } : Props) => {
 
                <input
                    type="text"
-                   className="block w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm disabled:bg-gray-100"
-                   placeholder="예: AAPL, 삼성전자, NVDA"
+                   className="block w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                   placeholder={disabled ? "API 키 등록이 필요합니다" : "예: AAPL, 삼성전자, NVDA"}
                    value={query}
                    onChange={(e) => setQuery(e.target.value)}
                    onFocus={() => query && setIsOpen(true)}
-                   disabled={isLoading} //로딩 중 입력 비활성화
+                   disabled={disabled || isLoading} //로딩 중 입력 비활성화
                />
            </form>
 

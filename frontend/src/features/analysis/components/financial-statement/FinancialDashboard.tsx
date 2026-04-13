@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Link } from '@tanstack/react-router';
+import { useUser } from '@/context/UserContext';
 import { CheckCircle2, MessageSquareText, Search, History, BarChart3, SearchX, X } from 'lucide-react';
 import { AnalysisLayout } from '../common/AnalysisLayout';
 import { FinancialAnalysisResponse, AnalysisHistoryListResponse } from '../../types';
@@ -16,77 +18,80 @@ export const FinancialDashboard = () => {
       const [history, setHistory] = useState<AnalysisHistoryListResponse[]>([]);
       const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-const handleOpenHistory = async () => {
-    try {
-      const response = await fetchUserHistoryList();
-      if (response && response.data) {
-        const financialHistory = response.data.filter(item => item.type === 'FINANCIAL');
-        setHistory(financialHistory);
-        setIsDrawerOpen(true);
-    }
-    } catch (err) {
-      console.error("히스토리 로딩 실패", err);
-    }
-  };
+      const { user } = useUser();
+      const isApiKeyMissing = !user?.hasApiKey;
 
-const handleHistoryItemClick = async (item: AnalysisHistoryListResponse) => {
-    try {
-        setIsLoading(true); // 상세 데이터를 가져오는 동안 로딩 표시
-        // 개별 상세 조회 API 호출
-        const response = await fetchHistoryDetail(item.id);
-
-        if (response && response.data) {
-          setResult(response.data);      // 상세 분석 결과(AiResponseDto) 세팅
-          setSearchTicker(item.symbol);  // 티커 세팅
-          setSearchName('');             // 필요 시 이름 필드 초기화
-          setIsDrawerOpen(false);        // 사이드바 닫기
+      const handleOpenHistory = async () => {
+        try {
+          const response = await fetchUserHistoryList();
+          if (response && response.data) {
+            const financialHistory = response.data.filter(item => item.type === 'FINANCIAL');
+            setHistory(financialHistory);
+            setIsDrawerOpen(true);
         }
-      } catch (err) {
-        console.error("상세 내역 로딩 실패", err);
-        alert("상세 데이터를 불러오지 못했습니다.");
-      } finally {
-        setIsLoading(false);
-      }
-  };
+        } catch (err) {
+          console.error("히스토리 로딩 실패", err);
+        }
+      };
 
- const handleSearch = async (inputTicker: string, inputName?: string) => {
-    //  상태 초기화
-    setIsLoading(true);
-    setResult(null);
-    setError(null);
-    setSearchTicker(inputTicker);
-    setSearchName(inputName || '');
+      const handleHistoryItemClick = async (item: AnalysisHistoryListResponse) => {
+        try {
+            setIsLoading(true); // 상세 데이터를 가져오는 동안 로딩 표시
+            // 개별 상세 조회 API 호출
+            const response = await fetchHistoryDetail(item.id);
 
-    try {
-      const response = await fetchAiFinancialAnalysis(inputTicker);
-
-      if(response && response.data) {
-          setResult(response.data);
-          } else {
-              throw new Error("데이터 형식이 올바르지 않습니다.");
+            if (response && response.data) {
+              setResult(response.data);      // 상세 분석 결과(AiResponseDto) 세팅
+              setSearchTicker(item.symbol);  // 티커 세팅
+              setSearchName('');             // 필요 시 이름 필드 초기화
+              setIsDrawerOpen(false);        // 사이드바 닫기
+            }
+          } catch (err) {
+            console.error("상세 내역 로딩 실패", err);
+            alert("상세 데이터를 불러오지 못했습니다.");
+          } finally {
+            setIsLoading(false);
           }
+      };
+
+     const handleSearch = async (inputTicker: string, inputName?: string) => {
+        //  상태 초기화
+        setIsLoading(true);
+        setResult(null);
+        setError(null);
+        setSearchTicker(inputTicker);
+        setSearchName(inputName || '');
+
+        try {
+          const response = await fetchAiFinancialAnalysis(inputTicker);
+
+          if(response && response.data) {
+              setResult(response.data);
+              } else {
+                  throw new Error("데이터 형식이 올바르지 않습니다.");
+              }
 
 
-    } catch (err: any) {
-      console.error("API Error:", err);
+        } catch (err: any) {
+          console.error("API Error:", err);
 
-      // 에러 상황별 메시지 처리
-      if (err.response) {
-          const serverMessage = err.response.data?.error?.message;
-        if (err.response.status === 401) {
-            setError("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
-        } else if (err.response.status === 404) {
-            setError(`'${inputTicker}'에 대한 정보를 찾을 수 없습니다.`);
-        } else if(serverMessage){
-           setError(serverMessage);
-        }else {
-         setError("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+          // 에러 상황별 메시지 처리
+          if (err.response) {
+              const serverMessage = err.response.data?.error?.message;
+            if (err.response.status === 401) {
+                setError("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
+            } else if (err.response.status === 404) {
+                setError(`'${inputTicker}'에 대한 정보를 찾을 수 없습니다.`);
+            } else if(serverMessage){
+               setError(serverMessage);
+            }else {
+             setError("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            }
+          }
+        } finally {
+          setIsLoading(false);
         }
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      };
 
 return (
     <div className="relative space-y-6">
@@ -111,7 +116,15 @@ return (
 
         {/* 검색 입력창 (종목 티커 검색용) */}
         <div className="mb-8">
-           <AnalysisSearchInput onSearch={handleSearch} isLoading={isLoading} />
+           <AnalysisSearchInput onSearch={handleSearch} isLoading={isLoading} disabled={isApiKeyMissing}/>
+
+           {isApiKeyMissing && (
+             <div className="mt-3 px-1">
+               <p className="text-sm font-medium text-red-500 animate-pulse">
+                 분석을 시작하려면 먼저 <Link to="/profile" className="underline font-bold hover:text-red-700">내 프로필</Link>에서 AlphaVantage API 키를 등록해 주세요.
+               </p>
+             </div>
+           )}
         </div>
 
         {/*  로딩 화면 */}
