@@ -51,17 +51,18 @@ public class HoldingService {
         // 기존 보유종목 여부 확인
         Holding holding = holdingRepository.findByPortfolioIdAndSecurityId(portfolio.getId(), security.getId()).orElse(null);
 
+        Currency securityCurrency = security.getCurrencyCode();
+
         boolean isNewHolding = (holding == null);
 
         if (isNewHolding) {
-            holding = new Holding(
-                    null,
-                    portfolio,
-                    security,
-                    request.quantity(),
-                    request.avgPrice(),
-                    security.getCurrency() != null ? security.getCurrency() : Currency.KRW
-            );
+            holding = Holding.builder()
+                    .portfolio(portfolio)
+                    .security(security)
+                    .quantity(request.quantity())
+                    .avgPrice(request.avgPrice())
+                    .currency(securityCurrency)
+                    .build();
         } else {
             // 추가 매수 시 평단가 및 수량 재계산
             BigDecimal existingQty = holding.getQuantity();
@@ -74,6 +75,7 @@ public class HoldingService {
             BigDecimal newAvg = totalCost.divide(totalQty, 4, RoundingMode.HALF_UP);
 
             holding.updateQuantityAndAvgPrice(totalQty, newAvg);
+            holding.updateCurrency(securityCurrency);
         }
 
         holdingRepository.save(holding);

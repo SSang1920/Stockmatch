@@ -24,9 +24,6 @@ export function Sidebar() {
             <NavItem to="/" icon={<LineChart className="h-4 w-4" />}>
                 시장 요약
             </NavItem>
-            <NavItem to="/market/fx" icon={<DollarSign className="h-4 w-4" />}>
-                환율
-            </NavItem>
 
             <div className="my-2 border-t" />
 

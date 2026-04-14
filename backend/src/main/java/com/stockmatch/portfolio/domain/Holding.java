@@ -37,10 +37,9 @@ public class Holding extends BaseEntity {
     @Column(name = "avg_price", precision = 28, scale = 8)
     private BigDecimal avgPrice;
 
-    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Currency currency = Currency.KRW;
+    private Currency currency;
 
     // ===== 상태 변경 메서드 ===== //
     public void updateQuantity(BigDecimal quantity) {
@@ -49,6 +48,10 @@ public class Holding extends BaseEntity {
 
     public void updateAvgPrice(BigDecimal avgPrice) {
         this.avgPrice = avgPrice;
+    }
+
+    public void updateCurrency(Currency currency) {
+        this.currency = currency;
     }
 
     public void updateQuantityAndAvgPrice(BigDecimal quantity, BigDecimal avgPrice) {
