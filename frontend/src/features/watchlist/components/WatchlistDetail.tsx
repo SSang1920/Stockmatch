@@ -181,9 +181,11 @@ export function WatchlistDetail({ watchlistId, onBack }: DetailProps) {
     useEffect(() => { loadData() }, [watchlistId]);
 
     // 종목 추가 핸들러
-    const handleAddStock = async (ticker: string) => {
+    const handleAddStock = async (data: any) => {
         try {
-            await watchlistApi.addWatchlistItem(watchlistId, ticker);
+            const ticker = typeof data === 'string' ? data : data.ticker;
+
+            await watchlistApi.addWatchlistItem(watchlistId, { ticker });
             await loadData();
             setIsSearchOpen(false);
         } catch (error) {
@@ -207,7 +209,7 @@ export function WatchlistDetail({ watchlistId, onBack }: DetailProps) {
     // 메모 수정 핸들러
     const handleUpdateMemo = async (itemId: number, memo: string) => {
         try {
-            await watchlistApi.updateWatchlistItem(watchlistId, itemId, memo);
+            await watchlistApi.updateWatchlistItem(watchlistId, itemId, { memo });
             setWatchlist(prev => prev ? { ...prev, items: prev.items.map(i => i.id === itemId ? { ...i, memo } : i) } : null);
         } catch (error) {
             alert(getErrorMessage(error))
