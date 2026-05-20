@@ -1,5 +1,5 @@
 # 1) 빌드 스테이지 (Node.js 환경)
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 # 캐시 최적화를 위해 패키지 파일 먼저 복사 후 설치
