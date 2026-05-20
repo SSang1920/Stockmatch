@@ -25,8 +25,6 @@ export const Route = createRootRouteWithContext<{
 
     return (
       <>
-        <NavigationProgress />
-
         <Outlet context={{ user }} />
         <Toaster
           richColors={true}
