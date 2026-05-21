@@ -9,6 +9,7 @@ import com.stockmatch.user.auth.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,6 +26,9 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @Value("${app.frontend-url:http://stockmatch.kro.kr}")
+    private String frontendUrl;
+
     @GetMapping("/callback/{provider}")
     public void callback(
             @PathVariable String provider,
@@ -35,7 +39,7 @@ public class AuthController {
     ) throws IOException {
 
         if (error != null){
-            response.sendRedirect("http://localhost:5173");
+            response.sendRedirect(frontendUrl);
             return;
         }
 
@@ -44,11 +48,13 @@ public class AuthController {
         String accessToken = tokens.get("accessToken");
         String refreshToken = tokens.get("refreshToken");
 
+        boolean isProd = !frontendUrl.contains("localhost");
+
         // accessToken 쿠키 생성
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken)
                 .path("/")
                 .httpOnly(true) //프론트에서 읽을시 false
-                .secure(false) // 로컬 환경 false, 배포 환경 true
+                .secure(isProd) // 로컬 환경 false, 배포 환경 true
                 .sameSite("Lax") // 타 도메인간 리다이렉트 시 쿠키 전달 허용
                 .maxAge(60*60)
                 .build();
@@ -57,7 +63,7 @@ public class AuthController {
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .path("/")
                 .httpOnly(true) // refreshToken은 서버만 읽도록
-                .secure(false)
+                .secure(isProd)
                 .sameSite("Lax")
                 .maxAge(7 * 24 * 60 * 60)
                 .build();
@@ -65,7 +71,7 @@ public class AuthController {
         response.addHeader("Set-Cookie", accessCookie.toString());
         response.addHeader("Set-Cookie", refreshCookie.toString());
 
-        response.sendRedirect("http://localhost:5173");
+        response.sendRedirect(frontendUrl);
     }
 
     /**
@@ -81,11 +87,12 @@ public class AuthController {
         }
 
         TokenResponseDto responseData = authService.refreshAccessToken(refreshToken);
+        boolean isProd = !frontendUrl.contains("localhost");
 
         ResponseCookie newAccessCookie = ResponseCookie.from("accessToken", responseData.getAccessToken())
                 .path("/")
                 .httpOnly(true)
-                .secure(false)
+                .secure(isProd)
                 .sameSite("Lax")
                 .maxAge(60 * 60)
                 .build();
