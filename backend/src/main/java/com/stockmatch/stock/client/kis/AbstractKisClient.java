@@ -31,7 +31,13 @@ public abstract class AbstractKisClient {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("authorization", "Bearer " + accessToken);
+
+        if (trId != null && (trId.startsWith("F") || trId.startsWith("H") || trId.startsWith("D") || trId.startsWith("V"))) {
+            headers.set("authorization", accessToken);
+        } else {
+            headers.set("authorization", "Bearer " + accessToken);
+        }
+
         headers.set("appkey", appKey);
         headers.set("appsecret", appSecret);
         headers.set("tr_id", trId);
