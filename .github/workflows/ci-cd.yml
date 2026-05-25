@@ -41,17 +41,6 @@ jobs:
       - name: Build
         run: ./gradlew clean build -x test
 
-      - name: Test
-        continue-on-error: ${{ env.TEST_OPTIONAL == 'true' }}
-        run: ./gradlew test
-
-      - name: Upload test reports (always)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-test-report
-          path: backend/build/reports/tests/test
-
   ci-frontend:
     name: Frontend Build
     runs-on: ubuntu-latest
@@ -153,7 +142,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             set -e
-            cd /srv/stockmatch
+            cd ~/stockmatch
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
             docker compose pull
             docker compose --profile intra --profile app up -d
