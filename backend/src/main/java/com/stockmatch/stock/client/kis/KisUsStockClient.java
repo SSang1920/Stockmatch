@@ -97,11 +97,14 @@ public class KisUsStockClient extends AbstractKisClient implements ExternalPrice
                 return StockPriceResponse.builder().build();
             }
 
+            JsonNode latestData = output1.isArray() ? output1.get(0) : output1;
+
             // API 필드 매핑
-            BigDecimal current = parseBigDecimal(output1.path("ovrs_nmix_prpr").asText());
-            BigDecimal prevClose = parseBigDecimal(output1.path("ovrs_nmix_prdy_clpr").asText());
+            BigDecimal current = parseBigDecimal(latestData.path("ovrs_nmix_prpr").asText());
+            BigDecimal prevClose = parseBigDecimal(latestData.path("ovrs_nmix_prdy_clpr").asText());
+
             BigDecimal changeAmount = current.subtract(prevClose);
-            BigDecimal changeRate = parseBigDecimal(output1.path("prdy_ctrt").asText());
+            BigDecimal changeRate = parseBigDecimal(latestData.path("prdy_ctrt").asText());
 
             return StockPriceResponse.builder()
                     .region(Region.US)
