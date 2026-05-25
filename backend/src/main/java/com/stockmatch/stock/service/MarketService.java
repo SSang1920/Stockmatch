@@ -94,11 +94,11 @@ public class MarketService {
             StockPriceResponse kospi = kisKorStockClient.getKrIndexPrice(CODE_KOSPI);
 
             // 나스닥, S&P 500 조회
-            StockPriceResponse nasdaq = kisUsStockClient.getUsIndexPrice(CODE_NASDAQ, "NASDAQ");
-            StockPriceResponse sp500 = kisUsStockClient.getUsIndexPrice(CODE_SP500, "S&P 500");
+            StockPriceResponse nasdaq = kisUsStockClient.getUsIndexPrice(CODE_NASDAQ, "FHKST03010100");
+            StockPriceResponse sp500 = kisUsStockClient.getUsIndexPrice(CODE_SP500, "FHKST03010100");
 
             // 환율 조회
-            StockPriceResponse usdRate = kisUsStockClient.getUsIndexPrice(CODE_EXCHANGE, "USD/KRW");
+            StockPriceResponse usdRate = kisUsStockClient.getUsIndexPrice(CODE_EXCHANGE, "FHKST03010100");
 
             // 현재 시간 포맷
             String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM.dd HH:mm"));
