@@ -153,7 +153,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             set -e
-            cd /srv/stockmatch
+            cd ~/stockmatch
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
             docker compose pull
             docker compose --profile intra --profile app up -d
