@@ -1,7 +1,6 @@
 services:
   db:
     image: mysql:8.0
-    profiles: ["infra"]
     ports: ["3307:3306"]
     container_name: stock-db
     env_file: .env
@@ -22,7 +21,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    profiles: ["infra"]
     ports: ["6379:6379"]
     container_name: stock-redis
     env_file: .env
@@ -43,7 +41,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    profiles: ["app"]
     container_name: stock-backend
     env_file: .env
     environment:
@@ -67,7 +64,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    profiles: ["app"]
     container_name: stock-web
     env_file: .env
     environment:
