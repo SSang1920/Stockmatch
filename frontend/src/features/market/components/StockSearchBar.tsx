@@ -31,7 +31,7 @@ export const StockSearchBar = ({ onSelectStock, hideRecent = false }: StockSearc
     // 최근 검색어 추가 함수 (중복 제거 + 최대 5개 제한)
     const addToRecent = (stock: StockSearchResponse) => {
         const prev = [...recentSearches];
-        
+
         // 중복 방지
         const filtered = prev.filter((item) => item.ticker !== stock.ticker);
 
@@ -84,12 +84,50 @@ export const StockSearchBar = ({ onSelectStock, hideRecent = false }: StockSearc
                     market: stock.market,
                     ticker: stock.ticker
                 },
-            });            
+            });
         }
 
         setIsOpen(false);
         setQuery('');   // 검색창 초기화
     }
+
+    // 검색창에서 엔더키 누르거나 없는 주식 강제로 검색할 때 발동되는 핸들러
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            const cleanQuery = query.trim().toUpperCase();
+            if (!cleanQuery) return;
+
+            // 만약 검색 결과 리스트에 입력한 티커와 완벽히 일치하는 자산이 있다면, 그 자산을 정상 선택 처리
+            const exactMatch = results.find(s => s.ticker.toUpperCase() === cleanQuery);
+            if (exactMatch) {
+                handleSelect(exactMatch);
+                return;
+            }
+
+            const dummyStock: StockSearchResponse = {
+                id: 0,
+                ticker: cleanQuery,
+                name: cleanQuery,
+                englishName: cleanQuery,
+                market: 'US',
+                exchange: 'NASDAQ'
+            };
+
+            addToRecent(dummyStock);
+
+
+            navigate({
+                to: '/stocks/$market/$ticker',
+                params: {
+                    market: 'US',
+                    ticker: cleanQuery
+                }
+            });
+
+            setIsOpen(false);
+            setQuery('');
+        }
+    };
 
     // 외부 클릭 시 드롭다운 닫기
     useEffect(() => {
@@ -114,7 +152,7 @@ export const StockSearchBar = ({ onSelectStock, hideRecent = false }: StockSearc
                         viewBox="0 0 24 24"
                         stroke="currentColor"
                     >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
 
@@ -179,8 +217,12 @@ export const StockSearchBar = ({ onSelectStock, hideRecent = false }: StockSearc
 
             {/* 검색 결과 없음 표시 */}
             {isOpen && query.length > 0 && results.length === 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center text-gray-500">
-                    검색 결과가 없습니다.
+                <div
+                    onClick={() => handleKeyDown({ key: 'Enter', preventDefault: () => { } } as any)}
+                    className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center text-gray-500 hover:bg-gray-50 hover:text-blue-500 cursor-pointer transition-all border-dashed border-2"
+                >
+                    <div className="font-semibold">"{query.toUpperCase()}" 결과가 DB에 없습니다.</div>
+                    <div className="text-xs text-gray-400 mt-1">이곳을 클릭하거나 Enter를 치면 KIS 실시간 마스터 동기화를 시작합니다.</div>
                 </div>
             )}
         </div>

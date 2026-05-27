@@ -1,7 +1,6 @@
 package com.stockmatch.stock.service;
 
 import com.stockmatch.common.exception.BusinessException;
-import com.stockmatch.common.exception.ErrorCode;
 import com.stockmatch.stock.dto.StockTrendResponse;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -11,10 +10,12 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 @Slf4j
 @Service
@@ -66,7 +67,7 @@ public class StockRankService {
             throw e;
         } catch (Exception e) {
             log.error("Failed to fetch market trends", e);
-            throw new BusinessException(ErrorCode.MARKET_DATA_FETCH_ERROR);
+            return new HashMap<>();
         }
     }
 
@@ -94,21 +95,24 @@ public class StockRankService {
             usData.put("gainers", overseasTrendService.getGainers());
             usData.put("losers", overseasTrendService.getLosers());
             result.put("US", usData);
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Error collecting trend data", e);
-            throw new BusinessException(ErrorCode.MARKET_DATA_FETCH_ERROR);
-        }
 
-        // Redis 저장
-        try {
+            // Redis 저장
             redisTemplate.opsForValue().set(REDIS_KEY_MARKET_TREND, result, 20, TimeUnit.MINUTES);
             log.info("Market Trend cached successfully.");
+
         } catch (Exception e) {
-            log.error("Failed to cache trend data in Redis", e);
+            log.error("Error collecting trend data, skipping cache update", e);
         }
 
         return result;
+    }
+
+    private List<StockTrendResponse> safeGet(Supplier<List<StockTrendResponse>> supplier) {
+        try {
+            return supplier.get();
+        } catch (Exception e) {
+            log.warn("부분적인 데이터 조회 실패, 빈 리스트로 대체합니다.");
+            return Collections.emptyList();
+        }
     }
 }

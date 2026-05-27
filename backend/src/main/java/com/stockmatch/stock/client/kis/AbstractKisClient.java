@@ -34,28 +34,15 @@ public abstract class AbstractKisClient {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        String upperTrId = (trId != null) ? trId.toUpperCase() : "";
-
-        if (!upperTrId.isEmpty() && (
-                upperTrId.startsWith("F") ||
-                        upperTrId.startsWith("H") ||
-                        upperTrId.startsWith("D") ||
-                        upperTrId.startsWith("V") ||
-                        upperTrId.contains("NASDAQ") ||
-                        upperTrId.contains("S&P") ||
-                        upperTrId.contains("USD")
-        )) {
-            headers.set("authorization", accessToken);
-            log.info("[KIS HEADER] Applied pure token format for tr_id: {}", trId);
-        } else {
-            headers.set("authorization", "Bearer " + accessToken);
-            log.info("[KIS HEADER] Applied Bearer token format for tr_id: {}", trId);
-        }
+        String authValue = "Bearer " + accessToken;
+        headers.set("authorization", authValue);
 
         headers.set("appkey", appKey);
         headers.set("appsecret", appSecret);
         headers.set("tr_id", trId);
         headers.set("custtype", "P");
+
+        log.debug("[KIS HEADER] Applied Bearer token for tr_id: {}", trId);
 
         return headers;
     }

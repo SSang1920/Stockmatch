@@ -52,7 +52,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // 인증 없이 가능한 API
-                        .requestMatchers("/api/auth/**", "/oauth2/**", "/login/**" , "/api/stocks/**", "/api/corporate/**", "/api/market/**")
+                        .requestMatchers("/api/auth/**", "/oauth2/**", "/login/**" , "/api/stocks/**", "/api/corporate/**", "/api/market/**", "/api/exchange-rate/**")
                         .permitAll()
                         .requestMatchers("/api/admin/dart/sync").permitAll()
 

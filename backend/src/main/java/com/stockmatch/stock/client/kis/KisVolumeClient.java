@@ -32,7 +32,7 @@ public class KisVolumeClient extends AbstractKisClient {
                     .fromUriString(baseUrl + "/uapi/domestic-stock/v1/quotations/volume-rank")
                     .queryParam("FID_COND_MRKT_DIV_CODE", "J")
                     .queryParam("FID_COND_SCR_DIV_CODE", "20171")
-                    .queryParam("FID_INPUT_ISCD", "0000")
+                    .queryParam("FID_INPUT_ISCD", "0001")
                     .queryParam("FID_DIV_CLS_CODE", "0")
                     .queryParam("FID_BLNG_CLS_CODE", "0")
                     .queryParam("FID_TRGT_CLS_CODE", "111111111")
@@ -58,7 +58,8 @@ public class KisVolumeClient extends AbstractKisClient {
             );
 
             KisVolumeRankResponse body = response.getBody();
-            if (body == null || body.getOutput() == null) {
+            if (body == null || !"0".equals(body.getRtCd())) {
+                log.warn("[KIS-RANK] 거래량 랭킹 API 오류: {}", (body != null ? body.getMsg1() : "No Body"));
                 return Collections.emptyList();
             }
 
@@ -119,6 +120,8 @@ public class KisVolumeClient extends AbstractKisClient {
     public static class KisVolumeRankResponse {
         @JsonProperty("output")
         private List<KisVolumeItem> output;
+        @JsonProperty("rt_cd") private String rtCd;
+        @JsonProperty("msg1") private String msg1;
     }
 
     @Getter

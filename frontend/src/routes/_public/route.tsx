@@ -1,9 +1,30 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { Header } from '@/components/common/Header'
 import { Sidebar } from '@/components/common/Sidebar'
+import { cookies } from '@/lib/cookies'
 
 export const Route = createFileRoute('/_public')({
-  component: PublicLayout,
+    beforeLoad: async ({ location }) => {
+        const pathname = location.pathname
+
+        const securedPaths = ['/portfolio', '/watchlists', '/analysis']
+
+        const isSecuredPath = securedPaths.some((path) => pathname.startsWith(path))
+
+        if (isSecuredPath) {
+            const accessToken = cookies.get('accessToken')
+
+            if (!accessToken) {
+                throw redirect({
+                    to: '/sign-in',
+                    search: {
+                        redirect: pathname,
+                    },
+                })
+            }
+        }
+    },
+    component: PublicLayout,
 })
 
 function PublicLayout() {

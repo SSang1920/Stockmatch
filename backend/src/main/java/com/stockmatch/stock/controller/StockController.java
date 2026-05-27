@@ -23,7 +23,8 @@ public class StockController {
 
     @GetMapping("/us/{symbol}")
     public ResponseEntity<ApiResponse<StockPriceResponse>> getUsQuote(@PathVariable String symbol) {
-        var data = stockPriceService.getUsStockPrice(symbol);
+        String upperSymbol = (symbol != null) ? symbol.toUpperCase().trim() : "";
+        var data = stockPriceService.getUsStockPrice(upperSymbol);
         return ResponseEntity.ok(ApiResponse.ok(data));
     }
 

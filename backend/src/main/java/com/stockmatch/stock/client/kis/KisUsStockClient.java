@@ -23,12 +23,17 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 @Slf4j
 @Component
 public class KisUsStockClient extends AbstractKisClient implements ExternalPriceClient {
 
     private final SecurityRepository securityRepository;
+
+    private final Set<String> invalidTickers = Collections.synchronizedSet(new HashSet<>());
 
     public KisUsStockClient(RestTemplate restTemplate,
                             KisTokenProvider kisTokenProvider,
@@ -54,7 +59,11 @@ public class KisUsStockClient extends AbstractKisClient implements ExternalPrice
 
         // 티커 + 미국 마켓으로 종목 조회해서 거래소 확인
         Security security = securityRepository.findByTickerAndMarket(normTicker, Market.US)
-                .orElseThrow(() -> new BusinessException(ErrorCode.SECURITY_NOT_FOUND));
+                .orElseGet(() -> fetchAndSaveNewSecurity(normTicker));
+
+        if (security == null) {
+            throw new BusinessException(ErrorCode.SECURITY_NOT_FOUND);
+        }
 
         String excd = resolveExcd(security.getExchange());
 
@@ -120,6 +129,65 @@ public class KisUsStockClient extends AbstractKisClient implements ExternalPrice
             log.error("Failed to fetch US Index {}: {}", ticker, e.getMessage());
             return StockPriceResponse.builder().build();
         }
+    }
+
+    private Security fetchAndSaveNewSecurity(String ticker) {
+        if (invalidTickers.contains(ticker)) {
+            return null;
+        }
+
+        String[] targetExchanges = { "NAS", "NYS", "AMX" };
+
+        for (String excd : targetExchanges) {
+            try {
+                String url = UriComponentsBuilder
+                        .fromUriString(baseUrl + "/uapi/overseas-price/v1/quotations/price-detail")
+                        .queryParam("AUTH", "F")
+                        .queryParam("EXCD", excd)
+                        .queryParam("SYMB", ticker)
+                        .toUriString();
+
+                HttpHeaders headers = createHeaders(KisTrId.US_REAL_TIME);
+                HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+                log.info("DB 누락 티커 발견. KIS API 호출 시도 - Ticker: {}, Exchange: {}", ticker, excd);
+                ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
+
+                JsonNode body = response.getBody();
+                if (body == null || !"0".equals(body.path("rt_cd").asText())) {
+                    continue; // 실패하면 다음 거래소 코드로 패스
+                }
+
+                JsonNode output = body.get("output");
+                if (output == null || output.isEmpty() || output.path("hnam").asText().isBlank()) {
+                    continue; // 응답이 비어있으면 다음 거래소 코드로 패스
+                }
+
+                String korName = output.path("hnam").asText().trim();
+
+                Exchange targetExchange = switch (excd) {
+                    case "NYS" -> Exchange.NYSE;
+                    case "AMX" -> Exchange.AMEX;
+                    default -> Exchange.NASDAQ;
+                };
+
+                // 신규 엔티티 조립
+                Security newSecurity = Security.builder()
+                        .ticker(ticker)
+                        .name(korName)
+                        .market(Market.US)
+                        .exchange(targetExchange)
+                        .build();
+
+                Security saved = securityRepository.save(newSecurity);
+                log.info("[LAZY-LOADING] 신규 미국 종목 자동 적재 완료: {} ({})", ticker, korName);
+                return saved;
+
+            } catch (Exception e) {
+            }
+        }
+        invalidTickers.add(ticker);
+        return null;
     }
 
     private String normalizeTicker(String ticker) {

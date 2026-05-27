@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getUserInfo } from '@/api/user';
+import { cookies } from '@/lib/cookies';
 
 export interface User {
     id: number;             // Long id -> number
@@ -28,6 +29,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchUser = useCallback(async () => {
+        const token = cookies.get('accessToken');
+        if (!token) {
+            setUser(null);
+            setIsLoading(false);
+            return;
+        }
+
         try {
             if (!user) setIsLoading(true);
 
