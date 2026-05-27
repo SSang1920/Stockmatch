@@ -114,8 +114,12 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta_backend.outputs.tags }}
           labels: ${{ steps.meta_backend.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.UNIFIED_IMAGE }}:backend-buildcache
-          cache-to: type=registry,ref=${{ env.UNIFIED_IMAGE }}:backend-buildcache,mode=max
+          cache-from: |
+            type=registry,ref=${{ env.UNIFIED_IMAGE }}:backend-cache-amd64
+            type=registry,ref=${{ env.UNIFIED_IMAGE }}:backend-cache-arm64
+          cache-to: |
+            type=registry,ref=${{ env.UNIFIED_IMAGE }}:backend-cache-amd64,mode=max
+            type=registry,ref=${{ env.UNIFIED_IMAGE }}:backend-cache-arm64,mode=max
 
       - name: Build & Push Web
         uses: docker/build-push-action@v6
@@ -126,8 +130,12 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta_web.outputs.tags }}
           labels: ${{ steps.meta_web.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.UNIFIED_IMAGE }}:web-buildcache
-          cache-to: type=registry,ref=${{ env.UNIFIED_IMAGE }}:web-buildcache,mode=max
+          cache-from: |
+            type=registry,ref=${{ env.UNIFIED_IMAGE }}:web-cache-amd64
+            type=registry,ref=${{ env.UNIFIED_IMAGE }}:web-cache-arm64
+          cache-to: |
+            type=registry,ref=${{ env.UNIFIED_IMAGE }}:web-cache-amd64,mode=max
+            type=registry,ref=${{ env.UNIFIED_IMAGE }}:web-cache-arm64,mode=max
 
   deploy:
     name: Deploy to Server
