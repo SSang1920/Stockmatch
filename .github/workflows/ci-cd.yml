@@ -150,6 +150,6 @@ jobs:
             git pull origin main
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
             export DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
-            docker compose pull stock-backend stock-web || true
-            docker compose up -d --build stock-backend stock-web
+            docker compose pull backend web || true
+            docker compose up -d backend web
             docker system prune -f
