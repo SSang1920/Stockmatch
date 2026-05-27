@@ -111,7 +111,6 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
-          no-cache: true
           tags: ${{ steps.meta_backend.outputs.tags }}
           labels: ${{ steps.meta_backend.outputs.labels }}
           cache-from: type=registry,ref=${{ env.UNIFIED_IMAGE }}:backend-buildcache
@@ -123,7 +122,6 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
-          no-cache: true
           tags: ${{ steps.meta_web.outputs.tags }}
           labels: ${{ steps.meta_web.outputs.labels }}
           cache-from: type=registry,ref=${{ env.UNIFIED_IMAGE }}:web-buildcache
