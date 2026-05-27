@@ -164,6 +164,7 @@ export const StockSearchBar = ({ onSelectStock, hideRecent = false }: StockSearc
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => query && setIsOpen(true)}
+                    onKeyDown={handleKeyDown}
                 />
             </div>
 
@@ -217,14 +218,36 @@ export const StockSearchBar = ({ onSelectStock, hideRecent = false }: StockSearc
 
             {/* 검색 결과 없음 표시 */}
             {isOpen && query.length > 0 && results.length === 0 && (
-                <div
-                    onClick={() => handleKeyDown({ key: 'Enter', preventDefault: () => { } } as any)}
-                    className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center text-gray-500 hover:bg-gray-50 hover:text-blue-500 cursor-pointer transition-all border-dashed border-2"
-                >
-                    <div className="font-semibold">"{query.toUpperCase()}" 결과가 DB에 없습니다.</div>
-                    <div className="text-xs text-gray-400 mt-1">이곳을 클릭하거나 Enter를 치면 KIS 실시간 마스터 동기화를 시작합니다.</div>
-                </div>
-            )}
+    <div
+        onClick={() => {
+            const cleanQuery = query.trim().toUpperCase();
+            if (!cleanQuery) return;
+
+            const dummyStock: StockSearchResponse = {
+                id: 0,
+                ticker: cleanQuery,
+                name: cleanQuery,
+                englishName: cleanQuery,
+                market: 'US',
+                exchange: 'NASDAQ'
+            };
+
+            addToRecent(dummyStock);
+
+            navigate({
+                to: '/stocks/$market/$ticker',
+                params: { market: 'US', ticker: cleanQuery }
+            });
+
+            setIsOpen(false);
+            setQuery('');
+        }}
+        className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center text-gray-500 hover:bg-gray-50 hover:text-blue-500 cursor-pointer transition-all border-dashed border-2"
+    >
+        <div className="font-semibold">"{query.toUpperCase()}" 결과가 없습니다.</div>
+        <div className="text-xs text-gray-400 mt-1">이곳을 클릭하거나 Enter를 동기화를 시작합니다.</div>
+    </div>
+)}
         </div>
     );
 }
