@@ -26,7 +26,7 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @Value("${app.frontend-url:http://stockmatch.kro.kr}")
+    @Value("${app.frontend-url:https://stockmatch.kro.kr}")
     private String frontendUrl;
 
     @GetMapping("/callback/{provider}")
