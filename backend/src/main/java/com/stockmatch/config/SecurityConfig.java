@@ -28,8 +28,7 @@ public class SecurityConfig {
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring()
-                .requestMatchers("/", "/error", "/favicon.ico", "/index.html", "/assets/**")
-                .requestMatchers("/api/auth/callback/**");
+                .requestMatchers("/", "/error", "/favicon.ico", "/index.html", "/assets/**");
     }
 
     @Bean
@@ -41,7 +40,7 @@ public class SecurityConfig {
 
 
                 // 세션 관리 정책
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 // HTML 폼 기반 로그인 비활성화
                 .formLogin(form -> form.disable())

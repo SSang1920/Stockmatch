@@ -55,13 +55,9 @@ instance.interceptors.response.use(
             isRefreshing = true; //
 
             try {
-                const res = await axios.post('/api/auth/refresh', {}, {
-                    withCredentials: true
-                });
+                const res = await instance.post('/auth/refresh', {});
 
                 processQueue(null);
-
-
                 return instance(originalRequest);
 
                 } catch (refreshError) {
