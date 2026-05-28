@@ -109,20 +109,24 @@ public class AuthController {
         Long userId = userDetails.getUser().getId();
         authService.logout(userId);
 
+        boolean isProd = !frontendUrl.contains("localhost");
+
         ResponseCookie expiredAccess = ResponseCookie.from("accessToken", "")
                 .path("/")
                 .maxAge(0)
                 .httpOnly(true)
-                .secure(true)
-                .sameSite("Lax")
+                .secure(isProd)
+                .sameSite("None")
+                .domain(isProd ? "stockmatch.kro.kr" : "localhost")
                 .build();
 
         ResponseCookie expiredRefresh = ResponseCookie.from("refreshToken", "")
                 .path("/")
                 .maxAge(0)
-                .httpOnly(true)
+                .httpOnly(isProd)
                 .secure(true)
-                .sameSite("Lax")
+                .sameSite("None")
+                .domain(isProd ? "stockmatch.kro.kr" : "localhost")
                 .build();
 
         return ResponseEntity.ok()
