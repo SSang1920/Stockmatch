@@ -141,6 +141,12 @@
 - **JJWT (0.12.6)**: 이중 JWT(Access / Refresh Token) 인증/인가
 - **Spring Data Redis / Spring Cache**: 외부 금융 API 호출 최적화 및 캐싱
 - **MySQL**: 메인 관계형 데이터베이스(RDB)
+
+### External APIs
+- **OpenAI API**: 데이터 기반 자산 진단 및 정형 AI 분석 리포트 생성
+- **한국은행 ECOS API**: 원/달러 기준 환율 데이터 수집
+- **국가전자공시시스템 DART API**: 국내 주식 고유번호 파싱 및 기업 재무 데이터 수집
+- **Alpha Vantage API**: 글로벌(해외) 주식 기업 개요 및 다차원 재무 수치 연동
   
 ### Infra & DevOps
 - **Oracle Cloud (OCI)**: 서버 및 데이터베이스 배포
