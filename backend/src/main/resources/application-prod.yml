@@ -76,7 +76,7 @@ logging:
     name: /var/log/stockmatch/app.log
 
 server:
-  forward-headers-strategy: native
+  forward-headers-strategy: framework
   error:
     include-message: never
 
