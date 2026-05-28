@@ -55,7 +55,7 @@ public class AuthController {
                 .path("/")
                 .httpOnly(true) //프론트에서 읽을시 false
                 .secure(isProd) // 로컬 환경 false, 배포 환경 true
-                .sameSite("Lax") // 타 도메인간 리다이렉트 시 쿠키 전달 허용
+                .sameSite("None") // 타 도메인간 리다이렉트 시 쿠키 전달 허용
                 .maxAge(60*60)
                 .build();
 
@@ -64,7 +64,7 @@ public class AuthController {
                 .path("/")
                 .httpOnly(true) // refreshToken은 서버만 읽도록
                 .secure(isProd)
-                .sameSite("Lax")
+                .sameSite("None")
                 .maxAge(7 * 24 * 60 * 60)
                 .build();
 
