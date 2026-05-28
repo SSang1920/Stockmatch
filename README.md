@@ -135,10 +135,22 @@
 ### Frontend
 
 ### Backend
-
+- **Java 17 / Spring Boot 3.5**
+- **Spring Data JPA / QueryDSL**: ORM & 동적 쿼리
+- **Spring Security / OAuth2 Client**: 다중 소셜 로그인 인증 처리  
+- **JJWT (0.12.6)**: 이중 JWT(Access / Refresh Token) 인증/인가
+- **Spring Data Redis / Spring Cache**: 외부 금융 API 호출 최적화 및 캐싱
+- **MySQL**: 메인 관계형 데이터베이스(RDB)
+  
 ### Infra & DevOps
+- **Oracle Cloud (OCI)**: 서버 및 데이터베이스 배포
+- **Docker & Docker Compose**: 컨테이너 기반 배포
+- **Nginx**: Reverse Proxy, 정적 리소스 제공
+- **GitHub Actions (CI/CD)**: 코드 푸시 시 자동 빌드 & 배포 파이프라인 구축
 
+  
 ---
+
 ## 프로젝트 실행 방법(두 가지 방식 중 하나 택)
 
 ---
