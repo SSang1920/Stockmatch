@@ -83,7 +83,7 @@
   - **성향-자산 괴리율 진단**: 사용자의 주관적인 투자 성향(`investmentType`)과 실제 보유 자산의 종목별 비중(`weightPct`) 데이터를 대조하여 리스크 일치 여부를 심층 진단합니다.
   - **자산 쏠림 리스크 탐지**: 단일 종목의 비중이 과도하게 높은 상태를 감지하여 포트폴리오 상태에 따라 `WELL_BALANCED(60% 미만)`, `CONCENTRATED(60%~80%)`, `HIGH_RISK(80% 이상 또는 성향 불일치)` 단계로 안전성 코드를 자동 분류합니다.
   - **사용자 질의 맞춤 피드백**: 사용자가 작성한 추가 요청 사항(`userComment`)이 있으면 질문과의 상관관계를 우선 분석하며, 내용이 없을 경우 종합 자산 진단으로 자동 분기하여 주력 섹터의 약점을 보완할 수 있는 대체 자산군(2~3개)을 거시경제 관점과 연계하여 제안합니다.
-  - **Structured Outputs**: OpenAI API 요청 시 Strict JSON Schema를 강제하여 환각 현상(Hallucination) 없는 정형 데이터 응답 보장
+  - **Structured Outputs**: OpenAI API 요청 시 Strict JSON Schema를 강제하여 환각(Hallucination)을 최소화한 정형 재무 리포트
   - **AiRequestGuard**: 유저별 AI 분석 호출 건수에 제한을 두는 가드 계층을 적용하여 무분별한 API 오남용 및 인프라 비용 폭주 원천 차단
 </details>
 
