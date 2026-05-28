@@ -8,6 +8,12 @@ RUN npm ci
 
 # 전체 소스 복사 후 빌드 진행
 COPY . .
+
+ARG VITE_API_BASE_URL
+ARG VITE_KAKAO_CLIENT_ID
+ARG VITE_NAVER_CLIENT_ID
+ARG VITE_GOOGLE_CLIENT_ID
+
 RUN npm run build
 
 # 2) 런타임 스테이지 (Nginx 환경)
