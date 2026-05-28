@@ -59,7 +59,6 @@ services:
       - "8080"
 
   web:
-    platform: linux/amd64
     image: ${DOCKERHUB_USERNAME}/stockmatch:web-latest
     container_name: stock-web
     env_file: .env
