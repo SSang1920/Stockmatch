@@ -109,11 +109,13 @@
   - **AiRequestGuard**: 유저별 AI 분석 호출 건수에 제한을 두는 가드 계층을 적용하여 무분별한 API 오남용 및 인프라 비용 폭주 원천 차단
 </details>
 
+---
+
 ### 구현화면
 
 ---
 
----
+
 
 ## 아키텍처
 - **Spring Boot + MySQL + JPA(QueryDSL)** 기반 백엔드  
