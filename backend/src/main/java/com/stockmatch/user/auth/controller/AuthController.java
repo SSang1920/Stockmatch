@@ -104,7 +104,8 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            HttpServletResponse response) {
 
         Long userId = userDetails.getUser().getId();
         authService.logout(userId);
@@ -116,8 +117,7 @@ public class AuthController {
                 .maxAge(0)
                 .httpOnly(true)
                 .secure(isProd)
-                .sameSite("None")
-                .domain(isProd ? "stockmatch.kro.kr" : "localhost")
+                .sameSite("Lax")
                 .build();
 
         ResponseCookie expiredRefresh = ResponseCookie.from("refreshToken", "")
@@ -126,12 +126,12 @@ public class AuthController {
                 .httpOnly(isProd)
                 .secure(true)
                 .sameSite("None")
-                .domain(isProd ? "stockmatch.kro.kr" : "localhost")
                 .build();
 
+        response.addHeader("Set-Cookie", expiredAccess.toString());
+        response.addHeader("Set-Cookie", expiredRefresh.toString());
+
         return ResponseEntity.ok()
-                .header("Set-Cookie", expiredAccess.toString())
-                .header("Set-Cookie", expiredRefresh.toString())
                 .body(ApiResponse.ok());
     }
 
