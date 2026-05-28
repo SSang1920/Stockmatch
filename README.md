@@ -8,6 +8,7 @@
 
 ---
 
+
 ## 팀원 소개
 | 이름 | Github |
 | ----- | ----- |
@@ -15,6 +16,7 @@
 | 용상윤 | https://github.com/imnerf242 |
 
 ---
+
 
 ## 목차
 1. [프로젝트 소개](#프로젝트-소개)  
@@ -37,12 +39,14 @@
 
 ---
 
+
 ## 목표
 - **성향 기반 맞춤형 분석:** 용자의 투자 스타일과 실제 보유 자산을 고려하여 성향에 최적화된 피드백 및 종목 추천 가이드를 제공
 - **금융 데이터 해석의 신뢰성 확보** Structured Outputs(Strict Schema) 기술을 도입하여 생성형 AI의 환각(Hallucination) 현상을 원천 방지
 - **리스크 중심의 투자 의사결정 지원:** 신규 종목 편입에 따른 포트폴리오의 상관관계 및 리스크 변화를 분석하여 합리적인 투자 판단을 보조
 
 ---
+
 
 ## 주요 기능
 - **OAuth2 소셜 로그인 & JWT 인증/인가**(Access / Refresh), Spring Security 보안 계층
@@ -104,3 +108,37 @@
   - **Structured Outputs**: OpenAI API 요청 시 Strict JSON Schema를 강제하여 환각 현상(Hallucination) 없는 정형 데이터 응답 보장
   - **AiRequestGuard**: 유저별 AI 분석 호출 건수에 제한을 두는 가드 계층을 적용하여 무분별한 API 오남용 및 인프라 비용 폭주 원천 차단
 </details>
+
+### 구현화면
+
+---
+
+---
+
+## 아키텍처
+- **Spring Boot + MySQL + JPA(QueryDSL)** 기반 백엔드  
+- **React + JavaScript** 기반 프론트엔드  
+- **OAuth2 + JWT** 쿠키 기반 인증/인가 (Access Token + Refresh Token)
+- **OpenAI API + Structured Outputs (Strict Schema)** 기반 AI 정형 데이터 제어
+- **AiRequestGuard** 인터셉터 계층을 통한 AI 호출 트래픽 및 비용 통제
+- **Redis (Cache-Aside)** 전략 기반 외부 금융 API 데이터 캐시 최적화
+- **국내·외 금융 API 및 환율 연동**: 한국은행(BOK), DART, Alpha Vantage 연동 데이터 통합
+- **Docker + Docker Compose** 로 배포 환경 구성  
+- **Nginx** 를 통한 Reverse Proxy
+
+---
+
+## 기술 스택 상세
+
+### Frontend
+
+### Backend
+
+### Infra & DevOps
+
+---
+## 프로젝트 실행 방법(두 가지 방식 중 하나 택)
+
+---
+
+## 데이터베이스 설계도 (ERD)
