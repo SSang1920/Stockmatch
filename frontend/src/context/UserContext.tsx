@@ -29,24 +29,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchUser = useCallback(async () => {
-        const token = cookies.get('accessToken');
-        if (!token) {
-            setUser(null);
-            setIsLoading(false);
-            return;
-        }
-
         try {
             if (!user) setIsLoading(true);
 
             const response = await getUserInfo();
 
             if (response && response.data) {
-                console.log("[Context] 유저 정보 로드 성공:", response.data.name);
                 setUser(response.data);
             }
         } catch (error) {
-            console.log("ℹ[Context] 비로그인 상태이거나 토큰 만료됨");
             setUser(null);
         } finally {
             setIsLoading(false); // 로딩 끝
