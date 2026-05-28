@@ -119,7 +119,7 @@
 
 ## 아키텍처
 - **Spring Boot + MySQL + JPA(QueryDSL)** 기반 백엔드  
-- **React + JavaScript** 기반 프론트엔드  
+- **React** 기반 프론트엔드  
 - **OAuth2 + JWT** 쿠키 기반 인증/인가 (Access Token + Refresh Token)
 - **OpenAI API + Structured Outputs (Strict Schema)** 기반 AI 정형 데이터 제어
 - **AiRequestGuard** 인터셉터 계층을 통한 AI 호출 트래픽 및 비용 통제
