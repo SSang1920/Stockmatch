@@ -15,7 +15,7 @@ import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'
 import { routeTree } from './routeTree.gen'
 import './styles/index.css'
-import { UserProvider, useUser } from './context/UserContext'
+import { User, UserProvider, useUser } from './context/UserContext'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,6 +71,12 @@ const queryClient = new QueryClient({
   }),
 })
 
+interface RouterContextType {
+  queryClient: QueryClient
+  user: User | null
+  isLoading: boolean
+}
+
 // Create a new router instance
 const router = createRouter({
   routeTree,
@@ -78,7 +84,7 @@ const router = createRouter({
     queryClient,
     user: null,
     isLoading: true, 
-  } as any,
+  } as RouterContextType,
   defaultPreload: 'intent',
   defaultPreloadStaleTime: 0,
 })
