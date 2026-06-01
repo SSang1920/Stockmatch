@@ -6,15 +6,14 @@ import { cookies } from '@/lib/cookies'
 export const Route = createFileRoute('/_public')({
     beforeLoad: async ({ location }) => {
         const pathname = location.pathname
-
         const securedPaths = ['/portfolio', '/watchlists', '/analysis']
-
         const isSecuredPath = securedPaths.some((path) => pathname.startsWith(path))
 
         if (isSecuredPath) {
-            const accessToken = cookies.get('accessToken')
 
-            if (!accessToken) {
+          const isLikelyLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+
+            if (!isLikelyLoggedIn) {
                 throw redirect({
                     to: '/sign-in',
                     search: {
