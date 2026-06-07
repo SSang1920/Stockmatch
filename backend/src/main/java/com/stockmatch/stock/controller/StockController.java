@@ -24,6 +24,9 @@ public class StockController {
     @GetMapping("/us/{symbol}")
     public ResponseEntity<ApiResponse<StockPriceResponse>> getUsQuote(@PathVariable String symbol) {
         String upperSymbol = (symbol != null) ? symbol.toUpperCase().trim() : "";
+
+        stockService.getOrCreateNewStock(upperSymbol, "US");
+
         var data = stockPriceService.getUsStockPrice(upperSymbol);
         return ResponseEntity.ok(ApiResponse.ok(data));
     }
@@ -36,6 +39,10 @@ public class StockController {
 
     @GetMapping("/kr/{code}")
     public ResponseEntity<ApiResponse<Object>> getKrQuote(@PathVariable String code) {
+        String upperCode = (code != null) ? code.toUpperCase().trim() : "";
+
+        stockService.getOrCreateNewStock(upperCode, "KR");
+
         var data = stockPriceService.getKrStockPrice(code);
         return ResponseEntity.ok(ApiResponse.ok(data));
     }

@@ -2,6 +2,7 @@ package com.stockmatch.stock.client;
 
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
+import com.stockmatch.stock.domain.Security;
 import com.stockmatch.stock.dto.StockPriceResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -28,6 +29,18 @@ public class PriceClientRouter {
 
         if ("KR".equalsIgnoreCase(region)) {
             return krClient.getRealtime(region, ticker);
+        }
+
+        throw new BusinessException(ErrorCode.UNSUPPORTED_REGION);
+    }
+
+    public Security fetchCompanyProfile(String ticker, String region) {
+        if ("US".equalsIgnoreCase(region)) {
+            return usClient.fetchCompanyProfile(ticker, region);
+        }
+
+        if ("KR".equalsIgnoreCase(region)) {
+            return krClient.fetchCompanyProfile(ticker, region);
         }
 
         throw new BusinessException(ErrorCode.UNSUPPORTED_REGION);

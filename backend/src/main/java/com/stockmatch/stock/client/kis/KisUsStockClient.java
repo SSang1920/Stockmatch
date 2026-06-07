@@ -3,6 +3,7 @@ package com.stockmatch.stock.client.kis;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.stockmatch.common.exception.BusinessException;
 import com.stockmatch.common.exception.ErrorCode;
+import com.stockmatch.portfolio.domain.Currency;
 import com.stockmatch.stock.client.ExternalPriceClient;
 import com.stockmatch.stock.domain.Exchange;
 import com.stockmatch.stock.domain.Market;
@@ -11,6 +12,7 @@ import com.stockmatch.stock.dto.Region;
 import com.stockmatch.stock.dto.StockPriceResponse;
 import com.stockmatch.stock.repository.SecurityRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -25,6 +27,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 @Slf4j
@@ -32,14 +35,17 @@ import java.util.Set;
 public class KisUsStockClient extends AbstractKisClient implements ExternalPriceClient {
 
     private final SecurityRepository securityRepository;
+    private final KisApiHelper kisApiHelper;
 
     private final Set<String> invalidTickers = Collections.synchronizedSet(new HashSet<>());
 
     public KisUsStockClient(RestTemplate restTemplate,
                             KisTokenProvider kisTokenProvider,
-                            SecurityRepository securityRepository) {
+                            SecurityRepository securityRepository,
+                            KisApiHelper kisApiHelper) {
         super(restTemplate, kisTokenProvider);
         this.securityRepository = securityRepository;
+        this.kisApiHelper = kisApiHelper;
     }
 
     @Override
@@ -131,61 +137,95 @@ public class KisUsStockClient extends AbstractKisClient implements ExternalPrice
         }
     }
 
+    @Override
+    public Security fetchCompanyProfile(String ticker, String region) {
+        String trimmedTicker = ticker.trim().toUpperCase();
+        String logPrefix = String.format("[KIS 미국 프로필 수집 - %s]", trimmedTicker);
+
+        return kisApiHelper.execute(() -> {
+
+            // KIS 명세서 기준 URL 경로 및 파라미터 빌드
+            String path = "/uapi/overseas-price/v1/quotations/search-info";
+            String url = UriComponentsBuilder.fromHttpUrl(baseUrl + path)
+                    .queryParam("PRDT_TYPE_CD", "512") // 512: 미국 나스닥/뉴욕/아멕스 통합 유형코드
+                    .queryParam("PDNO", trimmedTicker)  // 주식 티커코드
+                    .build()
+                    .toUriString();
+
+            HttpHeaders headers = createHeaders("CTPF1702R");
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<Map<String, Object>> responseEntity = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            Map<String, Object> body = responseEntity.getBody();
+            if (body == null || !"0".equals(String.valueOf(body.get("rt_cd")))) {
+                log.warn("{} KIS 서버 응답 코드 반환 실패", logPrefix);
+                return null;
+            }
+
+            Map<String, Object> output = (Map<String, Object>) body.get("output");
+            if (output == null) {
+                return null;
+            }
+
+            String korName = output.get("prdt_name") != null ? String.valueOf(output.get("prdt_name")).trim() : "";
+            String engName = output.get("prdt_eng_name") != null ? String.valueOf(output.get("prdt_eng_name")).trim() : "";
+
+            if (korName.isEmpty() && output.get("ovrs_item_name") != null) {
+                korName = String.valueOf(output.get("ovrs_item_name")).trim();
+            }
+
+            String ovrsExcgCd = output.get("ovrs_excg_cd") != null ? String.valueOf(output.get("ovrs_excg_cd")).trim().toUpperCase() : "";
+            Exchange targetExchange = Exchange.NASDAQ;
+
+            if (ovrsExcgCd.contains("NYS") || ovrsExcgCd.contains("NYSE")) {
+                targetExchange = Exchange.NYSE;
+            } else if (ovrsExcgCd.contains("AMS") || ovrsExcgCd.contains("AMEX")) {
+                targetExchange = Exchange.AMEX;
+            }
+
+            if (korName.isEmpty()) korName = trimmedTicker;
+            if (engName.isEmpty()) engName = trimmedTicker;
+
+            log.info("{} 수집 완공 -> 거래소: {}, 한글명: {}, 영문명: {}",
+                    logPrefix, targetExchange, korName, engName);
+
+            // Security 엔티티 반환
+            return Security.builder()
+                    .ticker(trimmedTicker)
+                    .name(korName)
+                    .englishName(engName)
+                    .market(Market.US)
+                    .exchange(targetExchange)
+                    .currency(Currency.USD)
+                    .delisted(false)
+                    .build();
+
+        }, logPrefix);
+    }
+
     private Security fetchAndSaveNewSecurity(String ticker) {
         if (invalidTickers.contains(ticker)) {
             return null;
         }
 
-        String[] targetExchanges = { "NAS", "NYS", "AMX" };
-
-        for (String excd : targetExchanges) {
-            try {
-                String url = UriComponentsBuilder
-                        .fromUriString(baseUrl + "/uapi/overseas-price/v1/quotations/price-detail")
-                        .queryParam("AUTH", "F")
-                        .queryParam("EXCD", excd)
-                        .queryParam("SYMB", ticker)
-                        .toUriString();
-
-                HttpHeaders headers = createHeaders(KisTrId.US_REAL_TIME);
-                HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-                log.info("DB 누락 티커 발견. KIS API 호출 시도 - Ticker: {}, Exchange: {}", ticker, excd);
-                ResponseEntity<JsonNode> response = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
-
-                JsonNode body = response.getBody();
-                if (body == null || !"0".equals(body.path("rt_cd").asText())) {
-                    continue; // 실패하면 다음 거래소 코드로 패스
-                }
-
-                JsonNode output = body.get("output");
-                if (output == null || output.isEmpty() || output.path("hnam").asText().isBlank()) {
-                    continue; // 응답이 비어있으면 다음 거래소 코드로 패스
-                }
-
-                String korName = output.path("hnam").asText().trim();
-
-                Exchange targetExchange = switch (excd) {
-                    case "NYS" -> Exchange.NYSE;
-                    case "AMX" -> Exchange.AMEX;
-                    default -> Exchange.NASDAQ;
-                };
-
-                // 신규 엔티티 조립
-                Security newSecurity = Security.builder()
-                        .ticker(ticker)
-                        .name(korName)
-                        .market(Market.US)
-                        .exchange(targetExchange)
-                        .build();
-
+        try {
+            // 새 파이프라인을 가동하여 거래소, 찐영문명까지 다 담아오기
+            Security newSecurity = fetchCompanyProfile(ticker, "US");
+            if (newSecurity != null) {
                 Security saved = securityRepository.save(newSecurity);
-                log.info("[LAZY-LOADING] 신규 미국 종목 자동 적재 완료: {} ({})", ticker, korName);
+                log.info("[LAZY-LOADING 완공] 신규 KIS 미국 종목 정합성 안착 완료: {} ({})", ticker, saved.getName());
                 return saved;
-
-            } catch (Exception e) {
             }
+        } catch (Exception e) {
+            log.error("Lazy loading profile fetch error for ticker: {}", ticker, e);
         }
+
         invalidTickers.add(ticker);
         return null;
     }
@@ -207,6 +247,7 @@ public class KisUsStockClient extends AbstractKisClient implements ExternalPrice
         return switch (exchange) {
             case NASDAQ -> "NAS";
             case NYSE -> "NYS";
+            case AMEX -> "AMX";
             default -> "NAS";
         };
     }

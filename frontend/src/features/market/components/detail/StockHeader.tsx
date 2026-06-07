@@ -11,6 +11,7 @@ interface StockHeaderProps {
     market: string;
     ticker: string;
     name: string;
+    englishName?: string;
     isKrMarket: boolean;
     currencyMode: 'KRW' | 'USD';
     onCurrencyChange: (mode: 'KRW' | 'USD') => void;
@@ -21,7 +22,7 @@ interface StockHeaderProps {
 }
 
 export function StockHeader({
-    market, ticker, name, isKrMarket, currencyMode, onCurrencyChange, onRefresh, onBack, watchlists, onWatchlistChange
+    market, ticker, name, englishName, isKrMarket, currencyMode, onCurrencyChange, onRefresh, onBack, watchlists, onWatchlistChange
 }: StockHeaderProps) {
     const navigate = useNavigate();
     const [isWatchlistModalOpen, setIsWatchlistModalOpen] = useState(false);
@@ -53,21 +54,36 @@ export function StockHeader({
 
     return (
         <div className="relative flex items-center justify-between h-14 mb-6">
-            <div className="flex items-center gap-3 overflow-hidden">
+            <div className="flex items-center gap-3 overflow-hidden w-full max-w-[70%]">
                 <Button variant="ghost" size="icon" onClick={onBack} className="-ml-2 shrink-0">
                     <ArrowLeft className="h-6 w-6" />
                 </Button>
-                
-                <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-2">
+
+                <div className="flex flex-col min-w-0 w-full">
+                    {/* 1층: 마켓 배지 + 한글 종목명 + (PC 버전에만 노출될 영문명) */}
+                    <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-bold bg-muted px-1.5 py-0.5 rounded text-muted-foreground shrink-0">
                             {market}
                         </span>
-                        <h1 className="text-xl font-bold tracking-tight truncate">
+                        <h1 className="text-xl font-bold tracking-tight truncate max-w-[100%]">
                             {name || ticker}
                         </h1>
+                        {englishName && englishName !== name && (
+                            <span className="text-xs text-muted-foreground font-medium truncate max-w-[40%] hidden sm:inline-block">
+                                ({englishName})
+                            </span>
+                        )}
                     </div>
-                    {name && <p className="text-xs text-muted-foreground mt-0.5 truncate">{ticker}</p>}
+
+                    {/* 2층: 티커 기호 + (모바일 버전에만 노출될 영문명) */}
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs font-mono text-muted-foreground tracking-wider">{ticker}</p>
+                        {englishName && englishName !== name && (
+                            <p className="text-[10px] text-muted-foreground/70 truncate sm:hidden">
+                                • {englishName}
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
 

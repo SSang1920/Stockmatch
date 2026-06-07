@@ -84,8 +84,4 @@ public class DailyPriceSyncService {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR);
         }
     }
-
-
-
-
 }
