@@ -1,20 +1,25 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { Header } from '@/components/common/Header'
 import { Sidebar } from '@/components/common/Sidebar'
-import { cookies } from '@/lib/cookies'
+import { QueryClient } from '@tanstack/react-query';
+import { User } from '@/context/UserContext';
 
 export const Route = createFileRoute('/_public')({
-    beforeLoad: async ({ location }) => {
+    beforeLoad: async ({ location, context }: {
+      location: any;
+      context: { queryClient: QueryClient; user: User | null; isLoading: boolean }
+    }) => {
         const pathname = location.pathname
-
         const securedPaths = ['/portfolio', '/watchlists', '/analysis']
-
         const isSecuredPath = securedPaths.some((path) => pathname.startsWith(path))
 
         if (isSecuredPath) {
-            const accessToken = cookies.get('accessToken')
 
-            if (!accessToken) {
+          if (context.isLoading || context.isLoading === undefined) {
+                return;
+          }
+
+            if (!context.user) {
                 throw redirect({
                     to: '/sign-in',
                     search: {

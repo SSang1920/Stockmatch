@@ -26,7 +26,7 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @Value("${app.frontend-url:http://stockmatch.kro.kr}")
+    @Value("${app.frontend-url:https://stockmatch.kro.kr}")
     private String frontendUrl;
 
     @GetMapping("/callback/{provider}")
@@ -55,7 +55,7 @@ public class AuthController {
                 .path("/")
                 .httpOnly(true) //프론트에서 읽을시 false
                 .secure(isProd) // 로컬 환경 false, 배포 환경 true
-                .sameSite("Lax") // 타 도메인간 리다이렉트 시 쿠키 전달 허용
+                .sameSite("None") // 타 도메인간 리다이렉트 시 쿠키 전달 허용
                 .maxAge(60*60)
                 .build();
 
@@ -64,7 +64,7 @@ public class AuthController {
                 .path("/")
                 .httpOnly(true) // refreshToken은 서버만 읽도록
                 .secure(isProd)
-                .sameSite("Lax")
+                .sameSite("None")
                 .maxAge(7 * 24 * 60 * 60)
                 .build();
 
@@ -104,30 +104,34 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            HttpServletResponse response) {
 
         Long userId = userDetails.getUser().getId();
         authService.logout(userId);
+
+        boolean isProd = !frontendUrl.contains("localhost");
 
         ResponseCookie expiredAccess = ResponseCookie.from("accessToken", "")
                 .path("/")
                 .maxAge(0)
                 .httpOnly(true)
-                .secure(true)
+                .secure(isProd)
                 .sameSite("Lax")
                 .build();
 
         ResponseCookie expiredRefresh = ResponseCookie.from("refreshToken", "")
                 .path("/")
                 .maxAge(0)
-                .httpOnly(true)
+                .httpOnly(isProd)
                 .secure(true)
-                .sameSite("Lax")
+                .sameSite("None")
                 .build();
 
+        response.addHeader("Set-Cookie", expiredAccess.toString());
+        response.addHeader("Set-Cookie", expiredRefresh.toString());
+
         return ResponseEntity.ok()
-                .header("Set-Cookie", expiredAccess.toString())
-                .header("Set-Cookie", expiredRefresh.toString())
                 .body(ApiResponse.ok());
     }
 

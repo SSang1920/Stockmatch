@@ -60,10 +60,14 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Build
-        env:
-          VITE_API_BASE: /api
-        run: npm run build
+      - name: Create Production Env File & Build
+        run: |
+          echo "VITE_API_BASE_URL=https://stockmatch.kro.kr" >> .env.production
+          echo "VITE_KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> .env.production
+          echo "VITE_NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}" >> .env.production
+          echo "VITE_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env.production
+          
+          npm run build
 
   build-and-push:
     name: Build & Push Docker Images
@@ -89,6 +93,7 @@ jobs:
         with:
           images: ${{ env.UNIFIED_IMAGE }}
           tags: |
+            type=raw,value=backend-latest
             type=sha,prefix=backend-sha-
             type=ref,event=branch,prefix=backend-
             type=semver,pattern={{version}},prefix=backend-
@@ -99,6 +104,7 @@ jobs:
         with:
           images: ${{ env.UNIFIED_IMAGE }}
           tags: |
+            type=raw,value=web-latest
             type=sha,prefix=web-sha-
             type=ref,event=branch,prefix=web-
             type=semver,pattern={{version}},prefix=web-
@@ -109,10 +115,15 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
+          platforms: linux/arm64
           tags: ${{ steps.meta_backend.outputs.tags }}
           labels: ${{ steps.meta_backend.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.UNIFIED_IMAGE }}:backend-buildcache
-          cache-to: type=registry,ref=${{ env.UNIFIED_IMAGE }}:backend-buildcache,mode=max
+          cache-from: |
+            type=registry,ref=${{ env.UNIFIED_IMAGE }}:backend-cache-amd64
+            type=registry,ref=${{ env.UNIFIED_IMAGE }}:backend-cache-arm64
+          cache-to: |
+            type=registry,ref=${{ env.UNIFIED_IMAGE }}:backend-cache-amd64,mode=max
+            type=registry,ref=${{ env.UNIFIED_IMAGE }}:backend-cache-arm64,mode=max
 
       - name: Build & Push Web
         uses: docker/build-push-action@v6
@@ -120,10 +131,20 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
+          platforms: linux/arm64
           tags: ${{ steps.meta_web.outputs.tags }}
           labels: ${{ steps.meta_web.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.UNIFIED_IMAGE }}:web-buildcache
-          cache-to: type=registry,ref=${{ env.UNIFIED_IMAGE }}:web-buildcache,mode=max
+          build-args: |
+            VITE_API_BASE_URL=https://stockmatch.kro.kr
+            VITE_KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
+            VITE_NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}
+            VITE_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          cache-from: |
+            type=registry,ref=${{ env.UNIFIED_IMAGE }}:web-cache-amd64
+            type=registry,ref=${{ env.UNIFIED_IMAGE }}:web-cache-arm64
+          cache-to: |
+            type=registry,ref=${{ env.UNIFIED_IMAGE }}:web-cache-amd64,mode=max
+            type=registry,ref=${{ env.UNIFIED_IMAGE }}:web-cache-arm64,mode=max
 
   deploy:
     name: Deploy to Server
@@ -145,6 +166,7 @@ jobs:
             cd ~/stockmatch
             git pull origin main
             docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
-            docker compose pull
-            docker compose up -d
+            export DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            docker compose pull backend web || true
+            docker compose up -d backend web
             docker system prune -f

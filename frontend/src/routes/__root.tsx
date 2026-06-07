@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { ensurePortfolio } from '@/api/user';
 import { type QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
@@ -7,13 +7,16 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { Toaster } from '@/components/ui/sonner'
 import { GeneralError } from '@/features/errors/general-error'
 import { NotFoundError } from '@/features/errors/not-found-error'
-import { useUser } from '@/context/UserContext';
+import { User, useUser } from '@/context/UserContext';
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
+  user: User | null
+  isLoading: boolean
 }>()({
   component: () => {
-    const { user } = useUser();
+    const { user, isLoading } = useUser();
+    const AnyOutlet = Outlet as any;
 
     useEffect(() => {
           if (user) {
@@ -25,7 +28,7 @@ export const Route = createRootRouteWithContext<{
 
     return (
       <>
-        <Outlet context={{ user }} />
+        <AnyOutlet context={{ user, isLoading }} />
         <Toaster
           richColors={true}
           position="top-center"

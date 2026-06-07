@@ -17,7 +17,8 @@ export function UserAuthForm({ className, redirectTo, ...props }: UserAuthFormPr
         localStorage.setItem('loginRedirect', redirectTo);
       }
 
-      const BACKEND_CALLBACK_URL = 'http://localhost:8080/api/auth/callback';
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+      const BACKEND_CALLBACK_URL = `${API_BASE}/api/auth/callback`;
 
         // 1. 카카오 로그인
       if (provider === 'kakao') {

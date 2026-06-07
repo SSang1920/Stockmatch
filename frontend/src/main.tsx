@@ -15,7 +15,7 @@ import { FontProvider } from './context/font-provider'
 import { ThemeProvider } from './context/theme-provider'
 import { routeTree } from './routeTree.gen'
 import './styles/index.css'
-import { UserProvider } from './context/UserContext'
+import { User, UserProvider, useUser } from './context/UserContext'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,10 +71,20 @@ const queryClient = new QueryClient({
   }),
 })
 
+interface RouterContextType {
+  queryClient: QueryClient
+  user: User | null
+  isLoading: boolean
+}
+
 // Create a new router instance
 const router = createRouter({
   routeTree,
-  context: { queryClient },
+  context: { 
+    queryClient,
+    user: null,
+    isLoading: true, 
+  } as RouterContextType,
   defaultPreload: 'intent',
   defaultPreloadStaleTime: 0,
 })
@@ -84,6 +94,17 @@ declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router
   }
+}
+
+function AppRouter() {
+  const { user, isLoading } = useUser();
+
+  return (
+    <RouterProvider
+      router={router}
+      context={{ queryClient, user, isLoading }}
+    />
+  );
 }
 
 // Render the app
@@ -97,7 +118,7 @@ if (!rootElement.innerHTML) {
           <FontProvider>
             <DirectionProvider>
                 <UserProvider>
-                  <RouterProvider router={router} />
+                  <AppRouter />
                 </UserProvider>
             </DirectionProvider>
           </FontProvider>
