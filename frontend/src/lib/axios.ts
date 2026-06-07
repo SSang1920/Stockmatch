@@ -7,6 +7,15 @@ const instance = axios.create({
         'Content-Type': 'application/json',
         }
 });
+
+export const publicInstance = axios.create({
+    baseURL: '/api',
+    withCredentials: true,
+    headers: {
+        'Content-Type': 'application/json',
+        }
+});
+
 let isRefreshing = false;
 let failedQueue: any[] = [];
 
@@ -55,12 +64,22 @@ instance.interceptors.response.use(
             isRefreshing = true; //
 
             try {
-                const res = await instance.post('/auth/refresh', {});
+                console.log( '401 감지! 쿠키를 믿고 재발급 요청 시도...');
+
+                const res = await axios.post('/api/auth/refresh', {}, {
+                    withCredentials: true
+                });
+
+                console.log('재발급 성공! AccessToken 갱신.');
 
                 processQueue(null);
+
+
                 return instance(originalRequest);
 
                 } catch (refreshError) {
+                    // 재발급 요청조차 실패하면 진짜 로그인 풀린 것임
+                    console.error('재발급 실패 (쿠키 만료됨). 로그아웃 처리.');
                     processQueue(refreshError, null);
 
                     localStorage.removeItem('accessToken');
