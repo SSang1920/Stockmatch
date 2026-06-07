@@ -1,4 +1,4 @@
-import axios, { publicInstance } from '@/lib/axios';
+import { publicInstance } from '@/lib/axios';
 import { MarketOverviewResponse, MarketTrendResponse } from '../types';
 import { ApiResponse } from '@/types/common';
 

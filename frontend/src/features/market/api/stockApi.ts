@@ -1,4 +1,4 @@
-import axios from '@/lib/axios';
+import { publicInstance } from '@/lib/axios';
 import { ApiResponse } from "@/types/common";
 import { MinuteChartItem, StockChartItem, StockDetailResponse, StockSearchResponse } from "../types";
 
@@ -7,7 +7,7 @@ export const searchStocks = async (query: string): Promise<StockSearchResponse[]
     // 검색어 없으면 빈 배열 리턴
     if (!query) return [];
 
-    const response = await axios.get<ApiResponse<StockSearchResponse[]>>(`/stocks/search`, {
+    const response = await publicInstance.get<ApiResponse<StockSearchResponse[]>>(`/stocks/search`, {
         params: { q: query }
     });
 
@@ -23,13 +23,13 @@ export const getStockDetail = async (market: string, ticker: string): Promise<St
     let url = '';
 
     const marketUpper = market.toUpperCase();
-    if (['NASDAQ', 'NYSE', 'US'].includes(marketUpper)) {
+    if (['NASDAQ', 'NYSE', 'US', 'AMEX'].includes(marketUpper)) {
         url = `/stocks/us/${ticker}`;
     } else {
         url = `/stocks/kr/${ticker}`;
     }
 
-    const response = await axios.get<ApiResponse<StockDetailResponse>>(url);
+    const response = await publicInstance.get<ApiResponse<StockDetailResponse>>(url);
 
     if(!response.data.success) {
         throw new Error(response.data.error?.message || '주식 상세 정보 조회 실패');
@@ -44,7 +44,7 @@ export const getStockChart = async (ticker: string): Promise<StockChartItem[]> =
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(today.getFullYear() - 1);
 
-    const response = await axios.get<ApiResponse<any[]>>(`/stocks/daily-price/${ticker}`, {
+    const response = await publicInstance.get<ApiResponse<any[]>>(`/stocks/daily-price/${ticker}`, {
         params: {
             from: formatDate(oneYearAgo),
             to: formatDate(today)
@@ -72,7 +72,7 @@ export const getStockChart = async (ticker: string): Promise<StockChartItem[]> =
 
 // 분봉 차트 데이터 조회 API
 export const getStockMinuteChart = async (ticker: string): Promise<MinuteChartItem[]> => {
-    const response = await axios.get<ApiResponse<MinuteChartItem[]>>(`/stocks/${ticker}/chart/minute`);
+    const response = await publicInstance.get<ApiResponse<MinuteChartItem[]>>(`/stocks/${ticker}/chart/minute`);
 
     if (!response.data.success || !response.data.data) {
         return [];
