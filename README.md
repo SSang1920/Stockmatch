@@ -1,10 +1,13 @@
 # Stockmatch
 
+> 생성형 AI와 실시간 금융 API를 결합한 **개인 맞춤형 자산 진단 및 리스크 관리** 웹 애플리케이션
+
+![Java](https://img.shields.io/badge/Java-17-007396?logo=openjdk&logoColor=white)  ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?logo=springboot&logoColor=white) ![Spring Security](https://img.shields.io/badge/Spring%20Security-6.x-6DB33F?logo=springsecurity&logoColor=white) ![JWT](https://img.shields.io/badge/JWT-000000?logo=jsonwebLogos&logoColor=white)  ![Redis](https://img.shields.io/badge/Redis-7.x-DC382D?logo=redis&logoColor=white) ![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)  ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)  ![Nginx](https://img.shields.io/badge/Nginx-009639?logo=nginx&logoColor=white) ![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI/CD-2088FF?logo=githubactions&logoColor=white) ![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o-412991?logo=openai&logoColor=white)
 
 ---
 
 ## 배포 주소
-
+[https://stockmatch.kro.kr](https://stockmatch.kro.kr) (2026-04-30 ~ 서비스 중)
 
 ---
 
@@ -31,50 +34,49 @@
 ---
 
 ##  프로젝트 소개
-**StockMatch**는 생성형 AI와 금융 API를 활용하여 개인 맞춤형 자산 진단 및 리스크 관리를 제공하는 웹 애플리케이션입니다.
+**StockMatch**는 생성형 AI와 실시간 금융 API를 활용하여 개인 맞춤형 자산 진단 및 리스크 관리를 제공하는 웹 애플리케이션입니다.
 사용자가 직접 등록한 포트폴리오를 기반으로 자산의 안정성을 진단하고 합리적인 투자 판단을 내릴 수 있도록 백엔드 시스템을 구축했습니다.
 
-- 사용자가 등록한 포트폴리오 자산과 투자 성향 간의 일치도를 AI가 심층 진단 
-- 신규 종목 편입 시 발생하는 분산 효과 및 리스크 변화를 사전에 시뮬레이션  
-- **Strict JSON Schema** 통제를 통해 환각 현상을 (Hallucination) 최소화한 재무제표 요약 리포트를 생성
+- **환각 최소화 정형 리포트**: OpenAI **Strict JSON Schema** 통제를 통해 환각 현상(Hallucination) 없는 재무제표 요약 생성
+- **비용 통제 및 트래픽 제어**: Redis 캐시 전략과 속도 제한 가드로 무분별한 외부 API 호출 및 트래픽 폭주 원천 차단
+- **온디맨드 실시간 수집**: 한국투자증권(KIS) 금융망과 연동하여 미등록 종목 진입 시 실시간 마스터 데이터를 자동 적재하는 파이프라인 컴포넌트 설계 완료
 
 ---
 
 
 ## 목표
-- **성향 기반 맞춤형 분석:** 사용자의 투자 스타일과 실제 보유 자산을 고려하여 성향에 최적화된 피드백 및 종목 추천 가이드를 제공
-- **금융 데이터 해석의 신뢰성 확보** Structured Outputs(Strict Schema) 기술을 도입하여 생성형 AI의 환각(Hallucination) 현상을 원천 방지
-- **리스크 중심의 투자 의사결정 지원:** 신규 종목 편입에 따른 포트폴리오의 상관관계 및 리스크 변화를 분석하여 합리적인 투자 판단을 보조
+- 투자 스타일과 실제 자산 비중 대조를 통한 맞춤형 리스크 피드백 제공
+- 엄격한 스키마 구조 설계를 통해 생성형 AI의 금융 데이터 해석 신뢰성 확보
+- 다중 외부 금융 API와 환율 레이어를 결합한 무결성 데이터 파이프라인 구축
 
 ---
 
 
 ## 주요 기능
 - **OAuth2 소셜 로그인 & JWT 인증/인가**(Access / Refresh), Spring Security 보안 계층
-- **국내·외 주식 API 연동 및 데이터 통합**: 한국은행(BOK), DART, Alpha Vantage API 연동 및 원/달러 환율 데이터 보정
-- **내 포트폴리오 분석**: 사용자의 투자 성향과 실제 자산 비중 대조 및 리스크 진단
+- **한국투자증권(KIS) API 연동 및 데이터 통합**: 국내·외 상품기본조회 및 실시간 환율 데이터를 연동하여 자산 간 가치 및 보유 비중 정합성 보정
+- **내 포트폴리오 분석**: 투자 성향과 자산 비중 대조 및 자산 쏠림 위험 분류
 - **포트폴리오 추가 적합 여부 분석**: 신규 종목 편입 시 기존 자산과의 상관관계를 분석하여 포트폴리오 다각화 효과 및 리스크 변동성 진단
-- **재무제표 분석**: 금융 API 데이터 기반 핵심 지표 요약 및 한글 리포트 생성
+- **재무제표 요약 및 AI 리포트 생성**: Strict JSON Schema 기반 금융 분석 및 토큰 비용 최적화 패키징 구축
 
 
 ### JWT 기반 인증/인가
 <details>
   <summary>자세히 보기</summary>
 
-  - **소셜 로그인 연동**: OAuth2 프로토콜 기반의 다중 소셜 가입(Google, Kakao, Naver) 및 단일화된 인증 인프라 구축
-  - **쿠키(Cookie) 기반 토큰 검증**: 클라이언트 쿠키에서 `accessToken`을 직접 추출·파싱하여 다루는 `OncePerRequestFilter` 보안 필터 계층 구현
-  - **경량 토큰 설계**: JWT 페이로드에 유저 고유 PK와 권한(`role`)만을 포함하여 토큰 크기를 최적화
+  - **소셜 로그인 연동**: OAuth2 프로토콜 기반 다중 소셜 가입(Google, Kakao, Naver) 및 단일화된 인증 인프라 구축
+  - **쿠키(Cookie) 기반 토큰 검증**: 클라이언트 쿠키에서 `accessToken`을 직접 추출·파싱하는 `OncePerRequestFilter` 보안 필터 계층 구현
+  - **경량 토큰 및 위조 방지**: 페이로드 크기 최적화 및 `HMAC-SHA` 알고리즘 기반의 `SecretKey` 캐싱 적용, 커스텀 폴백 예외 핸들링
   - **효율적인 세션 관리**: 일반 요청은 쿠키 기반 JWT로 검증하되, 재발급 경로(`/api/auth/refresh`)는 필터를 스킵하도록 최적화
-  - **토큰 위조 방지**: `HMAC-SHA` 알고리즘 기반의 `SecretKey` 캐싱 적용 및 `SignatureException` 등 유효성 예외에 대한 정교한 custom 폴백 응답 처리
 </details>
 
-### 국내·외 주식 API 연동 및 환율 보정
+### 한국투자증권(KIS) API 연동 및 환율 보정
 <details>
   <summary>자세히 보기</summary>
 
-  - **국내외 금융 API 이원화**: `GenericAlphaVantageClient`(해외 자산 데이터 수집)와 `GenericDartClient`(국내 전자공시시스템 연동) 인프라 구축을 통한 데이터 수집 규격 추상화
-  - **원/달러 환율 실시간 보정**: `BokApiClient`를 통해 한국은행(BOK) ECOS API로부터 환율 데이터를 실시간 연동하여 자산 간의 가치 및 보유 비중 정합성 보정
-  - **Redis Cache-Aside 캐시 최적화**: 조회 주기가 일정한 외부 금융 API 데이터에 캐싱 전략을 적용하여 중복 네트워크 호출을 차단하고 트래픽 비용 대폭 절감
+  - **국내외 금융 인프라 단일화**: 한국투자증권(KIS) Open API 망으로 데이터 채널을 집중하여 주식 정보 마스터 수집 규격 추상화
+  - **원/달러 환율 실시간 보정**: KIS API로부터 실시간 환율 데이터를 직접 파싱 및 연동하여 원화/외화 자산 비중을 정교하게 실시간 가치 보정
+  - **Redis Cache-Aside 캐시 최적화**: 조회 주기가 일정한 외부 금융 API 및 환율 데이터에 캐싱 전략을 적용하여 중복 네트워크 호출을 차단하고 트래픽 비용 대폭 절감
 </details>
 
 ### 내 포트폴리오 분석
@@ -83,9 +85,9 @@
 
   - **성향-자산 괴리율 진단**: 사용자의 주관적인 투자 성향(`investmentType`)과 실제 보유 자산의 종목별 비중(`weightPct`) 데이터를 대조하여 리스크 일치 여부를 심층 진단합니다.
   - **자산 쏠림 리스크 탐지**: 단일 종목의 비중이 과도하게 높은 상태를 감지하여 포트폴리오 상태에 따라 `WELL_BALANCED(60% 미만)`, `CONCENTRATED(60%~80%)`, `HIGH_RISK(80% 이상 또는 성향 불일치)` 단계로 안전성 코드를 자동 분류합니다.
-  - **사용자 질의 맞춤 피드백**: 사용자가 작성한 추가 요청 사항(`userComment`)이 있으면 질문과의 상관관계를 우선 분석하며, 내용이 없을 경우 종합 자산 진단으로 자동 분기하여 주력 섹터의 약점을 보완할 수 있는 대체 자산군(2~3개)을 거시경제 관점과 연계하여 제안합니다.
+  - **사용자 질의 맞춤 피드백**: 유저 추가 요청 사항(`userComment`) 유무에 따른 동적 분기 로직 설계 및 대체 자산군 거시경제 관점 제안
   - **Structured Outputs**: OpenAI API 요청 시 Strict JSON Schema를 강제하여 환각 현상(Hallucination) 없는 정형 데이터 응답 보장
-  - **AiRequestGuard**: 유저별 AI 분석 호출 건수에 제한을 두는 가드 계층을 적용하여 무분별한 API 오남용 및 인프라 비용 폭주 원천 차단
+  - **AiRequestGuard**: 유저별 AI 분석 호출 건수를 통제하는 인터셉터 계층을 적용하여 인프라 비용 폭주 원천 차단
 </details>
 
 ### 포트폴리오 추가 적합 여부 분석
@@ -129,36 +131,75 @@
 - **Docker + Docker Compose** 로 배포 환경 구성  
 - **Nginx** 를 통한 Reverse Proxy
 
+```mermaid
+graph TD
+    %% 클라이언트 레이어
+    Client[Client Browser / React] -->|HTTPS / HttpOnly Cookies| Nginx[Reverse Proxy / Nginx]
+
+    %% 인프라 프록시 및 WAS 레이어
+    Nginx --> WAS[Core WAS / Spring Boot 3.5]
+
+    %% 내부 컴포넌트 격리 구역
+    subgraph SpringBoot_Internal [Spring Boot Core 인프라]
+        WAS --> Security[Spring Security / OAuth2]
+        WAS --> Interceptor[AiRequestGuard Interceptor]
+        WAS --> CacheLayer[Spring Cache Layer]
+        WAS --> JPALayer[Spring Data JPA / QueryDSL]
+    end
+
+    %% 보안 및 저장소 레이어 매핑
+    Security -->|Cookie Extraction| InMem[OncePerRequestFilter 인증 계층]
+    CacheLayer -->|Cache-Aside 전략| Redis[(Redis Memory Cache)]
+    JPALayer -->|ORM Mapping| MySQL[(MySQL 8.0 Main RDB)]
+
+    %% 외부 금융 및 AI 파이프라인 데이터 게이트웨이
+    WAS -->|Structured Outputs| OpenAI[OpenAI GPT-4o API]
+    WAS -->|Master Data & 환율 연동| KIS[한국투자증권 Open API 망]
+    WAS -->|국내 재무 수치| DART[국가전자공시시스템 DART]
+    WAS -->|해외 마스터 프로필| AlphaVantage[Alpha Vantage API]
+
+    %% 스타일 정의
+    style Client fill:#2088FF,stroke:#fff,stroke-width:2px,color:#fff
+    style Nginx fill:#009639,stroke:#fff,stroke-width:2px,color:#fff
+    style WAS fill:#6DB33F,stroke:#fff,stroke-width:2px,color:#fff
+    style Redis fill:#DC382D,stroke:#fff,stroke-width:2px,color:#fff
+    style MySQL fill:#4479A1,stroke:#fff,stroke-width:2px,color:#fff
+    style OpenAI fill:#412991,stroke:#fff,stroke-width:2px,color:#fff
+    style KIS fill:#ff9900,stroke:#fff,stroke-width:2px,color:#fff
+
 ---
 
 ## 기술 스택 상세
 
 ### Frontend
+- **React / TypeScript**: 컴포넌트 기반 UI 아키텍처 및 상태 제어
+- **TanStack Router & Query**: 캐시 제어 및 주식 상세 페이지 무효화(`invalidateQueries`) 시스템 탑재
+- **Tailwind CSS & Shadcn UI**: 반응형 레이아웃 및 디자인 시스템 인프라 구축
 
 ### Backend
 - **Java 17 / Spring Boot 3.5**
-- **Spring Data JPA / QueryDSL**: ORM & 동적 쿼리
+- **Spring Data JPA / QueryDSL**: ORM 및 복합 인덱스 매칭 동적 쿼리 최적화
 - **Spring Security / OAuth2 Client**: 다중 소셜 로그인 인증 처리  
 - **JJWT (0.12.6)**: 이중 JWT(Access / Refresh Token) 인증/인가
 - **Spring Data Redis / Spring Cache**: 외부 금융 API 호출 최적화 및 캐싱
-- **MySQL**: 메인 관계형 데이터베이스(RDB)
+- **MySQL 8.0**: 메인 관계형 데이터베이스(RDB)
 
 ### External APIs
+- **한국투자증권 (KIS API)**: 국내/해외 주식 마스터 데이터 온디맨드 실시간 수집 연동, 환율 수
 - **OpenAI API**: 데이터 기반 자산 진단 및 정형 AI 분석 리포트 생성
-- **한국은행 ECOS API**: 원/달러 기준 환율 데이터 수집
 - **국가전자공시시스템 DART API**: 국내 주식 고유번호 파싱 및 기업 재무 데이터 수집
 - **Alpha Vantage API**: 글로벌(해외) 주식 기업 개요 및 다차원 재무 수치 연동
   
 ### Infra & DevOps
-- **Oracle Cloud (OCI)**: 서버 및 데이터베이스 배포
-- **Docker & Docker Compose**: 컨테이너 기반 배포
-- **Nginx**: Reverse Proxy, 정적 리소스 제공
-- **GitHub Actions (CI/CD)**: 코드 푸시 시 자동 빌드 & 배포 파이프라인 구축
+- **Oracle Cloud (OCI)**: 클라우드 컴퓨팅 인스턴스 서버 및 데이터베이스 배포
+- **Docker & Docker Compose**: 가상 환경 인프라 컨테이너 기반 배포
+- **Nginx**: Reverse Proxy 구동 및 정적 리소스 웹 서버 가단성 확보
+- **GitHub Actions (CI/CD)**: 코드 푸시 시 자동 빌드, 패키징 및 운영 서버 무중단 배포 파이프라인 구축
 
   
 ---
 
-## 프로젝트 실행 방법(두 가지 방식 중 하나 택)
+## 프로젝트 실행 방법
 
 ---
 
